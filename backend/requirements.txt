@@ -1,0 +1,27 @@
+# FastAPI核心依赖
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# 数据验证和配置
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+email-validator>=2.1.0
+
+# 认证和安全
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.6
+
+# 限流保护
+slowapi>=0.1.9
+redis>=5.0.0
+
+# 数据库
+asyncpg>=0.29.0    # PostgreSQL异步支持
+
+# 文件处理
+aiofiles>=23.2.0
+python-magic>=0.4.27
+
+# 工具库
+httpx>=0.25.0

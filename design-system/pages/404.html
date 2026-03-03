@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - 页面未找到 | SynthInk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 赛博霓虹 */
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --text-primary: #e8e8f0;
+            --text-secondary: #9090a0;
+            --accent-primary: #00f5d4;
+            --accent-secondary: #ff006e;
+            --accent-gradient: linear-gradient(135deg, #00f5d4 0%, #ff006e 100%);
+            --glow-primary: rgba(0, 245, 212, 0.4);
+            --glow-secondary: rgba(255, 0, 110, 0.4);
+            --border-color: rgba(0, 245, 212, 0.2);
+            --particle-color: #00f5d4;
+            --error-color: #ff006e;
+        }
+
+        [data-theme="aurora"] {
+            /* 极光紫境 */
+            --bg-primary: #0d0d12;
+            --bg-secondary: #151520;
+            --bg-tertiary: #1f1f2e;
+            --text-primary: #f0f0f8;
+            --text-secondary: #a0a0b8;
+            --accent-primary: #c084fc;
+            --accent-secondary: #6366f1;
+            --accent-gradient: linear-gradient(135deg, #c084fc 0%, #6366f1 100%);
+            --glow-primary: rgba(192, 132, 252, 0.4);
+            --glow-secondary: rgba(99, 102, 241, 0.4);
+            --border-color: rgba(192, 132, 252, 0.2);
+            --particle-color: #c084fc;
+            --error-color: #f472b6;
+        }
+
+        [data-theme="sunset"] {
+            /* 暖阳橙光 */
+            --bg-primary: #1a1512;
+            --bg-secondary: #252018;
+            --bg-tertiary: #332a20;
+            --text-primary: #f5f0e8;
+            --text-secondary: #b8a090;
+            --accent-primary: #fbbf24;
+            --accent-secondary: #f97316;
+            --accent-gradient: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+            --glow-primary: rgba(251, 191, 36, 0.4);
+            --glow-secondary: rgba(249, 115, 22, 0.4);
+            --border-color: rgba(251, 191, 36, 0.2);
+            --particle-color: #fbbf24;
+            --error-color: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 背景粒子 */
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* 主题切换器 */
+        .theme-switcher {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            background: var(--bg-secondary);
+            padding: 8px;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .theme-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.15);
+        }
+
+        .theme-btn.active {
+            border-color: var(--text-primary);
+            box-shadow: 0 0 12px var(--glow-primary);
+        }
+
+        .theme-btn.cyber { background: linear-gradient(135deg, #00f5d4, #ff006e); }
+        .theme-btn.aurora { background: linear-gradient(135deg, #c084fc, #6366f1); }
+        .theme-btn.sunset { background: linear-gradient(135deg, #fbbf24, #f97316); }
+
+        /* 404 主容器 */
+        .error-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* 故障艺术 404 */
+        .glitch-wrapper {
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .glitch-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(120px, 25vw, 200px);
+            font-weight: 700;
+            color: var(--text-primary);
+            position: relative;
+            display: inline-block;
+            letter-spacing: -0.05em;
+            animation: glitch-skew 3s infinite;
+        }
+
+        .glitch-text::before,
+        .glitch-text::after {
+            content: '404';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch-text::before {
+            color: var(--accent-primary);
+            animation: glitch-1 2s infinite linear alternate-reverse;
+            clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+        }
+
+        .glitch-text::after {
+            color: var(--accent-secondary);
+            animation: glitch-2 3s infinite linear alternate-reverse;
+            clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+        }
+
+        @keyframes glitch-1 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-3px, 3px); }
+            40% { transform: translate(-3px, -3px); }
+            60% { transform: translate(3px, 3px); }
+            80% { transform: translate(3px, -3px); }
+        }
+
+        @keyframes glitch-2 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(3px, -3px); }
+            40% { transform: translate(3px, 3px); }
+            60% { transform: translate(-3px, -3px); }
+            80% { transform: translate(-3px, 3px); }
+        }
+
+        @keyframes glitch-skew {
+            0%, 100% { transform: skew(0deg); }
+            10% { transform: skew(-2deg); }
+            20% { transform: skew(2deg); }
+            30% { transform: skew(0deg); }
+            90% { transform: skew(1deg); }
+        }
+
+        /* 信号丢失图标 */
+        .signal-lost {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .signal-icon {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .signal-bar {
+            position: absolute;
+            bottom: 0;
+            background: var(--error-color);
+            border-radius: 2px;
+            animation: signal-flicker 1.5s infinite;
+        }
+
+        .signal-bar:nth-child(1) {
+            left: 0;
+            width: 12px;
+            height: 20%;
+            animation-delay: 0s;
+        }
+
+        .signal-bar:nth-child(2) {
+            left: 18px;
+            width: 12px;
+            height: 40%;
+            animation-delay: 0.1s;
+        }
+
+        .signal-bar:nth-child(3) {
+            left: 36px;
+            width: 12px;
+            height: 60%;
+            animation-delay: 0.2s;
+        }
+
+        .signal-bar:nth-child(4) {
+            left: 54px;
+            width: 12px;
+            height: 80%;
+            animation-delay: 0.3s;
+            opacity: 0.3;
+        }
+
+        .signal-bar:nth-child(5) {
+            left: 72px;
+            width: 12px;
+            height: 100%;
+            animation-delay: 0.4s;
+            opacity: 0.1;
+        }
+
+        @keyframes signal-flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* 错误信息 */
+        .error-message {
+            text-align: center;
+            max-width: 500px;
+            margin-bottom: 40px;
+        }
+
+        .error-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .error-description {
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+
+        .error-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            border: 1px solid var(--border-color);
+        }
+
+        /* 操作按钮 */
+        .error-actions {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: var(--bg-primary);
+            box-shadow: 0 4px 20px var(--glow-primary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--glow-primary);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-primary);
+        }
+
+        /* 故障扫描线效果 */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.03) 0px,
+                rgba(0, 0, 0, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            opacity: 0.5;
+        }
+
+        /* 随机故障块 */
+        .glitch-block {
+            position: absolute;
+            background: var(--error-color);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 底部装饰 */
+        .footer-decoration {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            text-align: center;
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .glitch-text {
+                font-size: 100px;
+            }
+
+            .error-title {
+                font-size: 22px;
+            }
+
+            .error-actions {
+                flex-direction: column;
+                width: 100%;
+                max-width: 280px;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* 无障碍 */
+        @media (prefers-reduced-motion: reduce) {
+            .glitch-text,
+            .glitch-text::before,
+            .glitch-text::after,
+            .signal-bar {
+                animation: none;
+            }
+        }
+    </style>
+</head>
+<body data-theme="cyber">
+    <!-- 粒子背景 -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- 扫描线效果 -->
+    <div class="scanlines"></div>
+
+    <!-- 主题切换器 -->
+    <div class="theme-switcher">
+        <button class="theme-btn cyber active" data-theme="cyber" title="赛博霓虹"></button>
+        <button class="theme-btn aurora" data-theme="aurora" title="极光紫境"></button>
+        <button class="theme-btn sunset" data-theme="sunset" title="暖阳橙光"></button>
+    </div>
+
+    <!-- 404 主内容 -->
+    <div class="error-container">
+        <!-- 信号丢失图标 -->
+        <div class="signal-lost">
+            <div class="signal-icon">
+                <div class="signal-bar"></div>
+                <div class="signal-bar"></div>
+                <div class="signal-bar"></div>
+                <div class="signal-bar"></div>
+                <div class="signal-bar"></div>
+            </div>
+        </div>
+
+        <!-- 故障艺术 404 -->
+        <div class="glitch-wrapper">
+            <span class="glitch-text">404</span>
+        </div>
+
+        <!-- 错误信息 -->
+        <div class="error-message">
+            <h1 class="error-title">信号丢失</h1>
+            <p class="error-description">
+                看起来你访问的页面已经消失在数字深渊中了。<br>
+                可能是链接已过期，或者页面从未存在过。
+            </p>
+            <span class="error-code">ERROR_CODE: PAGE_NOT_FOUND</span>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="error-actions">
+            <a href="home.html" class="btn btn-primary">
+                <span>←</span>
+                返回首页
+            </a>
+            <button class="btn btn-secondary" onclick="history.back()">
+                <span>↺</span>
+                返回上一页
+            </button>
+        </div>
+    </div>
+
+    <!-- 底部装饰 -->
+    <div class="footer-decoration">
+        <span class="footer-text">SynthInk · 404 Not Found</span>
+    </div>
+
+    <script>
+        // 主题切换
+        const themeBtns = document.querySelectorAll('.theme-btn');
+        const body = document.body;
+
+        themeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const theme = btn.dataset.theme;
+                body.setAttribute('data-theme', theme);
+                themeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // 粒子系统 - 故障碎片效果
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let animationId;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = (Math.random() - 0.5) * 2;
+                this.speedY = (Math.random() - 0.5) * 2;
+                this.opacity = Math.random() * 0.5 + 0.1;
+                this.life = Math.random() * 100 + 50;
+                this.maxLife = this.life;
+                
+                // 随机颜色 - 故障风格
+                const colors = [
+                    getComputedStyle(document.body).getPropertyValue('--error-color').trim() || '#ff006e',
+                    getComputedStyle(document.body).getPropertyValue('--accent-primary').trim() || '#00f5d4',
+                    getComputedStyle(document.body).getPropertyValue('--accent-secondary').trim() || '#ff006e'
+                ];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.life--;
+
+                // 随机故障跳跃
+                if (Math.random() < 0.02) {
+                    this.x += (Math.random() - 0.5) * 20;
+                }
+
+                if (this.life <= 0 || this.x < 0 || this.x > canvas.width || 
+                    this.y < 0 || this.y > canvas.height) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                const lifeRatio = this.life / this.maxLife;
+                ctx.save();
+                ctx.globalAlpha = this.opacity * lifeRatio;
+                ctx.fillStyle = this.color;
+                
+                // 绘制小方块模拟故障碎片
+                ctx.fillRect(this.x, this.y, this.size * 2, this.size);
+                
+                ctx.restore();
+            }
+        }
+
+        // 创建粒子
+        function createParticles() {
+            particles = [];
+            const particleCount = Math.min(50, (canvas.width * canvas.height) / 20000);
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        createParticles();
+
+        // 动画循环
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            // 偶尔绘制故障线条
+            if (Math.random() < 0.05) {
+                drawGlitchLine();
+            }
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // 绘制故障线条
+        function drawGlitchLine() {
+            const y = Math.random() * canvas.height;
+            const height = Math.random() * 3 + 1;
+            const color = getComputedStyle(document.body).getPropertyValue('--error-color').trim() || '#ff006e';
+            
+            ctx.save();
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = color;
+            ctx.fillRect(0, y, canvas.width, height);
+            ctx.restore();
+        }
+
+        animate();
+
+        // 随机故障块效果
+        function createGlitchBlock() {
+            const block = document.createElement('div');
+            block.className = 'glitch-block';
+            block.style.left = Math.random() * window.innerWidth + 'px';
+            block.style.top = Math.random() * window.innerHeight + 'px';
+            block.style.width = Math.random() * 100 + 50 + 'px';
+            block.style.height = Math.random() * 10 + 2 + 'px';
+            block.style.opacity = Math.random() * 0.5 + 0.2;
+            document.body.appendChild(block);
+
+            setTimeout(() => {
+                block.remove();
+            }, 100);
+        }
+
+        // 定期创建故障块
+        setInterval(createGlitchBlock, 2000);
+
+        // 页面卸载时清理
+        window.addEventListener('beforeunload', () => {
+            cancelAnimationFrame(animationId);
+        });
+    </script>
+</body>
+</html>

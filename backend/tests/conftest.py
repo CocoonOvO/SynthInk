@@ -1,0 +1,115 @@
+"""
+Pytest配置文件
+"""
+import pytest
+import pytest_asyncio
+import asyncio
+import os
+from pathlib import Path
+from httpx import AsyncClient, ASGITransport
+
+
+# 设置异步模式
+pytest_plugins = ("pytest_asyncio",)
+
+# 设置测试环境变量 - 切换到PostgreSQL（小墨已修复连接问题）
+# 注意：本地测试需要设置 POSTGRES_DISABLE_SSL=true 环境变量
+os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:heat1423@localhost:5432/synthink_test"
+os.environ["DEBUG_MODE"] = "true"
+os.environ["POSTGRES_DISABLE_SSL"] = "true"
+
+# 导入app（在设置环境变量之后）
+from app.main import app
+from app.db_manager import db_manager
+from app.config_db import config_db_manager as _config_db_manager
+
+
+@pytest.fixture
+def temp_db_path(tmp_path):
+    """创建临时配置库路径"""
+    return str(tmp_path / "test_config.db")
+
+
+@pytest_asyncio.fixture
+async def config_db_manager(temp_db_path):
+    """创建配置库管理器实例"""
+    # 创建新的管理器实例（绕过单例）
+    manager = object.__new__(_config_db_manager.__class__)
+    manager._initialized = False
+    manager.db_path = Path(temp_db_path)
+    
+    # 初始化
+    await manager.initialize()
+    
+    yield manager
+    
+    # 清理
+    import os
+    if Path(temp_db_path).exists():
+        os.remove(temp_db_path)
+
+
+@pytest_asyncio.fixture
+async def client():
+    """创建异步HTTP客户端，并初始化数据库连接"""
+    # 1. 初始化配置库
+    await _config_db_manager.initialize()
+    
+    # 2. 初始化业务数据库（根据DATABASE_URL自动选择PostgreSQL或SQLite）
+    database_url = os.environ.get("DATABASE_URL", "")
+    print(f"\n[测试] DATABASE_URL: {database_url}")
+    try:
+        # 使用db_manager初始化业务数据库
+        await db_manager.init_postgres_db(database_url)
+        print(f"[测试] 业务数据库连接成功!")
+        print(f"[测试] db_manager.is_postgres_ready: {db_manager.is_postgres_ready}")
+        
+        # 存储到app.state
+        app.state.postgres_adapter = db_manager._postgres_adapter
+    except Exception as e:
+        import traceback
+        print(f"\n[测试] 业务数据库连接失败!")
+        print(f"[测试] 错误: {e}")
+        print(f"[测试] 堆栈:\n{traceback.format_exc()}")
+    
+    # 3. 创建HTTP客户端
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+    
+    # 4. 清理数据库连接
+    postgres_adapter = getattr(app.state, "postgres_adapter", None)
+    if postgres_adapter is not None:
+        await postgres_adapter.disconnect()
+        app.state.postgres_adapter = None
+        db_manager._postgres_adapter = None
+
+
+@pytest_asyncio.fixture
+async def auth_headers(client):
+    """创建认证头（使用测试用户）"""
+    # 先注册测试用户
+    register_response = await client.post(
+        "/api/auth/register",
+        json={
+            "username": "testuser_auth",
+            "email": "testauth@example.com",
+            "password": "testpassword123"
+        }
+    )
+    
+    # 如果注册失败（用户已存在），直接登录
+    login_response = await client.post(
+        "/api/auth/token",
+        data={
+            "username": "testuser_auth",
+            "password": "testpassword123"
+        }
+    )
+    
+    if login_response.status_code != 200:
+        pytest.skip("无法创建测试用户，数据库可能未配置")
+    
+    token = login_response.json()["access_token"]
+    
+    return {"Authorization": f"Bearer {token}"}

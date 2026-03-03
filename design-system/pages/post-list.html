@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章列表 - SynthInk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ╭────────────────────────────────────────────────────────────╮
+           │  SynthInk 文章列表页设计稿                                      │
+           │  概念：知识的星图，每一篇文章都是一颗发光的星                      │
+           ╰────────────────────────────────────────────────────────────╯ */
+        
+        :root {
+            --theme-primary: #00f5ff;
+            --theme-secondary: #ff00a0;
+            --theme-tertiary: #ffea00;
+            --bg-deep: #0a0a0f;
+            --bg-mid: #12121a;
+            --bg-light: #1a1a25;
+            --bg-card: rgba(18, 18, 26, 0.8);
+            --text-main: #ffffff;
+            --text-sub: #a0a0b0;
+            --text-weak: #606070;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(0, 245, 255, 0.3);
+            
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 200ms;
+            --duration-normal: 300ms;
+        }
+
+        [data-theme="aurora"] {
+            --theme-primary: #b829dd;
+            --theme-secondary: #00d4aa;
+            --theme-tertiary: #ff6b6b;
+            --bg-deep: #0f0a1a;
+            --bg-mid: #1a1225;
+            --bg-light: #251a35;
+            --bg-card: rgba(26, 18, 37, 0.8);
+            --text-sub: #b8a8c8;
+            --text-weak: #705a80;
+            --border-glow: rgba(184, 41, 221, 0.3);
+        }
+
+        [data-theme="sunset"] {
+            --theme-primary: #ff6b35;
+            --theme-secondary: #f7931e;
+            --theme-tertiary: #ffd93d;
+            --bg-deep: #1a0f0a;
+            --bg-mid: #251812;
+            --bg-light: #35221a;
+            --bg-card: rgba(37, 24, 18, 0.8);
+            --text-main: #fff5f0;
+            --text-sub: #d4a890;
+            --text-weak: #906850;
+            --border-glow: rgba(255, 107, 53, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* ╭── 导航栏 ──╮ */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5%;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .nav-logo-icon {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--theme-primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-logo-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--theme-primary);
+        }
+
+        .nav-logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 3rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            position: relative;
+            padding: 0.5rem 0;
+            transition: var(--duration-fast);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--theme-primary);
+            transition: var(--duration-fast);
+            transform: translateX(-50%);
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--theme-primary);
+        }
+
+        .nav-links a:hover::after,
+        .nav-links a.active::after {
+            width: 100%;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .theme-switcher {
+            display: flex;
+            gap: 6px;
+            padding: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+        }
+
+        .theme-btn {
+            width: 24px;
+            height: 24px;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-btn.active {
+            border-color: var(--text-main);
+        }
+
+        .theme-btn.cyber {
+            background: linear-gradient(135deg, #00f5ff, #ff00a0);
+        }
+
+        .theme-btn.aurora {
+            background: linear-gradient(135deg, #b829dd, #00d4aa);
+        }
+
+        .theme-btn.sunset {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+        }
+
+        .nav-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--bg-deep);
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .nav-avatar:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px var(--border-glow);
+        }
+
+        /* ╭── 页面标题区 ──╮ */
+        .page-header {
+            padding: 120px 5% 40px;
+            background: linear-gradient(180deg, 
+                rgba(0, 245, 255, 0.03) 0%, 
+                transparent 100%);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            color: var(--text-sub);
+            font-size: 1.1rem;
+        }
+
+        /* ╭── 筛选栏 ──╮ */
+        .filter-bar {
+            padding: 24px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .filter-tags {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tag {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            color: var(--text-sub);
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .filter-tag:hover {
+            border-color: var(--theme-primary);
+            color: var(--theme-primary);
+        }
+
+        .filter-tag.active {
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            border-color: transparent;
+            color: var(--bg-deep);
+            font-weight: 500;
+        }
+
+        .search-box {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 14px;
+            transition: var(--duration-fast);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--theme-primary);
+            box-shadow: 0 0 20px var(--border-glow);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-weak);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-weak);
+        }
+
+        /* ╭── 文章网格 ──╮ */
+        .content-area {
+            padding: 40px 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .articles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 24px;
+        }
+
+        .article-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: var(--duration-normal);
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .article-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--theme-primary);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px var(--border-glow);
+        }
+
+        .card-cover {
+            height: 180px;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-cover::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 50%, var(--bg-card) 100%);
+        }
+
+        .card-category {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-main);
+            z-index: 1;
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .card-date {
+            font-size: 13px;
+            color: var(--text-weak);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: var(--bg-light);
+            border: 1px solid var(--border-glow);
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--theme-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .ai-badge::before {
+            content: '✦';
+            font-size: 10px;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            line-height: 1.4;
+            transition: var(--duration-fast);
+        }
+
+        .article-card:hover .card-title {
+            color: var(--theme-primary);
+        }
+
+        .card-excerpt {
+            font-size: 14px;
+            color: var(--text-sub);
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .card-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .author-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--theme-secondary), var(--theme-tertiary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--bg-deep);
+        }
+
+        .author-name {
+            font-size: 13px;
+            color: var(--text-sub);
+        }
+
+        .card-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-weak);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ╭── 分页 ──╮ */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 40px 0;
+        }
+
+        .page-btn {
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            color: var(--text-sub);
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .page-btn:hover {
+            border-color: var(--theme-primary);
+            color: var(--theme-primary);
+        }
+
+        .page-btn.active {
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            border-color: transparent;
+            color: var(--bg-deep);
+            font-weight: 600;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* ╭── Footer ──╮ */
+        .footer {
+            padding: 40px 5%;
+            background: var(--bg-mid);
+            border-top: 1px solid var(--border-subtle);
+            text-align: center;
+        }
+
+        .footer-text {
+            color: var(--text-weak);
+            font-size: 14px;
+        }
+
+        /* ╭── 响应式 ──╮ */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .articles-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <a href="home.html" class="nav-logo">
+            <div class="nav-logo-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </div>
+            <span class="nav-logo-text">SynthInk</span>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="home.html">首页</a></li>
+            <li><a href="post-list.html" class="active">文章</a></li>
+            <li><a href="#">关于</a></li>
+        </ul>
+
+        <div class="nav-actions">
+            <div class="theme-switcher">
+                <button class="theme-btn cyber active" data-theme="cyber"></button>
+                <button class="theme-btn aurora" data-theme="aurora"></button>
+                <button class="theme-btn sunset" data-theme="sunset"></button>
+            </div>
+            <div class="nav-avatar">U</div>
+        </div>
+    </nav>
+
+    <!-- 页面标题 -->
+    <header class="page-header">
+        <h1 class="page-title">文章列表</h1>
+        <p class="page-subtitle">探索创作者们的精彩文章</p>
+    </header>
+
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+        <div class="filter-tags">
+            <button class="filter-tag active">全部</button>
+            <button class="filter-tag">技术</button>
+            <button class="filter-tag">设计</button>
+            <button class="filter-tag">随笔</button>
+            <button class="filter-tag">AI协作</button>
+        </div>
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" placeholder="搜索文章...">
+        </div>
+    </div>
+
+    <!-- 文章网格 -->
+    <main class="content-area">
+        <div class="articles-grid">
+            <article class="article-card">
+                <div class="card-cover">
+                    <span class="card-category">技术</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-meta">
+                        <span class="card-date">2026.02.28</span>
+                        <span class="ai-badge">AI协作</span>
+                    </div>
+                    <h2 class="card-title">探索 AI 辅助写作的无限可能</h2>
+                    <p class="card-excerpt">在这个人工智能蓬勃发展的时代，写作方式正在经历前所未有的变革。本文将探讨如何利用 AI 工具提升写作效率...</p>
+                    <div class="card-footer">
+                        <div class="card-author">
+                            <div class="author-avatar">A</div>
+                            <span class="author-name">Alice</span>
+                        </div>
+                        <div class="card-stats">
+                            <span class="stat-item">👁 1.2k</span>
+                            <span class="stat-item">❤ 89</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="article-card">
+                <div class="card-cover" style="background: linear-gradient(135deg, #ff6b6b, #feca57);">
+                    <span class="card-category">设计</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-meta">
+                        <span class="card-date">2026.02.25</span>
+                    </div>
+                    <h2 class="card-title">深色模式设计指南</h2>
+                    <p class="card-excerpt">深色模式不仅是一种视觉风格，更是对用户体验的深度思考。从配色到对比度，从可读性到情感传达...</p>
+                    <div class="card-footer">
+                        <div class="card-author">
+                            <div class="author-avatar">B</div>
+                            <span class="author-name">Bob</span>
+                        </div>
+                        <div class="card-stats">
+                            <span class="stat-item">👁 856</span>
+                            <span class="stat-item">❤ 67</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="article-card">
+                <div class="card-cover" style="background: linear-gradient(135deg, #a29bfe, #6c5ce7);">
+                    <span class="card-category">随笔</span>
+                    <span class="ai-badge">AI协作</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-meta">
+                        <span class="card-date">2026.02.22</span>
+                    </div>
+                    <h2 class="card-title">凌晨两点的创作时光</h2>
+                    <p class="card-excerpt">窗外的城市已经沉睡，只有键盘的敲击声陪伴着我。这是属于创作者的黄金时刻，灵感如泉涌...</p>
+                    <div class="card-footer">
+                        <div class="card-author">
+                            <div class="author-avatar">C</div>
+                            <span class="author-name">Carol</span>
+                        </div>
+                        <div class="card-stats">
+                            <span class="stat-item">👁 2.3k</span>
+                            <span class="stat-item">❤ 156</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="article-card">
+                <div class="card-cover" style="background: linear-gradient(135deg, #00b894, #00cec9);">
+                    <span class="card-category">技术</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-meta">
+                        <span class="card-date">2026.02.20</span>
+                    </div>
+                    <h2 class="card-title">Vue 3 组合式 API 最佳实践</h2>
+                    <p class="card-excerpt">从 Options API 迁移到 Composition API 的过程中，我总结了一些实用的模式和技巧...</p>
+                    <div class="card-footer">
+                        <div class="card-author">
+                            <div class="author-avatar">D</div>
+                            <span class="author-name">David</span>
+                        </div>
+                        <div class="card-stats">
+                            <span class="stat-item">👁 3.1k</span>
+                            <span class="stat-item">❤ 234</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="article-card">
+                <div class="card-cover" style="background: linear-gradient(135deg, #fd79a8, #e84393);">
+                    <span class="card-category">随笔</span>
+                    <span class="ai-badge">AI协作</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-meta">
+                        <span class="card-date">2026.02.18</span>
+                    </div>
+                    <h2 class="card-title">与 AI 对话的艺术</h2>
+                    <p class="card-excerpt">如何让 AI 更好地理解你的需求？ prompt 工程的核心在于清晰的表达和迭代优化...</p>
+                    <div class="card-footer">
+                        <div class="card-author">
+                            <div class="author-avatar">E</div>
+                            <span class="author-name">Eve</span>
+                        </div>
+                        <div class="card-stats">
+                            <span class="stat-item">👁 1.8k</span>
+                            <span class="stat-item">❤ 112</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="article-card">
+                <div class="card-cover" style="background: linear-gradient(135deg, #636e72, #b2bec3);">
+                    <span class="card-category">设计</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-meta">
+                        <span class="card-date">2026.02.15</span>
+                    </div>
+                    <h2 class="card-title">极简主义在 UI 设计中的应用</h2>
+                    <p class="card-excerpt">少即是多。通过减少视觉噪音，让用户专注于核心内容，这是极简设计的精髓...</p>
+                    <div class="card-footer">
+                        <div class="card-author">
+                            <div class="author-avatar">F</div>
+                            <span class="author-name">Frank</span>
+                        </div>
+                        <div class="card-stats">
+                            <span class="stat-item">👁 967</span>
+                            <span class="stat-item">❤ 78</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- 分页 -->
+        <div class="pagination">
+            <button class="page-btn" disabled>←</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <span style="color: var(--text-weak);">...</span>
+            <button class="page-btn">10</button>
+            <button class="page-btn">→</button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p class="footer-text">人机共创的写作空间 · 让灵感自由流动</p>
+    </footer>
+
+    <script>
+        // 主题切换
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const theme = btn.dataset.theme;
+                document.documentElement.setAttribute('data-theme', theme);
+                
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // 筛选标签
+        document.querySelectorAll('.filter-tag').forEach(tag => {
+            tag.addEventListener('click', () => {
+                document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+                tag.classList.add('active');
+            });
+        });
+
+        // 滚动渐显动画
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.classList.add('visible');
+                    }, index * 100);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.article-card').forEach(card => {
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

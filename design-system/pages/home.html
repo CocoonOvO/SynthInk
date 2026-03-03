@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SynthInk - 人机共创的写作空间</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- 引入模块化主题系统 -->
+    <link rel="stylesheet" href="../css/theme-system.css">
+    <style>
+        /* ╭────────────────────────────────────────────────────────────╮
+           │  SynthInk 首页设计稿 - 集成主题系统版                          │
+           │  概念：人机共创，文字与代码交织的诗意                            │
+           ╰────────────────────────────────────────────────────────────╯ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        /* ╭── 导航栏 ──╮ */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5%;
+            transition: var(--transition-normal);
+        }
+
+        .navbar.scrolled {
+            background: var(--bg-elevated);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .nav-logo-icon {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--accent-primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: logo-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes logo-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 var(--glow-primary); }
+            50% { box-shadow: 0 0 15px 3px var(--glow-strong); }
+        }
+
+        .nav-logo-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--accent-primary);
+        }
+
+        .nav-logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: var(--font-display);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 40px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: var(--transition-fast);
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent-primary);
+            transition: var(--transition-fast);
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-cta {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            text-decoration: none;
+            border-radius: var(--button-radius);
+            font-weight: 600;
+            font-size: 14px;
+            transition: var(--transition-fast);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--glow-strong);
+        }
+
+        /* ╭── Hero区域 ──╮ */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 5% 80px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 50px;
+            font-size: 13px;
+            color: var(--accent-primary);
+            font-weight: 500;
+            margin-bottom: 32px;
+            letter-spacing: 1px;
+            font-family: var(--font-mono);
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            font-family: var(--font-display);
+        }
+
+        .hero-title .gradient {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-desc {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.8;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 60px;
+            flex-wrap: wrap;
+        }
+
+        .btn-large {
+            padding: 16px 40px;
+            border-radius: var(--button-radius);
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary-large {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            box-shadow: 0 4px 20px var(--glow-primary);
+        }
+
+        .btn-primary-large:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px var(--glow-strong);
+        }
+
+        .btn-secondary-large {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary-large:hover {
+            border-color: var(--border-glow);
+            background: var(--bg-elevated);
+            transform: translateY(-3px);
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            font-family: var(--font-display);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ╭── 特性区域 ──╮ */
+        .features {
+            padding: 100px 5%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            font-family: var(--font-display);
+        }
+
+        .section-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--card-radius);
+            padding: 40px;
+            transition: var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            transform: scaleX(0);
+            transition: var(--transition-normal);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--border-glow);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 24px;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* ╭── 文章列表 ──╮ */
+        .articles {
+            padding: 100px 5%;
+            background: var(--bg-secondary);
+            position: relative;
+            z-index: 1;
+        }
+
+        .articles-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1000px;
+            margin: 0 auto 40px;
+        }
+
+        .articles-title {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: var(--font-display);
+        }
+
+        .view-all {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition-fast);
+        }
+
+        .view-all:hover {
+            gap: 12px;
+        }
+
+        .articles-list {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .article-item {
+            display: grid;
+            grid-template-columns: 80px 1fr 60px;
+            gap: 24px;
+            align-items: center;
+            padding: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--card-radius);
+            transition: var(--transition-normal);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .article-item:hover {
+            border-color: var(--border-glow);
+            transform: translateX(5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .article-date {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-right: 24px;
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        .date-day {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            line-height: 1;
+            font-family: var(--font-display);
+        }
+
+        .date-month {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .article-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .article-meta {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .article-category {
+            font-size: 12px;
+            color: var(--accent-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .ai-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            background: var(--glow-primary);
+            color: var(--accent-primary);
+            border-radius: 50px;
+            font-weight: 500;
+        }
+
+        .article-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            transition: var(--transition-fast);
+        }
+
+        .article-item:hover .article-title {
+            color: var(--accent-primary);
+        }
+
+        .article-excerpt {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .article-arrow {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+            transition: var(--transition-fast);
+        }
+
+        .article-item:hover .article-arrow {
+            color: var(--accent-primary);
+            transform: translateX(5px);
+        }
+
+        /* ╭── Footer ──╮ */
+        .footer {
+            padding: 60px 5%;
+            background: var(--bg-mid);
+            border-top: 1px solid var(--border-subtle);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .footer-logo-icon {
+            width: 36px;
+            height: 36px;
+            border: 2px solid var(--accent-primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-logo-icon svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--accent-primary);
+        }
+
+        .footer-logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: var(--font-display);
+        }
+
+        .footer-text {
+            color: var(--text-tertiary);
+            font-size: 14px;
+        }
+
+        /* ╭── 响应式 ──╮ */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero-stats {
+                gap: 30px;
+            }
+
+            .stat-value {
+                font-size: 1.75rem;
+            }
+
+            .article-item {
+                grid-template-columns: 60px 1fr;
+            }
+
+            .article-arrow {
+                display: none;
+            }
+
+            .articles-header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景效果层 -->
+    <div class="bg-effects"></div>
+    
+    <!-- 粒子画布 -->
+    <canvas id="particle-canvas"></canvas>
+    
+    <!-- 矩阵雨效果容器 -->
+    <div id="matrix-rain" class="matrix-rain"></div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar" id="navbar">
+        <a href="#" class="nav-logo">
+            <div class="nav-logo-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </div>
+            <span class="nav-logo-text">SynthInk</span>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="#features">特性</a></li>
+            <li><a href="#articles">文章</a></li>
+            <li><a href="#">关于</a></li>
+        </ul>
+
+        <div class="nav-actions">
+            <!-- 主题选择器 -->
+            <div class="theme-selector">
+                <select class="theme-select">
+                    <option value="dark">暗色</option>
+                </select>
+            </div>
+            <a href="auth-login.html" class="nav-cta">开始写作</a>
+        </div>
+    </nav>
+
+    <!-- Hero区域 -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">AI-Powered Writing</div>
+            <h1 class="hero-title">
+                人机共创的<br>
+                <span class="gradient">写作空间</span>
+            </h1>
+            <p class="hero-desc">
+                SynthInk 将人工智能与人类创意完美融合，让每一次写作都成为一场灵感与技术的对话
+            </p>
+            <div class="hero-actions">
+                <a href="auth-register.html" class="btn-large btn-primary-large">免费开始</a>
+                <a href="#articles" class="btn-large btn-secondary-large">浏览文章</a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-value" data-count-target="10" data-count-suffix="K+">0</span>
+                    <span class="stat-label">创作者</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" data-count-target="50" data-count-suffix="K+">0</span>
+                    <span class="stat-label">文章</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" data-count-target="1" data-count-suffix="M+">0</span>
+                    <span class="stat-label">阅读</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 特性区域 -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <h2 class="section-title">为什么选择 SynthInk</h2>
+            <p class="section-subtitle">为创作者打造的智能写作工具</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3 class="feature-title">AI 辅助写作</h3>
+                <p class="feature-desc">智能补全、润色建议、灵感激发，让 AI 成为你的写作伙伴</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">✨</div>
+                <h3 class="feature-title">精美排版</h3>
+                <p class="feature-desc">支持 Markdown，自动渲染代码高亮、数学公式、图表</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌙</div>
+                <h3 class="feature-title">主题定制</h3>
+                <p class="feature-desc">多套精美主题，支持深色/浅色模式，护眼舒适</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 文章列表 -->
+    <section class="articles" id="articles">
+        <div class="articles-header">
+            <h2 class="articles-title">最新文章</h2>
+            <a href="post-list.html" class="view-all">查看全部 →</a>
+        </div>
+        <div class="articles-list">
+            <article class="article-item">
+                <div class="article-date">
+                    <span class="date-day">28</span>
+                    <span class="date-month">FEB</span>
+                </div>
+                <div class="article-content">
+                    <div class="article-meta">
+                        <span class="article-category">技术</span>
+                        <span class="ai-badge">AI协作</span>
+                    </div>
+                    <h3 class="article-title">探索 AI 辅助写作的无限可能</h3>
+                    <p class="article-excerpt">在这个人工智能蓬勃发展的时代，写作方式正在经历前所未有的变革。本文将探讨如何利用 AI 工具提升写作效率...</p>
+                </div>
+                <div class="article-arrow">→</div>
+            </article>
+            <article class="article-item">
+                <div class="article-date">
+                    <span class="date-day">25</span>
+                    <span class="date-month">FEB</span>
+                </div>
+                <div class="article-content">
+                    <div class="article-meta">
+                        <span class="article-category">设计</span>
+                    </div>
+                    <h3 class="article-title">深色模式设计指南</h3>
+                    <p class="article-excerpt">深色模式不仅是一种视觉风格，更是对用户体验的深度思考。从配色到对比度，从可读性到情感传达...</p>
+                </div>
+                <div class="article-arrow">→</div>
+            </article>
+            <article class="article-item">
+                <div class="article-date">
+                    <span class="date-day">22</span>
+                    <span class="date-month">FEB</span>
+                </div>
+                <div class="article-content">
+                    <div class="article-meta">
+                        <span class="article-category">随笔</span>
+                        <span class="ai-badge">AI协作</span>
+                    </div>
+                    <h3 class="article-title">凌晨两点的创作时光</h3>
+                    <p class="article-excerpt">窗外的城市已经沉睡，只有键盘的敲击声陪伴着我。这是属于创作者的黄金时刻，灵感如泉涌...</p>
+                </div>
+                <div class="article-arrow">→</div>
+            </article>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-logo">
+            <div class="footer-logo-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </div>
+            <span class="footer-logo-text">SynthInk</span>
+        </div>
+        <p class="footer-text">人机共创的写作空间 · 让灵感自由流动</p>
+    </footer>
+
+    <!-- 引入主题系统JS -->
+    <script src="../js/theme-system.js"></script>
+    <!-- 引入页面动态效果 -->
+    <script src="../js/effects/typewriter.js"></script>
+    <script src="../js/effects/count-up.js"></script>
+    <script src="../js/effects/tilt-card.js"></script>
+    <script src="../js/effects/floating-elements.js"></script>
+    <script>
+        // 导航栏滚动效果
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // 初始化打字机效果 - Hero标题
+        Typewriter.init('.hero-title', { speed: 80, delay: 300 });
+
+        // 初始化数字滚动 - 统计数据
+        CountUp.init('.stat-value', { duration: 2000 });
+
+        // 初始化3D卡片倾斜 - 特性卡片
+        TiltCard.init('.feature-card', { maxTilt: 10, glare: true });
+
+        // 初始化浮动装饰元素
+        FloatingElements.init({
+            count: 6,
+            shapes: ['circle', 'square'],
+            minSize: 30,
+            maxSize: 100
+        });
+
+        // 滚动渐显动画
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.feature-card, .article-item').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

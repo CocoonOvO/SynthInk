@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - SynthInk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ╭────────────────────────────────────────────────────────────╮
+           │  SynthInk 个人中心页设计稿                                      │
+           │  概念：创作者的数字名片，展示你的创作轨迹                          │
+           ╰────────────────────────────────────────────────────────────╯ */
+        
+        :root {
+            --theme-primary: #00f5ff;
+            --theme-secondary: #ff00a0;
+            --theme-tertiary: #ffea00;
+            --bg-deep: #0a0a0f;
+            --bg-mid: #12121a;
+            --bg-light: #1a1a25;
+            --bg-card: rgba(18, 18, 26, 0.8);
+            --text-main: #ffffff;
+            --text-sub: #a0a0b0;
+            --text-weak: #606070;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(0, 245, 255, 0.3);
+            
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 200ms;
+            --duration-normal: 300ms;
+        }
+
+        [data-theme="aurora"] {
+            --theme-primary: #b829dd;
+            --theme-secondary: #00d4aa;
+            --theme-tertiary: #ff6b6b;
+            --bg-deep: #0f0a1a;
+            --bg-mid: #1a1225;
+            --bg-light: #251a35;
+            --bg-card: rgba(26, 18, 37, 0.8);
+            --text-sub: #b8a8c8;
+            --text-weak: #705a80;
+            --border-glow: rgba(184, 41, 221, 0.3);
+        }
+
+        [data-theme="sunset"] {
+            --theme-primary: #ff6b35;
+            --theme-secondary: #f7931e;
+            --theme-tertiary: #ffd93d;
+            --bg-deep: #1a0f0a;
+            --bg-mid: #251812;
+            --bg-light: #35221a;
+            --bg-card: rgba(37, 24, 18, 0.8);
+            --text-main: #fff5f0;
+            --text-sub: #d4a890;
+            --text-weak: #906850;
+            --border-glow: rgba(255, 107, 53, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* ╭── 导航栏 ──╮ */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5%;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .nav-logo-icon {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--theme-primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-logo-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--theme-primary);
+        }
+
+        .nav-logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 3rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            position: relative;
+            padding: 0.5rem 0;
+            transition: var(--duration-fast);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--theme-primary);
+            transition: var(--duration-fast);
+            transform: translateX(-50%);
+        }
+
+        .nav-links a:hover {
+            color: var(--theme-primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .theme-switcher {
+            display: flex;
+            gap: 6px;
+            padding: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+        }
+
+        .theme-btn {
+            width: 24px;
+            height: 24px;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-btn.active {
+            border-color: var(--text-main);
+        }
+
+        .theme-btn.cyber {
+            background: linear-gradient(135deg, #00f5ff, #ff00a0);
+        }
+
+        .theme-btn.aurora {
+            background: linear-gradient(135deg, #b829dd, #00d4aa);
+        }
+
+        .theme-btn.sunset {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+        }
+
+        .nav-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--bg-deep);
+            cursor: pointer;
+            transition: var(--duration-fast);
+            border: 2px solid var(--theme-primary);
+        }
+
+        .nav-avatar:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px var(--border-glow);
+        }
+
+        /* ╭── 个人资料头部 ──╮ */
+        .profile-header {
+            padding: 120px 5% 60px;
+            background: linear-gradient(180deg, 
+                rgba(0, 245, 255, 0.05) 0%, 
+                transparent 100%);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .profile-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 40px;
+        }
+
+        .profile-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--bg-deep);
+            border: 4px solid var(--bg-card);
+            box-shadow: 0 0 40px var(--border-glow);
+            flex-shrink: 0;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .profile-handle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text-weak);
+            margin-bottom: 16px;
+        }
+
+        .profile-bio {
+            color: var(--text-sub);
+            font-size: 16px;
+            line-height: 1.7;
+            margin-bottom: 24px;
+            max-width: 600px;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 32px;
+        }
+
+        .profile-stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--theme-primary);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-weak);
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--duration-fast);
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            color: var(--bg-deep);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--border-glow);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--theme-primary);
+            color: var(--theme-primary);
+        }
+
+        /* ╭── 内容标签页 ──╮ */
+        .profile-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 5%;
+        }
+
+        .content-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-sub);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--duration-fast);
+            margin-bottom: -1px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            color: var(--theme-primary);
+            border-bottom-color: var(--theme-primary);
+        }
+
+        /* ╭── 文章列表 ──╮ */
+        .articles-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .article-item {
+            display: flex;
+            gap: 20px;
+            padding: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            transition: var(--duration-normal);
+            cursor: pointer;
+        }
+
+        .article-item:hover {
+            transform: translateY(-3px);
+            border-color: var(--theme-primary);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 0 0 20px var(--border-glow);
+        }
+
+        .article-cover {
+            width: 160px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .article-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .article-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .article-category {
+            font-size: 12px;
+            color: var(--theme-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .article-date {
+            font-size: 13px;
+            color: var(--text-weak);
+        }
+
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: var(--bg-light);
+            border: 1px solid var(--border-glow);
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--theme-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .ai-badge::before {
+            content: '✦';
+            font-size: 10px;
+        }
+
+        .article-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            transition: var(--duration-fast);
+        }
+
+        .article-item:hover .article-title {
+            color: var(--theme-primary);
+        }
+
+        .article-excerpt {
+            font-size: 14px;
+            color: var(--text-sub);
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .article-stats {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--text-weak);
+        }
+
+        .article-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ╭── 设置面板 ──╮ */
+        .settings-panel {
+            display: none;
+        }
+
+        .settings-panel.active {
+            display: block;
+        }
+
+        .settings-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .settings-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-light);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 14px;
+            transition: var(--duration-fast);
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--theme-primary);
+            box-shadow: 0 0 15px var(--border-glow);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .save-settings-btn {
+            padding: 12px 32px;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            border: none;
+            border-radius: 8px;
+            color: var(--bg-deep);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .save-settings-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--border-glow);
+        }
+
+        /* ╭── Footer ──╮ */
+        .footer {
+            padding: 40px 5%;
+            background: var(--bg-mid);
+            border-top: 1px solid var(--border-subtle);
+            text-align: center;
+        }
+
+        .footer-text {
+            color: var(--text-weak);
+            font-size: 14px;
+        }
+
+        /* ╭── 响应式 ──╮ */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .profile-container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .profile-stats {
+                justify-content: center;
+            }
+
+            .article-item {
+                flex-direction: column;
+            }
+
+            .article-cover {
+                width: 100%;
+                height: 150px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <a href="home.html" class="nav-logo">
+            <div class="nav-logo-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </div>
+            <span class="nav-logo-text">SynthInk</span>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="home.html">首页</a></li>
+            <li><a href="post-list.html">文章</a></li>
+            <li><a href="#">关于</a></li>
+        </ul>
+
+        <div class="nav-actions">
+            <div class="theme-switcher">
+                <button class="theme-btn cyber active" data-theme="cyber"></button>
+                <button class="theme-btn aurora" data-theme="aurora"></button>
+                <button class="theme-btn sunset" data-theme="sunset"></button>
+            </div>
+            <div class="nav-avatar">U</div>
+        </div>
+    </nav>
+
+    <!-- 个人资料头部 -->
+    <header class="profile-header">
+        <div class="profile-container">
+            <div class="profile-avatar-large">U</div>
+            <div class="profile-info">
+                <h1 class="profile-name">User</h1>
+                <div class="profile-handle">@username</div>
+                <p class="profile-bio">热爱技术与写作的创作者，相信 AI 能让创作更美好。在这里记录我的思考与成长。</p>
+                <div class="profile-stats">
+                    <div class="profile-stat">
+                        <span class="stat-number">32</span>
+                        <span class="stat-label">文章</span>
+                    </div>
+                    <div class="profile-stat">
+                        <span class="stat-number">1.2K</span>
+                        <span class="stat-label">关注者</span>
+                    </div>
+                    <div class="profile-stat">
+                        <span class="stat-number">5.6K</span>
+                        <span class="stat-label">获赞</span>
+                    </div>
+                    <div class="profile-stat">
+                        <span class="stat-number">128K</span>
+                        <span class="stat-label">阅读</span>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <button class="btn btn-primary">编辑资料</button>
+                    <button class="btn btn-secondary">分享主页</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 内容区域 -->
+    <main class="profile-content">
+        <div class="content-tabs">
+            <button class="tab-btn active" data-tab="articles">文章</button>
+            <button class="tab-btn" data-tab="drafts">草稿</button>
+            <button class="tab-btn" data-tab="settings">设置</button>
+        </div>
+
+        <!-- 文章列表 -->
+        <div class="articles-list" id="articlesTab">
+            <article class="article-item">
+                <div class="article-cover"></div>
+                <div class="article-info">
+                    <div class="article-meta">
+                        <span class="article-category">技术</span>
+                        <span class="ai-badge">AI协作</span>
+                        <span class="article-date">2026.02.28</span>
+                    </div>
+                    <h3 class="article-title">探索 AI 辅助写作的无限可能</h3>
+                    <p class="article-excerpt">在这个人工智能蓬勃发展的时代，写作方式正在经历前所未有的变革。本文将探讨如何利用 AI 工具提升写作效率...</p>
+                    <div class="article-stats">
+                        <span class="article-stat">👁 1.2k</span>
+                        <span class="article-stat">❤ 89</span>
+                        <span class="article-stat">💬 12</span>
+                    </div>
+                </div>
+            </article>
+
+            <article class="article-item">
+                <div class="article-cover" style="background: linear-gradient(135deg, #ff6b6b, #feca57);"></div>
+                <div class="article-info">
+                    <div class="article-meta">
+                        <span class="article-category">设计</span>
+                        <span class="article-date">2026.02.25</span>
+                    </div>
+                    <h3 class="article-title">深色模式设计指南</h3>
+                    <p class="article-excerpt">深色模式不仅是一种视觉风格，更是对用户体验的深度思考。从配色到对比度，从可读性到情感传达...</p>
+                    <div class="article-stats">
+                        <span class="article-stat">👁 856</span>
+                        <span class="article-stat">❤ 67</span>
+                        <span class="article-stat">💬 8</span>
+                    </div>
+                </div>
+            </article>
+
+            <article class="article-item">
+                <div class="article-cover" style="background: linear-gradient(135deg, #a29bfe, #6c5ce7);"></div>
+                <div class="article-info">
+                    <div class="article-meta">
+                        <span class="article-category">随笔</span>
+                        <span class="ai-badge">AI协作</span>
+                        <span class="article-date">2026.02.22</span>
+                    </div>
+                    <h3 class="article-title">凌晨两点的创作时光</h3>
+                    <p class="article-excerpt">窗外的城市已经沉睡，只有键盘的敲击声陪伴着我。这是属于创作者的黄金时刻，灵感如泉涌...</p>
+                    <div class="article-stats">
+                        <span class="article-stat">👁 2.3k</span>
+                        <span class="article-stat">❤ 156</span>
+                        <span class="article-stat">💬 23</span>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- 草稿列表 -->
+        <div class="articles-list" id="draftsTab" style="display: none;">
+            <article class="article-item">
+                <div class="article-cover" style="background: linear-gradient(135deg, #636e72, #b2bec3);"></div>
+                <div class="article-info">
+                    <div class="article-meta">
+                        <span class="article-category">技术</span>
+                        <span class="article-date">草稿 · 最后编辑 2小时前</span>
+                    </div>
+                    <h3 class="article-title">TypeScript 高级类型体操入门</h3>
+                    <p class="article-excerpt">类型系统是 TypeScript 最强大的特性之一，本文将带你领略类型体操的魅力...</p>
+                </div>
+            </article>
+        </div>
+
+        <!-- 设置面板 -->
+        <div class="settings-panel" id="settingsTab">
+            <div class="settings-section">
+                <h3 class="settings-title">基本资料</h3>
+                <div class="form-group">
+                    <label class="form-label">昵称</label>
+                    <input type="text" class="form-input" value="User">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">用户名</label>
+                    <input type="text" class="form-input" value="username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">个人简介</label>
+                    <textarea class="form-textarea">热爱技术与写作的创作者，相信 AI 能让创作更美好。在这里记录我的思考与成长。</textarea>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 class="settings-title">账号安全</h3>
+                <div class="form-group">
+                    <label class="form-label">邮箱</label>
+                    <input type="email" class="form-input" value="user@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">密码</label>
+                    <input type="password" class="form-input" value="********">
+                </div>
+            </div>
+
+            <button class="save-settings-btn">保存设置</button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p class="footer-text">人机共创的写作空间 · 让灵感自由流动</p>
+    </footer>
+
+    <script>
+        // 主题切换
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const theme = btn.dataset.theme;
+                document.documentElement.setAttribute('data-theme', theme);
+                
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // 标签页切换
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const articlesTab = document.getElementById('articlesTab');
+        const draftsTab = document.getElementById('draftsTab');
+        const settingsTab = document.getElementById('settingsTab');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const tab = btn.dataset.tab;
+                articlesTab.style.display = tab === 'articles' ? 'flex' : 'none';
+                draftsTab.style.display = tab === 'drafts' ? 'flex' : 'none';
+                settingsTab.classList.toggle('active', tab === 'settings');
+            });
+        });
+    </script>
+</body>
+</html>
