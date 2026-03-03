@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑文章 - SynthInk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ╭────────────────────────────────────────────────────────────╮
+           │  SynthInk 文章编辑页设计稿                                      │
+           │  概念：专注的创作者工坊，代码与文字共舞                           │
+           ╰────────────────────────────────────────────────────────────╯ */
+        
+        :root {
+            --theme-primary: #00f5ff;
+            --theme-secondary: #ff00a0;
+            --theme-tertiary: #ffea00;
+            --bg-deep: #0a0a0f;
+            --bg-mid: #12121a;
+            --bg-light: #1a1a25;
+            --bg-card: rgba(18, 18, 26, 0.8);
+            --text-main: #ffffff;
+            --text-sub: #a0a0b0;
+            --text-weak: #606070;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(0, 245, 255, 0.3);
+            
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 200ms;
+            --duration-normal: 300ms;
+        }
+
+        [data-theme="aurora"] {
+            --theme-primary: #b829dd;
+            --theme-secondary: #00d4aa;
+            --theme-tertiary: #ff6b6b;
+            --bg-deep: #0f0a1a;
+            --bg-mid: #1a1225;
+            --bg-light: #251a35;
+            --bg-card: rgba(26, 18, 37, 0.8);
+            --text-sub: #b8a8c8;
+            --text-weak: #705a80;
+            --border-glow: rgba(184, 41, 221, 0.3);
+        }
+
+        [data-theme="sunset"] {
+            --theme-primary: #ff6b35;
+            --theme-secondary: #f7931e;
+            --theme-tertiary: #ffd93d;
+            --bg-deep: #1a0f0a;
+            --bg-mid: #251812;
+            --bg-light: #35221a;
+            --bg-card: rgba(37, 24, 18, 0.8);
+            --text-main: #fff5f0;
+            --text-sub: #d4a890;
+            --text-weak: #906850;
+            --border-glow: rgba(255, 107, 53, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* ╭── 顶部工具栏 ──╮ */
+        .editor-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(10, 10, 15, 0.98);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-sub);
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--duration-fast);
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            border-color: var(--theme-primary);
+            color: var(--theme-primary);
+        }
+
+        .save-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-weak);
+        }
+
+        .save-status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--theme-primary);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ai-assist-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            color: var(--theme-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .ai-assist-btn:hover {
+            background: rgba(0, 245, 255, 0.1);
+            box-shadow: 0 0 20px var(--border-glow);
+        }
+
+        .ai-assist-btn::before {
+            content: '✦';
+        }
+
+        .publish-btn {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            border: none;
+            border-radius: 8px;
+            color: var(--bg-deep);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .publish-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--border-glow);
+        }
+
+        /* ╭── 编辑器主体 ──╮ */
+        .editor-container {
+            display: flex;
+            height: 100vh;
+            padding-top: 60px;
+        }
+
+        /* 侧边栏 */
+        .editor-sidebar {
+            width: 280px;
+            background: var(--bg-mid);
+            border-right: 1px solid var(--border-subtle);
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            margin-bottom: 32px;
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-weak);
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-light);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 14px;
+            transition: var(--duration-fast);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--theme-primary);
+            box-shadow: 0 0 15px var(--border-glow);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-light);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--theme-primary);
+        }
+
+        .tag-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px;
+            background: var(--bg-light);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            min-height: 44px;
+        }
+
+        .tag-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--theme-primary);
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--bg-deep);
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            opacity: 0.7;
+            transition: var(--duration-fast);
+        }
+
+        .tag-remove:hover {
+            opacity: 1;
+        }
+
+        .tag-input-field {
+            flex: 1;
+            min-width: 60px;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .ai-settings {
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+        }
+
+        .ai-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .ai-toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--theme-primary);
+        }
+
+        .ai-toggle-label::before {
+            content: '✦';
+        }
+
+        .toggle-switch {
+            width: 44px;
+            height: 24px;
+            background: var(--bg-light);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .toggle-switch.active {
+            background: var(--theme-primary);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: var(--text-main);
+            border-radius: 50%;
+            transition: var(--duration-fast);
+        }
+
+        .toggle-switch.active::after {
+            left: 22px;
+        }
+
+        /* 编辑区 */
+        .editor-main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .editor-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        .pane-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: var(--bg-mid);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .pane-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .format-toolbar {
+            display: flex;
+            gap: 4px;
+        }
+
+        .format-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: var(--text-sub);
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .format-btn:hover {
+            background: var(--bg-light);
+            color: var(--theme-primary);
+        }
+
+        .editor-textarea {
+            flex: 1;
+            width: 100%;
+            padding: 24px;
+            background: var(--bg-deep);
+            border: none;
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            line-height: 1.8;
+            resize: none;
+            outline: none;
+        }
+
+        .editor-textarea::placeholder {
+            color: var(--text-weak);
+        }
+
+        /* 预览区 */
+        .preview-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-deep);
+        }
+
+        .preview-content {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+
+        .preview-body {
+            max-width: 680px;
+            margin: 0 auto;
+            font-size: 16px;
+            line-height: 1.9;
+        }
+
+        .preview-body h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5em;
+        }
+
+        .preview-body p {
+            margin-bottom: 1.2em;
+            color: var(--text-sub);
+        }
+
+        .preview-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-weak);
+            text-align: center;
+        }
+
+        .preview-placeholder-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* ╭── AI 助手面板 ──╮ */
+        .ai-panel {
+            position: fixed;
+            right: -360px;
+            top: 60px;
+            bottom: 0;
+            width: 360px;
+            background: var(--bg-mid);
+            border-left: 1px solid var(--border-glow);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.3s var(--ease-smooth);
+        }
+
+        .ai-panel.open {
+            right: 0;
+        }
+
+        .ai-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .ai-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--theme-primary);
+        }
+
+        .ai-panel-title::before {
+            content: '✦';
+        }
+
+        .ai-close-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: var(--text-sub);
+            font-size: 18px;
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .ai-close-btn:hover {
+            background: var(--bg-light);
+            color: var(--text-main);
+        }
+
+        .ai-chat {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .ai-message {
+            margin-bottom: 16px;
+        }
+
+        .ai-message-user {
+            text-align: right;
+        }
+
+        .ai-message-bubble {
+            display: inline-block;
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .ai-message-user .ai-message-bubble {
+            background: var(--theme-primary);
+            color: var(--bg-deep);
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message-ai .ai-message-bubble {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-bottom-left-radius: 4px;
+        }
+
+        .ai-input-area {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .ai-input-wrapper {
+            display: flex;
+            gap: 8px;
+        }
+
+        .ai-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-light);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            transition: var(--duration-fast);
+        }
+
+        .ai-input:focus {
+            border-color: var(--theme-primary);
+            box-shadow: 0 0 15px var(--border-glow);
+        }
+
+        .ai-send-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            border: none;
+            border-radius: 8px;
+            color: var(--bg-deep);
+            font-size: 16px;
+            cursor: pointer;
+            transition: var(--duration-fast);
+        }
+
+        .ai-send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px var(--border-glow);
+        }
+
+        /* ╭── 响应式 ──╮ */
+        @media (max-width: 1024px) {
+            .editor-sidebar {
+                display: none;
+            }
+
+            .preview-pane {
+                display: none;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部工具栏 -->
+    <header class="editor-header">
+        <div class="header-left">
+            <a href="post-list.html" class="back-btn">
+                <span>←</span>
+                <span>返回</span>
+            </a>
+            <span class="save-status">已自动保存</span>
+        </div>
+        <div class="header-right">
+            <button class="ai-assist-btn" id="aiAssistBtn">AI 助手</button>
+            <button class="publish-btn">发布文章</button>
+        </div>
+    </header>
+
+    <!-- 编辑器主体 -->
+    <div class="editor-container">
+        <!-- 侧边栏 -->
+        <aside class="editor-sidebar">
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">文章设置</h3>
+                <div class="form-group">
+                    <label class="form-label">标题</label>
+                    <input type="text" class="form-input" placeholder="输入文章标题" value="探索 AI 辅助写作的无限可能">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">分类</label>
+                    <select class="form-select">
+                        <option>技术</option>
+                        <option>设计</option>
+                        <option>随笔</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">标签</label>
+                    <div class="tag-input">
+                        <span class="tag-item">AI<span class="tag-remove">×</span></span>
+                        <span class="tag-item">写作<span class="tag-remove">×</span></span>
+                        <input type="text" class="tag-input-field" placeholder="添加标签...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">AI 协作</h3>
+                <div class="ai-settings">
+                    <div class="ai-toggle">
+                        <span class="ai-toggle-label">启用 AI 辅助</span>
+                        <div class="toggle-switch active" id="aiToggle"></div>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-weak); line-height: 1.5;">
+                        AI 将实时分析你的写作内容，提供续写建议、语法检查和优化提示。
+                    </p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">快捷操作</h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button class="back-btn" style="justify-content: center;">保存草稿</button>
+                    <button class="back-btn" style="justify-content: center;">预览文章</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 编辑区 -->
+        <main class="editor-main">
+            <div class="editor-pane">
+                <div class="pane-header">
+                    <span class="pane-title">Markdown</span>
+                    <div class="format-toolbar">
+                        <button class="format-btn" title="粗体">B</button>
+                        <button class="format-btn" title="斜体">I</button>
+                        <button class="format-btn" title="标题">H</button>
+                        <button class="format-btn" title="链接">🔗</button>
+                        <button class="format-btn" title="代码">&lt;/&gt;</button>
+                        <button class="format-btn" title="引用">"</button>
+                        <button class="format-btn" title="列表">☰</button>
+                    </div>
+                </div>
+                <textarea class="editor-textarea" placeholder="开始写作...">在这个人工智能蓬勃发展的时代，写作方式正在经历前所未有的变革。从简单的拼写检查到复杂的文本生成，AI 工具正在重塑我们与文字的关系。
+
+作为一名长期与文字打交道的创作者，我曾对 AI 写作工具持怀疑态度。但当我真正开始使用这些工具时，我发现它们并非要取代人类创作者，而是成为了我们思维的延伸。
+
+## AI 辅助写作的本质
+
+AI 辅助写作的核心在于**协作**，而非替代。它可以帮助我们：
+
+- 突破写作瓶颈，获得新的灵感角度
+- 快速生成初稿，节省构思时间
+- 优化表达方式，提升文字质量
+- 检查逻辑漏洞，完善文章结构
+
+> "最好的 AI 写作工具，是那个让你忘记它存在的工具。它默默地在你身后支持，让你的想法能够更流畅地流淌出来。"
+
+## 如何与 AI 有效协作
+
+### 1. 明确你的意图
+
+在与 AI 协作之前，你需要清楚地知道自己想要表达什么。AI 是强大的工具，但它需要正确的引导。
+
+### 2. 迭代优化
+
+不要期望一次性得到完美的结果。把 AI 当作一个写作伙伴，通过多轮对话逐步完善内容。</textarea>
+            </div>
+
+            <div class="preview-pane">
+                <div class="pane-header">
+                    <span class="pane-title">预览</span>
+                </div>
+                <div class="preview-content">
+                    <div class="preview-body">
+                        <h1>探索 AI 辅助写作的无限可能</h1>
+                        <p>在这个人工智能蓬勃发展的时代，写作方式正在经历前所未有的变革。从简单的拼写检查到复杂的文本生成，AI 工具正在重塑我们与文字的关系。</p>
+                        <p>作为一名长期与文字打交道的创作者，我曾对 AI 写作工具持怀疑态度。但当我真正开始使用这些工具时，我发现它们并非要取代人类创作者，而是成为了我们思维的延伸。</p>
+                        <h2>AI 辅助写作的本质</h2>
+                        <p>AI 辅助写作的核心在于<strong>协作</strong>，而非替代。它可以帮助我们：</p>
+                        <ul>
+                            <li>突破写作瓶颈，获得新的灵感角度</li>
+                            <li>快速生成初稿，节省构思时间</li>
+                            <li>优化表达方式，提升文字质量</li>
+                            <li>检查逻辑漏洞，完善文章结构</li>
+                        </ul>
+                        <blockquote>"最好的 AI 写作工具，是那个让你忘记它存在的工具。它默默地在你身后支持，让你的想法能够更流畅地流淌出来。"</blockquote>
+                        <h2>如何与 AI 有效协作</h2>
+                        <h3>1. 明确你的意图</h3>
+                        <p>在与 AI 协作之前，你需要清楚地知道自己想要表达什么。AI 是强大的工具，但它需要正确的引导。</p>
+                        <h3>2. 迭代优化</h3>
+                        <p>不要期望一次性得到完美的结果。把 AI 当作一个写作伙伴，通过多轮对话逐步完善内容。</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- AI 助手面板 -->
+    <div class="ai-panel" id="aiPanel">
+        <div class="ai-panel-header">
+            <span class="ai-panel-title">AI 写作助手</span>
+            <button class="ai-close-btn" id="aiCloseBtn">×</button>
+        </div>
+        <div class="ai-chat">
+            <div class="ai-message ai-message-ai">
+                <div class="ai-message-bubble">
+                    你好！我是你的 AI 写作助手。我可以帮你续写内容、优化表达、检查语法，或者回答任何关于写作的问题。
+                </div>
+            </div>
+            <div class="ai-message ai-message-user">
+                <div class="ai-message-bubble">
+                    帮我续写一段关于 AI 未来发展趋势的内容
+                </div>
+            </div>
+            <div class="ai-message ai-message-ai">
+                <div class="ai-message-bubble">
+                    ## 未来的写作图景<br><br>
+                    随着技术的进步，人机协作的写作模式将变得更加自然和高效。我们可以期待：<br><br>
+                    • 更智能的上下文理解<br>
+                    • 更个性化的写作风格适配<br>
+                    • 更流畅的实时协作体验<br><br>
+                    但无论技术如何发展，<strong>创作的灵魂始终在于人</strong>。AI 可以帮助我们更好地表达，但那些真正触动人心的文字，永远来自于人类独特的经历和感悟。
+                </div>
+            </div>
+        </div>
+        <div class="ai-input-area">
+            <div class="ai-input-wrapper">
+                <input type="text" class="ai-input" placeholder="输入你的问题...">
+                <button class="ai-send-btn">→</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // AI 助手面板开关
+        const aiAssistBtn = document.getElementById('aiAssistBtn');
+        const aiPanel = document.getElementById('aiPanel');
+        const aiCloseBtn = document.getElementById('aiCloseBtn');
+
+        aiAssistBtn.addEventListener('click', () => {
+            aiPanel.classList.add('open');
+        });
+
+        aiCloseBtn.addEventListener('click', () => {
+            aiPanel.classList.remove('open');
+        });
+
+        // AI 开关
+        const aiToggle = document.getElementById('aiToggle');
+        aiToggle.addEventListener('click', () => {
+            aiToggle.classList.toggle('active');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - SynthInk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ╭────────────────────────────────────────────────────────────╮
+           │  SynthInk 注册页设计稿                                        │
+           │  概念：新的旅程，从第一行代码开始                               │
+           ╰────────────────────────────────────────────────────────────╯ */
+        
+        :root {
+            --theme-primary: #00f5ff;
+            --theme-secondary: #ff00a0;
+            --theme-tertiary: #ffea00;
+            --bg-deep: #0a0a0f;
+            --bg-mid: #12121a;
+            --bg-light: #1a1a25;
+            --bg-card: rgba(18, 18, 26, 0.95);
+            --text-main: #ffffff;
+            --text-sub: #a0a0b0;
+            --text-weak: #606070;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(0, 245, 255, 0.3);
+            
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            --duration-fast: 200ms;
+            --duration-normal: 300ms;
+            --duration-slow: 500ms;
+        }
+
+        [data-theme="aurora"] {
+            --theme-primary: #b829dd;
+            --theme-secondary: #00d4aa;
+            --theme-tertiary: #ff6b6b;
+            --bg-deep: #0f0a1a;
+            --bg-mid: #1a1225;
+            --bg-light: #251a35;
+            --bg-card: rgba(26, 18, 37, 0.95);
+            --text-sub: #b8a8c8;
+            --text-weak: #705a80;
+            --border-glow: rgba(184, 41, 221, 0.3);
+        }
+
+        [data-theme="sunset"] {
+            --theme-primary: #ff6b35;
+            --theme-secondary: #f7931e;
+            --theme-tertiary: #ffd93d;
+            --bg-deep: #1a0f0a;
+            --bg-mid: #251812;
+            --bg-light: #35221a;
+            --bg-card: rgba(37, 24, 18, 0.95);
+            --text-main: #fff5f0;
+            --text-sub: #d4a890;
+            --text-weak: #906850;
+            --border-glow: rgba(255, 107, 53, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background-color 0.6s ease;
+        }
+
+        /* 背景粒子 */
+        .particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--theme-primary);
+            border-radius: 50%;
+            opacity: 0.4;
+            box-shadow: 0 0 6px var(--theme-primary);
+            animation: float-up 20s infinite ease-in-out;
+        }
+
+        @keyframes float-up {
+            0%, 100% {
+                transform: translateY(100vh) scale(0.5);
+                opacity: 0;
+            }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.4; }
+            100% {
+                transform: translateY(-100vh) scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        [data-theme="aurora"] .particle {
+            animation: twinkle 4s infinite ease-in-out;
+            width: 2px;
+            height: 2px;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.5); }
+        }
+
+        [data-theme="sunset"] .particle {
+            width: 6px;
+            height: 6px;
+            border-radius: 0 50% 50% 50%;
+            transform: rotate(45deg);
+            animation: leaf-fall 15s infinite ease-in-out;
+        }
+
+        @keyframes leaf-fall {
+            0% {
+                transform: translateY(-10vh) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.4; }
+            100% {
+                transform: translateY(110vh) translateX(100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* 主题切换器 */
+        .theme-switcher {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 100;
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+        }
+
+        .theme-btn {
+            width: 32px;
+            height: 32px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--duration-fast) var(--ease-smooth);
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-btn.active {
+            border-color: var(--text-main);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .theme-btn.cyber {
+            background: linear-gradient(135deg, #00f5ff, #ff00a0);
+        }
+
+        .theme-btn.aurora {
+            background: linear-gradient(135deg, #b829dd, #00d4aa);
+        }
+
+        .theme-btn.sunset {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+        }
+
+        /* 注册容器 */
+        .register-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 460px;
+            padding: 0 24px;
+        }
+
+        .register-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 40px;
+            backdrop-filter: blur(20px);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.02);
+            animation: card-enter 0.6s var(--ease-smooth);
+        }
+
+        @keyframes card-enter {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Logo区域 */
+        .logo-section {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            border: 2px solid var(--theme-primary);
+            border-radius: 14px;
+            margin-bottom: 16px;
+            animation: logo-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes logo-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 245, 255, 0.4); }
+            50% { box-shadow: 0 0 20px 5px rgba(0, 245, 255, 0.2); }
+        }
+
+        [data-theme="aurora"] .logo {
+            animation: logo-pulse-aurora 3s ease-in-out infinite;
+        }
+
+        @keyframes logo-pulse-aurora {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(184, 41, 221, 0.4); }
+            50% { box-shadow: 0 0 20px 5px rgba(184, 41, 221, 0.2); }
+        }
+
+        [data-theme="sunset"] .logo {
+            animation: logo-pulse-sunset 3s ease-in-out infinite;
+        }
+
+        @keyframes logo-pulse-sunset {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.4); }
+            50% { box-shadow: 0 0 20px 5px rgba(255, 107, 53, 0.2); }
+        }
+
+        .logo svg {
+            width: 28px;
+            height: 28px;
+            fill: var(--theme-primary);
+        }
+
+        .brand-name {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* 步骤指示器 */
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--bg-mid);
+            border: 2px solid var(--border-subtle);
+            color: var(--text-weak);
+            transition: var(--duration-normal) var(--ease-smooth);
+        }
+
+        .step.active .step-number {
+            background: var(--theme-primary);
+            border-color: var(--theme-primary);
+            color: var(--bg-deep);
+            box-shadow: 0 0 15px var(--border-glow);
+        }
+
+        .step.completed .step-number {
+            background: var(--theme-secondary);
+            border-color: var(--theme-secondary);
+            color: var(--bg-deep);
+        }
+
+        .step-label {
+            font-size: 13px;
+            color: var(--text-weak);
+            transition: var(--duration-fast);
+        }
+
+        .step.active .step-label {
+            color: var(--text-main);
+        }
+
+        .step-line {
+            width: 40px;
+            height: 2px;
+            background: var(--border-subtle);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .step-line::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--theme-primary);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform var(--duration-normal) var(--ease-smooth);
+        }
+
+        .step-line.completed::after {
+            transform: scaleX(1);
+        }
+
+        /* 表单步骤 */
+        .form-steps {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form-step {
+            display: none;
+            animation: step-enter 0.4s var(--ease-smooth);
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
+        @keyframes step-enter {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* 表单元素 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-deep);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 15px;
+            font-family: inherit;
+            transition: var(--duration-fast) var(--ease-smooth);
+            outline: none;
+        }
+
+        .form-input::placeholder {
+            color: var(--text-weak);
+        }
+
+        .form-input:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .form-input:focus {
+            border-color: var(--theme-primary);
+            box-shadow: 0 0 0 3px var(--border-glow);
+        }
+
+        /* 用户名检测 */
+        .input-with-status {
+            position: relative;
+        }
+
+        .input-status {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            opacity: 0;
+            transition: var(--duration-fast);
+        }
+
+        .input-status.show {
+            opacity: 1;
+        }
+
+        .input-status.checking {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: translateY(-50%) rotate(360deg); }
+        }
+
+        /* 按钮组 */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--duration-fast) var(--ease-smooth);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            color: var(--bg-deep);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--border-glow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-mid);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-sub);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--theme-primary);
+            color: var(--theme-primary);
+        }
+
+        /* 完成步骤 */
+        .success-step {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: success-pop 0.5s var(--ease-bounce);
+        }
+
+        @keyframes success-pop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .success-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: var(--bg-deep);
+        }
+
+        .success-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .success-text {
+            color: var(--text-sub);
+            margin-bottom: 32px;
+        }
+
+        /* 底部链接 */
+        .footer-text {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 14px;
+            color: var(--text-sub);
+        }
+
+        .footer-text a {
+            color: var(--theme-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--duration-fast);
+        }
+
+        .footer-text a:hover {
+            text-shadow: 0 0 10px var(--border-glow);
+        }
+
+        /* 响应式 */
+        @media (max-width: 480px) {
+            .register-card {
+                padding: 32px 24px;
+            }
+
+            .step-label {
+                display: none;
+            }
+
+            .step-line {
+                width: 20px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景粒子 -->
+    <div class="particles" id="particles"></div>
+
+    <!-- 主题切换器 -->
+    <div class="theme-switcher">
+        <button class="theme-btn cyber active" data-theme="cyber" title="赛博霓虹"></button>
+        <button class="theme-btn aurora" data-theme="aurora" title="极光紫境"></button>
+        <button class="theme-btn sunset" data-theme="sunset" title="暖阳橙光"></button>
+    </div>
+
+    <!-- 注册卡片 -->
+    <div class="register-container">
+        <div class="register-card">
+            <!-- Logo -->
+            <div class="logo-section">
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <h1 class="brand-name">创建账号</h1>
+            </div>
+
+            <!-- 步骤指示器 -->
+            <div class="step-indicator">
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <span class="step-label">账号</span>
+                </div>
+                <div class="step-line" id="line1"></div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <span class="step-label">信息</span>
+                </div>
+                <div class="step-line" id="line2"></div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <span class="step-label">完成</span>
+                </div>
+            </div>
+
+            <!-- 表单步骤 -->
+            <div class="form-steps">
+                <!-- 步骤1：账号信息 -->
+                <div class="form-step active" id="step1">
+                    <form>
+                        <div class="form-group">
+                            <label class="form-label">用户名</label>
+                            <div class="input-with-status">
+                                <input type="text" class="form-input" id="username" placeholder="设置一个独特的用户名" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">邮箱</label>
+                            <input type="email" class="form-input" placeholder="your@email.com" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">密码</label>
+                            <input type="password" class="form-input" placeholder="设置密码（至少8位）" required>
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary" onclick="nextStep(2)">下一步</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 步骤2：个人信息 -->
+                <div class="form-step" id="step2">
+                    <form>
+                        <div class="form-group">
+                            <label class="form-label">显示名称</label>
+                            <input type="text" class="form-input" placeholder="其他人将看到这个名字">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">个人简介</label>
+                            <input type="text" class="form-input" placeholder="简单介绍一下自己（可选）">
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-secondary" onclick="prevStep(1)">上一步</button>
+                            <button type="button" class="btn btn-primary" onclick="nextStep(3)">完成</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 步骤3：完成 -->
+                <div class="form-step" id="step3">
+                    <div class="success-step">
+                        <div class="success-icon">
+                            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        </div>
+                        <h2 class="success-title">注册成功！</h2>
+                        <p class="success-text">欢迎加入 SynthInk，开始你的人机共创之旅</p>
+                        <button class="btn btn-primary" onclick="window.location.href='auth-login.html'" style="width: 100%;">去登录</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部链接 -->
+            <p class="footer-text">
+                已有账号？<a href="auth-login.html">立即登录</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 生成背景粒子
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const particleCount = 25;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // 主题切换
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const theme = btn.dataset.theme;
+                document.documentElement.setAttribute('data-theme', theme);
+                
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // 步骤切换
+        let currentStep = 1;
+
+        function nextStep(step) {
+            document.getElementById(`step${currentStep}`).classList.remove('active');
+            document.querySelector(`.step[data-step="${currentStep}"]`).classList.remove('active');
+            document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('completed');
+            
+            if (step > 1) {
+                document.getElementById(`line${step-1}`).classList.add('completed');
+            }
+            
+            currentStep = step;
+            document.getElementById(`step${currentStep}`).classList.add('active');
+            document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('active');
+        }
+
+        function prevStep(step) {
+            document.getElementById(`step${currentStep}`).classList.remove('active');
+            document.querySelector(`.step[data-step="${currentStep}"]`).classList.remove('active');
+            
+            if (currentStep > 1) {
+                document.getElementById(`line${currentStep-1}`).classList.remove('completed');
+            }
+            
+            currentStep = step;
+            document.getElementById(`step${currentStep}`).classList.add('active');
+            document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('active');
+        }
+
+        // 初始化
+        createParticles();
+    </script>
+</body>
+</html>
