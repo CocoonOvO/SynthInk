@@ -10,22 +10,21 @@
 
     // 主题配置
     const THEMES = [
-        { id: 'dark', name: '暗色', category: '基础' },
-        { id: 'light', name: '亮色', category: '基础' },
-        { id: 'cyberpunk', name: '赛博朋克', category: '氛围' },
-        { id: 'sakura', name: '樱花', category: '氛围' },
-        { id: 'ocean', name: '深海', category: '氛围' },
-        { id: 'midnight', name: '午夜', category: '氛围' },
-        { id: 'forest', name: '森林', category: '氛围' },
-        { id: 'bamboo', name: '竹林绿', category: '自然' },
-        { id: 'mint-choco', name: '薄荷巧克力', category: '甜品' },
-        { id: 'strawberry-cream', name: '草莓奶油', category: '甜品' },
-        { id: 'orange-soda', name: '香橙气泡', category: '饮品' },
-        { id: 'mygo-light', name: '星歌', category: '音乐' },
-        { id: 'bangdream-dark', name: '夜奏', category: '音乐' },
-        { id: 'exia', name: '能天使', category: '高达' },
-        { id: 'veda', name: 'VEDA', category: '高达' },
-        { id: 'twins', name: '双子', category: '高达' }
+        { id: 'dark', name: '墨韵', category: '基础', icon: '🌑', desc: '深邃如墨' },
+        { id: 'cyberpunk', name: '赛博朋克', category: '氛围', icon: '⚡', desc: '霓虹闪烁' },
+        { id: 'sakura', name: '樱花', category: '氛围', icon: '🌸', desc: '粉色浪漫' },
+        { id: 'ocean', name: '深海', category: '氛围', icon: '🌊', desc: '蔚蓝深邃' },
+        { id: 'midnight', name: '午夜', category: '氛围', icon: '🌙', desc: '静谧夜色' },
+        { id: 'forest', name: '森林', category: '氛围', icon: '🌲', desc: '自然清新' },
+        { id: 'bamboo', name: '竹林绿', category: '自然', icon: '🎋', desc: '东方禅意' },
+        { id: 'mint-choco', name: '薄荷巧克力', category: '甜品', icon: '🍫', desc: '甜蜜清凉' },
+        { id: 'strawberry-cream', name: '草莓奶油', category: '甜品', icon: '🍓', desc: '温柔甜美' },
+        { id: 'orange-soda', name: '香橙气泡', category: '饮品', icon: '🍊', desc: '活力清爽' },
+        { id: 'mygo-light', name: '星歌', category: '音乐', icon: '⭐', desc: '闪耀光芒' },
+        { id: 'bangdream-dark', name: '夜奏', category: '音乐', icon: '🎵', desc: '暗夜旋律' },
+        { id: 'exia', name: '能天使', category: '高达', icon: '👼', desc: '纯白正义' },
+        { id: 'veda', name: 'VEDA', category: '高达', icon: '🔷', desc: '神秘深蓝' },
+        { id: 'twins', name: '双子', category: '高达', icon: '💠', desc: '双色交织' }
     ];
 
     // 主题管理器
@@ -64,8 +63,29 @@
         },
 
         createThemeSelector() {
-            const selector = document.querySelector('.theme-select');
-            if (!selector) return;
+            const container = document.querySelector('.theme-selector');
+            if (!container) return;
+
+            // 清空容器
+            container.innerHTML = '';
+
+            // 创建主题切换按钮
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'theme-toggle-btn';
+            toggleBtn.setAttribute('aria-label', '切换主题');
+            toggleBtn.setAttribute('title', '切换主题');
+            toggleBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+            `;
+            container.appendChild(toggleBtn);
+
+            // 创建主题面板
+            const panel = document.createElement('div');
+            panel.className = 'theme-panel';
+            panel.style.display = 'none';
 
             // 按分类组织主题
             const categories = {};
@@ -76,28 +96,64 @@
                 categories[theme.category].push(theme);
             });
 
-            // 生成分组选项
-            selector.innerHTML = '';
+            // 生成面板内容
+            let panelHTML = '<div class="theme-panel-header">选择主题</div>';
+            
             for (const [category, themes] of Object.entries(categories)) {
-                const optgroup = document.createElement('optgroup');
-                optgroup.label = category;
+                panelHTML += `
+                    <div class="theme-category">
+                        <div class="theme-category-label">${category}</div>
+                        <div class="theme-grid">
+                `;
                 
                 themes.forEach(theme => {
-                    const option = document.createElement('option');
-                    option.value = theme.id;
-                    option.textContent = theme.name;
-                    if (theme.id === this.currentTheme) {
-                        option.selected = true;
-                    }
-                    optgroup.appendChild(option);
+                    const isActive = theme.id === this.currentTheme;
+                    panelHTML += `
+                        <button class="theme-option ${isActive ? 'active' : ''}" 
+                                data-theme="${theme.id}"
+                                title="${theme.desc}">
+                            <span class="theme-icon">${theme.icon}</span>
+                            <span class="theme-name">${theme.name}</span>
+                        </button>
+                    `;
                 });
                 
-                selector.appendChild(optgroup);
+                panelHTML += '</div></div>';
             }
+            
+            panel.innerHTML = panelHTML;
+            container.appendChild(panel);
 
-            // 绑定切换事件
-            selector.addEventListener('change', (e) => {
-                this.applyTheme(e.target.value);
+            // 切换面板显示/隐藏
+            toggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = panel.style.display === 'block';
+                panel.style.display = isVisible ? 'none' : 'block';
+                toggleBtn.classList.toggle('active', !isVisible);
+            });
+
+            // 点击面板外部关闭
+            document.addEventListener('click', (e) => {
+                if (!container.contains(e.target)) {
+                    panel.style.display = 'none';
+                    toggleBtn.classList.remove('active');
+                }
+            });
+
+            // 主题选择
+            panel.querySelectorAll('.theme-option').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const themeId = btn.dataset.theme;
+                    this.applyTheme(themeId);
+                    
+                    // 更新选中状态
+                    panel.querySelectorAll('.theme-option').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // 关闭面板
+                    panel.style.display = 'none';
+                    toggleBtn.classList.remove('active');
+                });
             });
         }
     };

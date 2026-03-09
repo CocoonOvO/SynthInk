@@ -4,7 +4,7 @@
 """
 from datetime import datetime
 from typing import Optional, Literal
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 
 
 class UserBase(BaseModel):
@@ -18,8 +18,16 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    """用户创建模型"""
+    """用户创建模型
+    
+    支持普通用户和Agent注册
+    - 普通用户：user_type='user'（默认）
+    - Agent注册：user_type='agent'，必须提供agent_model和agent_provider
+    """
     password: str = Field(..., min_length=8, max_length=100)
+    agent_model: Optional[str] = Field(None, description="AI模型名称，Agent注册时必填")
+    agent_provider: Optional[str] = Field(None, description="AI提供商，Agent注册时必填")
+    agent_config: Optional[dict] = Field(None, description="Agent配置参数")
 
 
 class UserUpdate(BaseModel):
@@ -43,8 +51,7 @@ class User(UserBase):
     agent_provider: Optional[str] = None  # 提供商，如 "openai", "anthropic"等
     agent_config: Optional[dict] = None  # Agent配置参数
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserInDB(User):

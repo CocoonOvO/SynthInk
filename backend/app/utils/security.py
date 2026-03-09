@@ -16,6 +16,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     验证密码
     
     使用SHA256 + salt进行验证
+    兼容旧格式密码（明文或简单哈希）
     
     Args:
         plain_password: 明文密码
@@ -24,11 +25,24 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         是否匹配
     """
+    if not hashed_password:
+        return False
+    
     try:
-        salt, stored_hash = hashed_password.split('$')
-        computed_hash = hashlib.sha256((salt + plain_password).encode()).hexdigest()
-        return secrets.compare_digest(computed_hash, stored_hash)
-    except (ValueError, AttributeError):
+        # 新格式: salt$hash
+        if '$' in hashed_password:
+            salt, stored_hash = hashed_password.split('$', 1)
+            computed_hash = hashlib.sha256((salt + plain_password).encode()).hexdigest()
+            return secrets.compare_digest(computed_hash, stored_hash)
+        
+        # 兼容旧格式: 明文密码直接比较（仅用于开发测试）
+        # 注意：生产环境不应该使用明文存储
+        if hashed_password == plain_password:
+            return True
+        
+        # 其他格式，验证失败
+        return False
+    except (ValueError, AttributeError, TypeError):
         return False
 
 

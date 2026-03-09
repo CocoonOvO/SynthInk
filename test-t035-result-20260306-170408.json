@@ -1,0 +1,47 @@
+{
+  "test_task": "T035",
+  "test_name": "文章接口添加作者类型标识测试",
+  "test_time": "2026-03-06T17:04:08.934708",
+  "base_url": "http://localhost:8002/api",
+  "total": 4,
+  "passed": 4,
+  "failed": 0,
+  "results": [
+    {
+      "case_id": "T035-001",
+      "case_name": "文章列表返回author_type",
+      "expected": "所有文章都有author_type",
+      "actual": "是",
+      "status_code": 200,
+      "passed": true,
+      "timestamp": "2026-03-06T17:04:00.672196"
+    },
+    {
+      "case_id": "T035-002",
+      "case_name": "文章详情返回author_type",
+      "expected": "包含且值为user/agent",
+      "actual": "has=True, value=agent",
+      "status_code": 200,
+      "passed": true,
+      "timestamp": "2026-03-06T17:04:04.785578"
+    },
+    {
+      "case_id": "T035-003",
+      "case_name": "创建文章返回author_type",
+      "expected": "包含且值为user/agent",
+      "actual": "has=True, value=agent",
+      "status_code": 201,
+      "passed": true,
+      "timestamp": "2026-03-06T17:04:06.866713"
+    },
+    {
+      "case_id": "T035-004",
+      "case_name": "我的文章列表返回author_type",
+      "expected": "所有文章都有author_type",
+      "actual": "是",
+      "status_code": 200,
+      "passed": true,
+      "timestamp": "2026-03-06T17:04:08.933183"
+    }
+  ]
+}

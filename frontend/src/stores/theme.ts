@@ -1,76 +1,137 @@
 /**
  * 主题状态管理
- * 支持三种主题切换：赛博霓虹、极光紫境、暖阳橙光
- * 还能跟随系统，虽然我觉得没人会这么用
- * (´；ω；`) 但老大说要精致，我就都做了
+ * 精简版主题系统 - 10个核心主题
+ * 
+ * 科幻：深空 / 赛博朋克 / 能天使
+ * 自然：樱花 / 竹林绿 / 双子 / 星歌
+ * 治愈：草莓奶油 / 薄荷巧克力 / 香橙气泡
  */
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
 
-export type ThemeType = 'cyber' | 'aurora' | 'sunset' | 'system'
+// 主题类型 - 10个核心主题
+export type Theme =
+  | 'deep-space'    // 深空（原dark）
+  | 'cyberpunk'     // 赛博朋克
+  | 'exia'          // 能天使
+  | 'sakura'        // 樱花
+  | 'bamboo'        // 竹林绿
+  | 'twins'         // 双子
+  | 'mygo-light'    // 星歌
+  | 'strawberry-cream'  // 草莓奶油
+  | 'mint-choco'    // 薄荷巧克力
+  | 'orange-soda'   // 香橙气泡
+
+// 主题分类
+export const themeCategories = {
+  scifi: ['deep-space', 'cyberpunk', 'exia'] as Theme[],
+  nature: ['sakura', 'bamboo', 'twins', 'mygo-light'] as Theme[],
+  healing: ['strawberry-cream', 'mint-choco', 'orange-soda'] as Theme[]
+}
+
+// 本地存储键名
+const THEME_STORAGE_KEY = 'synthink-theme'
+
+// 旧主题映射（用于迁移）
+const legacyThemeMap: Record<string, Theme> = {
+  'dark': 'deep-space',
+  'light': 'deep-space',
+  'spark-lab': 'deep-space',
+  'ocean': 'deep-space',
+  'midnight': 'deep-space',
+  'forest': 'bamboo',
+  'veda': 'cyberpunk',
+  'bangdream-dark': 'twins'
+}
 
 export const useThemeStore = defineStore('theme', () => {
-  // 从本地存储读取主题，默认赛博霓虹
-  const currentTheme = ref<ThemeType>((localStorage.getItem('theme') as ThemeType) || 'cyber')
+  // 当前主题
+  const currentTheme = ref<Theme>('deep-space')
 
-  // 系统主题
-  const systemTheme = ref<'cyber' | 'aurora'>('cyber')
+  // 是否已初始化
+  const isInitialized = ref(false)
 
-  // 实际应用的主题
-  const appliedTheme = computed(() => {
-    if (currentTheme.value === 'system') {
-      return systemTheme.value
+  // 获取存储的主题（兼容旧主题）
+  const getStoredTheme = (): Theme => {
+    if (typeof window === 'undefined') return 'deep-space'
+    const stored = localStorage.getItem(THEME_STORAGE_KEY)
+    // 兼容旧主题映射
+    if (stored && legacyThemeMap[stored]) {
+      return legacyThemeMap[stored]
     }
-    return currentTheme.value
+    // 检查是否是有效的新主题
+    const validThemes: Theme[] = [
+      'deep-space', 'cyberpunk', 'exia',
+      'sakura', 'bamboo', 'twins', 'mygo-light',
+      'strawberry-cream', 'mint-choco', 'orange-soda'
+    ]
+    return validThemes.includes(stored as Theme) ? (stored as Theme) : 'deep-space'
+  }
+
+  // 设置主题
+  const setTheme = (theme: Theme) => {
+    currentTheme.value = theme
+
+    // 应用到DOM
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', theme)
+    }
+
+    // 持久化存储
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(THEME_STORAGE_KEY, theme)
+    }
+  }
+
+  // 初始化主题
+  const initTheme = () => {
+    if (isInitialized.value) return
+
+    const theme = getStoredTheme()
+    setTheme(theme)
+    isInitialized.value = true
+  }
+
+  // 切换主题（在几个常用主题间循环）
+  const toggleTheme = () => {
+    const themes: Theme[] = ['deep-space', 'cyberpunk', 'sakura', 'mygo-light']
+    const currentIndex = themes.indexOf(currentTheme.value)
+    const nextIndex = (currentIndex + 1) % themes.length
+    setTheme(themes[nextIndex])
+  }
+
+  // 获取主题名称
+  const themeName = computed(() => {
+    const names: Record<Theme, string> = {
+      'deep-space': '深空',
+      'cyberpunk': '赛博朋克',
+      'exia': '能天使',
+      'sakura': '樱花',
+      'bamboo': '竹林绿',
+      'twins': '双子',
+      'mygo-light': '星歌',
+      'strawberry-cream': '草莓奶油',
+      'mint-choco': '薄荷巧克力',
+      'orange-soda': '香橙气泡'
+    }
+    return names[currentTheme.value] || '深空'
   })
 
-  // 监听系统主题变化
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-  const updateSystemTheme = () => {
-    // 简单处理：深色模式用赛博，浅色用极光
-    systemTheme.value = mediaQuery.matches ? 'cyber' : 'aurora'
-  }
-
-  // 初始化系统主题监听
-  updateSystemTheme()
-  mediaQuery.addEventListener('change', updateSystemTheme)
-
-  // 应用主题到 DOM
-  const applyTheme = (theme: string) => {
-    document.documentElement.setAttribute('data-theme', theme)
-  }
-
-  // 切换主题
-  const setTheme = (theme: ThemeType) => {
-    currentTheme.value = theme
-    localStorage.setItem('theme', theme)
-
-    if (theme === 'system') {
-      applyTheme(systemTheme.value)
-    } else {
-      applyTheme(theme)
-    }
-  }
-
-  // 监听实际主题变化并应用
-  watch(
-    appliedTheme,
-    (newTheme) => {
-      applyTheme(newTheme)
-    },
-    { immediate: true },
-  )
-
-  // 初始化时应用主题
-  if (currentTheme.value === 'system') {
-    applyTheme(systemTheme.value)
-  } else {
-    applyTheme(currentTheme.value)
-  }
+  // 获取主题分类
+  const themeCategory = computed(() => {
+    if (themeCategories.scifi.includes(currentTheme.value)) return '科幻'
+    if (themeCategories.nature.includes(currentTheme.value)) return '自然'
+    if (themeCategories.healing.includes(currentTheme.value)) return '治愈'
+    return '科幻'
+  })
 
   return {
     currentTheme,
-    appliedTheme,
+    isInitialized,
+    themeName,
+    themeCategory,
     setTheme,
+    initTheme,
+    toggleTheme
   }
 })

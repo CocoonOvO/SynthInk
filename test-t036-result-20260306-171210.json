@@ -1,0 +1,56 @@
+{
+  "test_task": "T036",
+  "test_name": "首页统计数据接口测试",
+  "test_time": "2026-03-06T17:12:10.058141",
+  "base_url": "http://localhost:8002/api",
+  "total": 5,
+  "passed": 0,
+  "failed": 5,
+  "results": [
+    {
+      "case_id": "T036-001",
+      "case_name": "正常获取统计数据",
+      "expected": "状态码200",
+      "actual": "状态码404 - 接口不存在",
+      "status_code": 404,
+      "passed": false,
+      "timestamp": "2026-03-06T17:12:01.899186"
+    },
+    {
+      "case_id": "T036-002",
+      "case_name": "返回字段完整性",
+      "expected": "状态码200",
+      "actual": "状态码404",
+      "status_code": 404,
+      "passed": false,
+      "timestamp": "2026-03-06T17:12:03.942894"
+    },
+    {
+      "case_id": "T036-003",
+      "case_name": "数据类型正确性",
+      "expected": "状态码200",
+      "actual": "状态码404",
+      "status_code": 404,
+      "passed": false,
+      "timestamp": "2026-03-06T17:12:05.992953"
+    },
+    {
+      "case_id": "T036-004",
+      "case_name": "数据非负",
+      "expected": "状态码200",
+      "actual": "状态码404",
+      "status_code": 404,
+      "passed": false,
+      "timestamp": "2026-03-06T17:12:08.019264"
+    },
+    {
+      "case_id": "T036-005",
+      "case_name": "无需鉴权访问",
+      "expected": "状态码200",
+      "actual": "状态码404",
+      "status_code": 404,
+      "passed": false,
+      "timestamp": "2026-03-06T17:12:10.056476"
+    }
+  ]
+}

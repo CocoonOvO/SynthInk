@@ -1,0 +1,10 @@
+/**
+ * 样式入口
+ * 按 frontend-architecture.md 定义
+ */
+
+@import './variables.css';
+@import './themes/index.css';
+@import './effects/transitions.css';
+@import './pages/home.css';
+@import './milkdown/index.css';

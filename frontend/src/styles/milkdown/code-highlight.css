@@ -1,0 +1,487 @@
+/**
+ * Milkdown 代码高亮主题
+ * 根据主题分类动态适配
+ */
+
+/* ╭──────────────────────────────────────────────────────────╮
+   │  代码块容器样式
+   ╰──────────────────────────────────────────────────────────╯ */
+.milkdown pre {
+  background: var(--code-bg) !important;
+  border: 1px solid var(--code-border);
+  border-radius: var(--card-radius);
+  padding: 0 !important;
+  margin: 1em 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 代码块头部 - 语言标识和复制按钮区域 */
+.milkdown pre::before {
+  content: attr(data-language);
+  display: block;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--bg-elevated) 80%, var(--accent-primary) 5%);
+  border-bottom: 1px solid var(--code-border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
+}
+
+/* 无语言时的默认显示 */
+.milkdown pre:not([data-language])::before {
+  content: 'CODE';
+}
+
+/* 代码内容区域 */
+.milkdown pre code {
+  display: block;
+  padding: 16px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  line-height: 1.7;
+  overflow-x: auto;
+  background: transparent !important;
+}
+
+/* 代码块复制按钮 */
+.milkdown pre .code-copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  padding: 4px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.milkdown pre:hover .code-copy-btn {
+  opacity: 1;
+}
+
+.milkdown pre .code-copy-btn:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--bg-primary);
+}
+
+/* 注释 */
+.milkdown .hljs-comment,
+.milkdown .hljs-quote {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* 关键字 */
+.milkdown .hljs-keyword,
+.milkdown .hljs-selector-tag,
+.milkdown .hljs-subst {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+/* 字符串 */
+.milkdown .hljs-string,
+.milkdown .hljs-regexp,
+.milkdown .hljs-addition,
+.milkdown .hljs-attribute,
+.milkdown .hljs-meta-string {
+  color: var(--accent-secondary);
+}
+
+/* 数字、布尔值 */
+.milkdown .hljs-number,
+.milkdown .hljs-literal,
+.milkdown .hljs-variable,
+.milkdown .hljs-template-variable,
+.milkdown .hljs-tag .hljs-attr {
+  color: color-mix(in srgb, var(--accent-primary) 70%, #ff6b6b);
+}
+
+/* 函数 */
+.milkdown .hljs-title,
+.milkdown .hljs-section,
+.milkdown .hljs-selector-id,
+.milkdown .hljs-function {
+  color: color-mix(in srgb, var(--accent-secondary) 70%, #4ecdc4);
+}
+
+/* 类名 */
+.milkdown .hljs-class .hljs-title,
+.milkdown .hljs-type {
+  color: color-mix(in srgb, var(--accent-primary) 70%, #ffe66d);
+  font-weight: 600;
+}
+
+/* 标签 */
+.milkdown .hljs-tag,
+.milkdown .hljs-name,
+.milkdown .hljs-selector-class,
+.milkdown .hljs-selector-attr {
+  color: color-mix(in srgb, var(--accent-primary) 80%, #ff6b9d);
+}
+
+/* 属性 */
+.milkdown .hljs-attr,
+.milkdown .hljs-property {
+  color: color-mix(in srgb, var(--accent-secondary) 80%, #a8e6cf);
+}
+
+/* 内置函数 */
+.milkdown .hljs-built_in,
+.milkdown .hljs-builtin-name {
+  color: color-mix(in srgb, var(--accent-primary) 60%, #c7ceea);
+}
+
+/* 操作符 */
+.milkdown .hljs-operator,
+.milkdown .hljs-punctuation {
+  color: var(--text-secondary);
+}
+
+/* 模板标签 */
+.milkdown .hljs-template-tag {
+  color: var(--accent-primary);
+}
+
+/* 链接 */
+.milkdown .hljs-link {
+  color: var(--accent-secondary);
+  text-decoration: underline;
+}
+
+/* 删除 */
+.milkdown .hljs-deletion {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+/* ╭──────────────────────────────────────────────────────────╮
+   │  科幻系主题 - 霓虹风格增强
+   ╰──────────────────────────────────────────────────────────╯ */
+.milkdown.hljs-scifi pre {
+  background: linear-gradient(
+    135deg,
+    var(--bg-secondary),
+    color-mix(in srgb, var(--bg-secondary) 95%, var(--accent-primary))
+  ) !important;
+}
+
+.milkdown.hljs-scifi .hljs-keyword {
+  text-shadow: 0 0 10px var(--glow-primary);
+}
+
+.milkdown.hljs-scifi .hljs-string {
+  text-shadow: 0 0 8px color-mix(in srgb, var(--accent-secondary) 50%, transparent);
+}
+
+.milkdown.hljs-scifi .hljs-function {
+  color: #00f5d4;
+}
+
+/* ╭──────────────────────────────────────────────────────────╮
+   │  自然系主题 - 柔和风格
+   ╰──────────────────────────────────────────────────────────╯ */
+.milkdown.hljs-nature pre {
+  background: var(--bg-secondary) !important;
+  border-color: color-mix(in srgb, var(--border-subtle) 50%, var(--accent-primary));
+}
+
+.milkdown.hljs-nature .hljs-keyword {
+  color: color-mix(in srgb, var(--accent-primary) 80%, #2d6a4f);
+}
+
+.milkdown.hljs-nature .hljs-string {
+  color: color-mix(in srgb, var(--accent-secondary) 80%, #40916c);
+}
+
+.milkdown.hljs-nature .hljs-number {
+  color: color-mix(in srgb, var(--accent-primary) 70%, #d4a373);
+}
+
+/* ╭──────────────────────────────────────────────────────────╮
+   │  治愈系主题 - 温暖色调
+   ╰──────────────────────────────────────────────────────────╯ */
+.milkdown.hljs-healing pre {
+  background: linear-gradient(
+    180deg,
+    var(--bg-secondary),
+    color-mix(in srgb, var(--bg-secondary) 98%, var(--accent-primary))
+  ) !important;
+}
+
+.milkdown.hljs-healing .hljs-keyword {
+  color: color-mix(in srgb, var(--accent-primary) 85%, #ff8fa3);
+  font-weight: 500;
+}
+
+.milkdown.hljs-healing .hljs-string {
+  color: color-mix(in srgb, var(--accent-secondary) 85%, #ffb3c1);
+}
+
+.milkdown.hljs-healing .hljs-function {
+  color: color-mix(in srgb, var(--accent-primary) 75%, #ffc8dd);
+}
+
+.milkdown.hljs-healing .hljs-number {
+  color: color-mix(in srgb, var(--accent-secondary) 70%, #ffd6a5);
+}
+
+/* ╭──────────────────────────────────────────────────────────╮
+   │  行号样式
+   ╰──────────────────────────────────────────────────────────╯ */
+.milkdown .hljs-line-numbers {
+  color: var(--text-tertiary);
+  border-right: 1px solid var(--border-subtle);
+  padding-right: 1em;
+  margin-right: 1em;
+  user-select: none;
+}
+
+/* ╭──────────────────────────────────────────────────────────╮
+   │  代码块内滚动条
+   ╰──────────────────────────────────────────────────────────╯ */
+.milkdown pre::-webkit-scrollbar {
+  height: 4px;
+}
+
+.milkdown pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.milkdown pre::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent-primary) 30%, transparent);
+  border-radius: 2px;
+}
+
+.milkdown pre:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent-primary) 50%, transparent);
+}
+
+/* ╭──────────────────────────────────────────────────────────╮
+   │  语言标签颜色映射
+   ╰──────────────────────────────────────────────────────────╯ */
+.milkdown pre[data-language="javascript"]::before,
+.milkdown pre[data-language="typescript"]::before,
+.milkdown pre[data-language="js"]::before,
+.milkdown pre[data-language="ts"]::before {
+  color: #f7df1e;
+}
+
+.milkdown pre[data-language="python"]::before,
+.milkdown pre[data-language="py"]::before {
+  color: #3776ab;
+}
+
+.milkdown pre[data-language="java"]::before {
+  color: #007396;
+}
+
+.milkdown pre[data-language="go"]::before {
+  color: #00add8;
+}
+
+.milkdown pre[data-language="rust"]::before,
+.milkdown pre[data-language="rs"]::before {
+  color: #dea584;
+}
+
+.milkdown pre[data-language="cpp"]::before,
+.milkdown pre[data-language="c++"]::before {
+  color: #00599c;
+}
+
+.milkdown pre[data-language="c"]::before {
+  color: #a8b9cc;
+}
+
+.milkdown pre[data-language="csharp"]::before,
+.milkdown pre[data-language="c#"]::before,
+.milkdown pre[data-language="cs"]::before {
+  color: #239120;
+}
+
+.milkdown pre[data-language="php"]::before {
+  color: #777bb4;
+}
+
+.milkdown pre[data-language="ruby"]::before,
+.milkdown pre[data-language="rb"]::before {
+  color: #cc342d;
+}
+
+.milkdown pre[data-language="swift"]::before {
+  color: #f05138;
+}
+
+.milkdown pre[data-language="kotlin"]::before,
+.milkdown pre[data-language="kt"]::before {
+  color: #7f52ff;
+}
+
+.milkdown pre[data-language="sql"]::before {
+  color: #f29111;
+}
+
+.milkdown pre[data-language="html"]::before {
+  color: #e34c26;
+}
+
+.milkdown pre[data-language="css"]::before,
+.milkdown pre[data-language="scss"]::before,
+.milkdown pre[data-language="sass"]::before {
+  color: #1572b6;
+}
+
+.milkdown pre[data-language="json"]::before {
+  color: #000000;
+}
+
+.milkdown pre[data-language="yaml"]::before,
+.milkdown pre[data-language="yml"]::before {
+  color: #cb171e;
+}
+
+.milkdown pre[data-language="xml"]::before {
+  color: #ff6600;
+}
+
+.milkdown pre[data-language="markdown"]::before,
+.milkdown pre[data-language="md"]::before {
+  color: #083fa1;
+}
+
+.milkdown pre[data-language="bash"]::before,
+.milkdown pre[data-language="shell"]::before,
+.milkdown pre[data-language="sh"]::before {
+  color: #4eaa25;
+}
+
+.milkdown pre[data-language="powershell"]::before,
+.milkdown pre[data-language="ps"]::before {
+  color: #012456;
+}
+
+.milkdown pre[data-language="dockerfile"]::before {
+  color: #2496ed;
+}
+
+.milkdown pre[data-language="vim"]::before {
+  color: #019733;
+}
+
+.milkdown pre[data-language="lua"]::before {
+  color: #000080;
+}
+
+.milkdown pre[data-language="perl"]::before,
+.milkdown pre[data-language="pl"]::before {
+  color: #0298c3;
+}
+
+.milkdown pre[data-language="r"]::before {
+  color: #276dc3;
+}
+
+.milkdown pre[data-language="matlab"]::before {
+  color: #0076a8;
+}
+
+.milkdown pre[data-language="scala"]::before {
+  color: #dc322f;
+}
+
+.milkdown pre[data-language="groovy"]::before {
+  color: #4298b8;
+}
+
+.milkdown pre[data-language="dart"]::before {
+  color: #00b4ab;
+}
+
+.milkdown pre[data-language="elixir"]::before,
+.milkdown pre[data-language="ex"]::before {
+  color: #6e4a7e;
+}
+
+.milkdown pre[data-language="erlang"]::before,
+.milkdown pre[data-language="erl"]::before {
+  color: #a90533;
+}
+
+.milkdown pre[data-language="haskell"]::before,
+.milkdown pre[data-language="hs"]::before {
+  color: #5e5086;
+}
+
+.milkdown pre[data-language="clojure"]::before,
+.milkdown pre[data-language="clj"]::before {
+  color: #5881d8;
+}
+
+.milkdown pre[data-language="fsharp"]::before,
+.milkdown pre[data-language="fs"]::before,
+.milkdown pre[data-language="f#"]::before {
+  color: #378bba;
+}
+
+.milkdown pre[data-language="ocaml"]::before,
+.milkdown pre[data-language="ml"]::before {
+  color: #ec6813;
+}
+
+.milkdown pre[data-language="julia"]::before {
+  color: #9558b2;
+}
+
+.milkdown pre[data-language="crystal"]::before {
+  color: #000000;
+}
+
+.milkdown pre[data-language="nim"]::before {
+  color: #ffe953;
+}
+
+.milkdown pre[data-language="zig"]::before {
+  color: #ec915c;
+}
+
+.milkdown pre[data-language="v"]::before,
+.milkdown pre[data-language="vlang"]::before {
+  color: #536b8a;
+}
+
+.milkdown pre[data-language="gleam"]::before {
+  color: #ffaff3;
+}
+
+/* ╭──────────────────────────────────────────────────────────╮
+   │  暗色主题下的语言标签颜色调整
+   ╰──────────────────────────────────────────────────────────╯ */
+.milkdown[data-theme-category="scifi"] pre[data-language="json"]::before {
+  color: #f7df1e;
+}
+
+.milkdown[data-theme-category="scifi"] pre[data-language="crystal"]::before,
+.milkdown[data-theme-category="scifi"] pre[data-language="nim"]::before {
+  color: #ffffff;
+}
+
+/* ╭──────────────────────────────────────────────────────────╮
+   │  代码块聚焦效果
+   ╰──────────────────────────────────────────────────────────╯ */
+.milkdown pre:focus-within {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--glow-primary);
+}

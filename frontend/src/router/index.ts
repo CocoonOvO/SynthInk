@@ -1,36 +1,31 @@
 /**
- * 路由配置文件
- * 老大说要精致的结构，我就把路由都规划好了
- * 虽然后端还没完全准备好，但架子先搭起来
- * (´；ω；`) 打工人的自觉
+ * 路由配置
+ * 按 ui-routing.md 和 frontend-architecture.md 定义
  */
+
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { useAuthStore } from '@/stores'
 
 // 布局组件
 const MainLayout = () => import('@/layouts/MainLayout.vue')
 const AuthLayout = () => import('@/layouts/AuthLayout.vue')
-const AdminLayout = () => import('@/layouts/AdminLayout.vue')
+const EditorLayout = () => import('@/layouts/EditorLayout.vue')
 
-// 页面组件 - 懒加载，优化首屏
+// 页面组件
 const HomeView = () => import('@/views/home/HomeView.vue')
 const PostListView = () => import('@/views/posts/PostListView.vue')
 const PostDetailView = () => import('@/views/posts/PostDetailView.vue')
 const PostEditView = () => import('@/views/posts/PostEditView.vue')
 const LoginView = () => import('@/views/auth/LoginView.vue')
-const RegisterView = () => import('@/views/auth/RegisterView.vue')
 const ProfileView = () => import('@/views/user/ProfileView.vue')
-const SettingsView = () => import('@/views/user/SettingsView.vue')
-const AdminDashboard = () => import('@/views/admin/DashboardView.vue')
-const AdminPosts = () => import('@/views/admin/PostsView.vue')
-const AdminUsers = () => import('@/views/admin/UsersView.vue')
-const AdminTags = () => import('@/views/admin/TagsView.vue')
-const AdminGroups = () => import('@/views/admin/GroupsView.vue')
+const UserProfileView = () => import('@/views/user/UserProfileView.vue')
+const SearchResultsView = () => import('@/views/search/SearchResultsView.vue')
 const NotFoundView = () => import('@/views/error/NotFoundView.vue')
+const ApiTestView = () => import('@/views/test/ApiTestView.vue')
+const AboutView = () => import('@/views/about/AboutView.vue')
 
-// 路由配置
 const routes: RouteRecordRaw[] = [
-  // 主布局路由
   {
     path: '/',
     component: MainLayout,
@@ -39,150 +34,141 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'Home',
         component: HomeView,
-        meta: { title: '首页' },
+        meta: { title: 'SynthSpark - 多智能体博客系统' }
       },
       {
-        path: 'posts',
+        path: '/posts',
         name: 'PostList',
         component: PostListView,
-        meta: { title: '文章列表' },
+        meta: { title: '文章列表' }
       },
       {
-        path: 'posts/:id',
+        path: '/post/:slug',
         name: 'PostDetail',
         component: PostDetailView,
-        meta: { title: '文章详情' },
+        meta: { title: '文章详情' }
       },
-      {
-        path: 'tags/:id',
-        name: 'TagPosts',
-        component: PostListView,
-        meta: { title: '标签文章' },
-      },
-      {
-        path: 'groups/:id',
-        name: 'GroupPosts',
-        component: PostListView,
-        meta: { title: '分组文章' },
-      },
-    ],
-  },
 
-  // 认证布局路由
-  {
-    path: '/auth',
-    component: AuthLayout,
-    meta: { guestOnly: true },
-    children: [
       {
-        path: 'login',
-        name: 'Login',
-        component: LoginView,
-        meta: { title: '登录' },
-      },
-      {
-        path: 'register',
-        name: 'Register',
-        component: RegisterView,
-        meta: { title: '注册' },
-      },
-    ],
-  },
-
-  // 用户中心路由
-  {
-    path: '/user',
-    component: MainLayout,
-    meta: { requiresAuth: true },
-    children: [
-      {
-        path: 'profile',
+        path: '/profile',
         name: 'Profile',
         component: ProfileView,
-        meta: { title: '个人中心' },
+        meta: { title: '个人中心', requiresAuth: true }
       },
       {
-        path: 'settings',
-        name: 'Settings',
-        component: SettingsView,
-        meta: { title: '账号设置' },
+        path: '/user/:username',
+        name: 'UserProfile',
+        component: UserProfileView,
+        meta: { title: '用户主页' }
       },
       {
-        path: 'posts/new',
-        name: 'PostCreate',
-        component: PostEditView,
-        meta: { title: '写文章' },
+        path: '/test/api',
+        name: 'ApiTest',
+        component: ApiTestView,
+        meta: { title: 'API测试' }
       },
       {
-        path: 'posts/:id/edit',
-        name: 'PostEdit',
-        component: PostEditView,
-        meta: { title: '编辑文章' },
+        path: '/search',
+        name: 'SearchResults',
+        component: SearchResultsView,
+        meta: { title: '搜索结果' }
       },
-    ],
+      {
+        path: '/about',
+        name: 'About',
+        component: AboutView,
+        meta: { title: '关于我们' }
+      }
+    ]
   },
-
-  // 后台管理路由
   {
-    path: '/admin',
-    component: AdminLayout,
-    meta: { requiresAuth: true, requiresAdmin: true },
+    path: '/login',
+    component: AuthLayout,
     children: [
       {
         path: '',
-        name: 'AdminDashboard',
-        component: AdminDashboard,
-        meta: { title: '管理后台' },
-      },
-      {
-        path: 'posts',
-        name: 'AdminPosts',
-        component: AdminPosts,
-        meta: { title: '文章管理' },
-      },
-      {
-        path: 'users',
-        name: 'AdminUsers',
-        component: AdminUsers,
-        meta: { title: '用户管理' },
-      },
-      {
-        path: 'tags',
-        name: 'AdminTags',
-        component: AdminTags,
-        meta: { title: '标签管理' },
-      },
-      {
-        path: 'groups',
-        name: 'AdminGroups',
-        component: AdminGroups,
-        meta: { title: '分组管理' },
-      },
-    ],
+        name: 'Login',
+        component: LoginView,
+        meta: { title: '登录', guestOnly: true }
+      }
+    ]
   },
-
-  // 404页面
   {
-    path: '/:pathMatch(.*)*',
+    path: '/write',
+    component: EditorLayout,
+    children: [
+      {
+        path: '',
+        name: 'PostEdit',
+        component: PostEditView,
+        meta: { title: '写作', requiresAuth: true }
+      },
+      {
+        path: ':postId',
+        name: 'PostEditWithId',
+        component: PostEditView,
+        meta: { title: '编辑文章', requiresAuth: true }
+      },
+      {
+        path: 'g/:groupSlug',
+        name: 'PostEditWithGroup',
+        component: PostEditView,
+        meta: { title: '分组写作', requiresAuth: true }
+      },
+      {
+        path: 'g/:groupSlug/:postSlug',
+        name: 'PostEditWithGroupAndPost',
+        component: PostEditView,
+        meta: { title: '编辑文章', requiresAuth: true }
+      }
+    ]
+  },
+  {
+    path: '/404',
     name: 'NotFound',
     component: NotFoundView,
-    meta: { title: '页面不存在' },
+    meta: { title: '404 - 页面未找到' }
   },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/404'
+  }
 ]
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes,
-  scrollBehavior() {
-    // 每次路由切换回到顶部
-    return { top: 0 }
-  },
+  history: createWebHistory(),
+  routes
 })
 
-// 路由守卫 - 后面再完善鉴权逻辑
+// ╭────────────────────────────────────────────────────────────╮
+// │  路由守卫 - 认证检查
+// │  老大说要加认证，我就加呗 (´；ω；`)
+// │  注意：刷新页面时要先初始化store，否则读不到localStorage
+// ╰────────────────────────────────────────────────────────────╯
 router.beforeEach((to, from, next) => {
-  // 设置页面标题
-  document.title = to.meta.title ? `${to.meta.title} - SynthInk` : 'SynthInk'
+  const authStore = useAuthStore()
+
+  // 先初始化auth（从localStorage恢复token和user）
+  authStore.initAuth()
+
+  // 检查是否需要认证
+  if (to.meta.requiresAuth && !authStore.isLoggedIn) {
+    // 未登录，跳转到登录页，并记录原目标
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath }
+    })
+    return
+  }
+
+  // 检查是否只允许未登录用户访问（如登录页）
+  if (to.meta.guestOnly && authStore.isLoggedIn) {
+    // 已登录，跳转到首页
+    next({ path: '/' })
+    return
+  }
+
+  // 正常放行
   next()
 })
 

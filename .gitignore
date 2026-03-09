@@ -55,6 +55,9 @@ agent_memo.md
 # Agent Project Management (contains internal coordination)
 agent_project.md
 
+# Development Documentation (for internal use only)
+docs/
+
 # Test coverage
 .coverage
 htmlcov/

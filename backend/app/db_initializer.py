@@ -51,7 +51,7 @@ class DatabaseInitializer:
         self.admin_dsn = self._build_admin_dsn()
         # 使用原始连接字符串（不含驱动）用于asyncpg
         self.db_dsn = config.get_raw_connection_string()
-        self.schema = getattr(config, 'schema', 'public')
+        self.schema = getattr(config, 'db_schema', 'public')
     
     def _build_admin_dsn(self) -> str:
         """

@@ -30,12 +30,13 @@ const TextScramble = {
         elements.forEach(el => observer.observe(el));
     },
 
-    scramble(el) {
+    scramble(el, customSpeed = null) {
         const originalText = el.dataset.scrambleText || el.textContent;
         el.dataset.scrambleText = originalText;
         
         const length = originalText.length;
         let iteration = 0;
+        const speed = customSpeed || this.config.speed;
         
         const interval = setInterval(() => {
             el.textContent = originalText
@@ -54,8 +55,8 @@ const TextScramble = {
                 el.textContent = originalText;
             }
 
-            iteration += 1/3;
-        }, this.config.speed);
+            iteration += 1/2;
+        }, speed);
     }
 };
 

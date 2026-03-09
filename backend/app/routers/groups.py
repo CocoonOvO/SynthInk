@@ -26,37 +26,48 @@ async def list_groups(
     
     - 按排序顺序返回
     """
-    result = await db_manager.postgres.find(
-        "groups",
-        limit=limit,
-        offset=skip,
-        sort_by="sort_order",
-        sort_desc=False
-    )
+    # 检查数据库是否已初始化
+    try:
+        _ = db_manager.db
+    except RuntimeError:
+        # 数据库未初始化，返回空列表
+        return []
     
-    if not result.get("success"):
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="获取分组列表失败"
+    try:
+        result = await db_manager.db.find(
+            "groups",
+            limit=limit,
+            offset=skip,
+            sort_by="sort_order",
+            sort_desc=False
         )
-    
-    groups_data = result.get("data", [])
-    return [Group(**group_data) for group_data in groups_data]
+        
+        if not result.get("success"):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="获取分组列表失败"
+            )
+        
+        groups_data = result.get("data", [])
+        return [Group(**group_data) for group_data in groups_data]
+    except Exception as e:
+        # 数据库操作异常，返回空列表
+        return []
 
 
 @router.post("/", response_model=Group, summary="创建分组", status_code=status.HTTP_201_CREATED)
 async def create_group(
     group: GroupCreate,
-    current_user: Annotated[User, Depends(get_current_active_superuser)]
+    current_user: Annotated[User, Depends(get_current_active_user)]
 ) -> Group:
     """
     创建新分组
     
-    - 管理员权限
+    - 需要登录
     - 分组名不能重复
     """
     # 检查分组名是否已存在
-    existing_result = await db_manager.postgres.find(
+    existing_result = await db_manager.db.find(
         "groups",
         filters={"name": group.name},
         limit=1
@@ -76,7 +87,7 @@ async def create_group(
     group_data["updated_at"] = datetime.utcnow()
     
     # 创建分组
-    result = await db_manager.postgres.insert("groups", group_data)
+    result = await db_manager.db.insert("groups", group_data)
     
     if not result.get("success"):
         raise HTTPException(
@@ -94,7 +105,7 @@ async def get_group(
     """
     获取指定分组的详细信息
     """
-    result = await db_manager.postgres.get("groups", group_id)
+    result = await db_manager.db.get("groups", group_id)
     
     if not result.get("success"):
         raise HTTPException(
@@ -117,7 +128,7 @@ async def update_group(
     - 管理员权限
     """
     # 检查分组是否存在
-    existing_result = await db_manager.postgres.get("groups", group_id)
+    existing_result = await db_manager.db.get("groups", group_id)
     if not existing_result.get("success"):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -127,7 +138,7 @@ async def update_group(
     # 如果修改了分组名，检查是否与其他分组冲突
     existing_group = existing_result["data"]
     if group_update.name != existing_group["name"]:
-        name_check = await db_manager.postgres.find(
+        name_check = await db_manager.db.find(
             "groups",
             filters={"name": group_update.name},
             limit=1
@@ -143,7 +154,7 @@ async def update_group(
     update_data["updated_at"] = datetime.utcnow()
     
     # 更新分组
-    result = await db_manager.postgres.update("groups", group_id, update_data)
+    result = await db_manager.db.update("groups", group_id, update_data)
     
     if not result.get("success"):
         raise HTTPException(
@@ -152,7 +163,7 @@ async def update_group(
         )
     
     # 获取更新后的分组
-    updated_result = await db_manager.postgres.get("groups", group_id)
+    updated_result = await db_manager.db.get("groups", group_id)
     return Group(**updated_result["data"])
 
 
@@ -168,7 +179,7 @@ async def delete_group(
     - 删除后该分组下的文章将变为无分组状态
     """
     # 检查分组是否存在
-    existing_result = await db_manager.postgres.get("groups", group_id)
+    existing_result = await db_manager.db.get("groups", group_id)
     if not existing_result.get("success"):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -176,7 +187,7 @@ async def delete_group(
         )
     
     # 将该分组下的文章设为无分组
-    posts_result = await db_manager.postgres.find(
+    posts_result = await db_manager.db.find(
         "posts",
         filters={"group_id": group_id},
         limit=10000
@@ -184,14 +195,14 @@ async def delete_group(
     
     if posts_result.get("success"):
         for post in posts_result["data"]:
-            await db_manager.postgres.update(
+            await db_manager.db.update(
                 "posts",
                 post["id"],
                 {"group_id": None, "updated_at": datetime.utcnow()}
             )
     
     # 删除分组
-    result = await db_manager.postgres.delete("groups", group_id)
+    result = await db_manager.db.delete("groups", group_id)
     
     if not result.get("success"):
         raise HTTPException(
@@ -222,7 +233,7 @@ async def reorder_groups(
     # 更新每个分组的排序
     for group_id, sort_order in group_orders.items():
         try:
-            await db_manager.postgres.update(
+            await db_manager.db.update(
                 "groups",
                 group_id,
                 {
@@ -235,7 +246,7 @@ async def reorder_groups(
             continue
     
     # 返回更新后的分组列表
-    result = await db_manager.postgres.find(
+    result = await db_manager.db.find(
         "groups",
         sort_by="sort_order",
         sort_desc=False

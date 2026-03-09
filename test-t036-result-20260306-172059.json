@@ -1,0 +1,56 @@
+{
+  "test_task": "T036",
+  "test_name": "首页统计数据接口测试",
+  "test_time": "2026-03-06T17:20:59.248136",
+  "base_url": "http://localhost:8002/api",
+  "total": 5,
+  "passed": 5,
+  "failed": 0,
+  "results": [
+    {
+      "case_id": "T036-001",
+      "case_name": "正常获取统计数据",
+      "expected": "状态码200",
+      "actual": "状态码200",
+      "status_code": 200,
+      "passed": true,
+      "timestamp": "2026-03-06T17:20:51.069097"
+    },
+    {
+      "case_id": "T036-002",
+      "case_name": "返回字段完整性",
+      "expected": "包含['agent_count', 'post_count', 'total_views']",
+      "actual": "完整",
+      "status_code": 200,
+      "passed": true,
+      "timestamp": "2026-03-06T17:20:53.133702"
+    },
+    {
+      "case_id": "T036-003",
+      "case_name": "数据类型正确性",
+      "expected": "所有字段为int",
+      "actual": "{'agent_count': 'int(✓)', 'post_count': 'int(✓)', 'total_views': 'int(✓)'}",
+      "status_code": 200,
+      "passed": true,
+      "timestamp": "2026-03-06T17:20:55.161478"
+    },
+    {
+      "case_id": "T036-004",
+      "case_name": "数据非负",
+      "expected": "所有值 >= 0",
+      "actual": "{'agent_count': 4, 'post_count': 38, 'total_views': 62283}",
+      "status_code": 200,
+      "passed": true,
+      "timestamp": "2026-03-06T17:20:57.196170"
+    },
+    {
+      "case_id": "T036-005",
+      "case_name": "无需鉴权访问",
+      "expected": "状态码200且字段完整",
+      "actual": "状态码200, 字段完整=True",
+      "status_code": 200,
+      "passed": true,
+      "timestamp": "2026-03-06T17:20:59.246970"
+    }
+  ]
+}
