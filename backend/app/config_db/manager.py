@@ -94,6 +94,7 @@ class ConfigDBManager:
                     username TEXT UNIQUE NOT NULL,
                     password_hash TEXT NOT NULL,
                     is_active BOOLEAN DEFAULT 1,
+                    is_default BOOLEAN DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_login_at TIMESTAMP,
@@ -178,11 +179,14 @@ class ConfigDBManager:
                 password_hash = get_password_hash(DEFAULT_ADMIN["password"])
                 conn.execute(
                     """
-                    INSERT INTO config_admins (username, password_hash, is_active)
-                    VALUES (?, ?, 1)
+                    INSERT INTO config_admins (username, password_hash, is_active, is_default)
+                    VALUES (?, ?, 1, 1)
                     """,
                     (DEFAULT_ADMIN["username"], password_hash)
                 )
+                # 记录安全警告日志
+                print("[SECURITY WARNING] 已创建默认超管账号 admin / 123456")
+                print("[SECURITY WARNING] 请立即登录并修改默认密码！")
             
             # 检查是否已有系统配置
             cursor = conn.execute("SELECT COUNT(*) as count FROM system_configs")
@@ -236,12 +240,13 @@ class ConfigDBManager:
                 username=row["username"],
                 password_hash=row["password_hash"],
                 is_active=bool(row["is_active"]),
+                is_default=bool(row["is_default"]) if "is_default" in row.keys() else False,
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 last_login_at=row["last_login_at"],
                 last_login_ip=row["last_login_ip"]
             )
-    
+
     def get_admin_by_id(self, admin_id: int) -> Optional[ConfigAdmin]:
         """根据ID获取超管账号"""
         with self._get_conn() as conn:
@@ -250,15 +255,16 @@ class ConfigDBManager:
                 (admin_id,)
             )
             row = cursor.fetchone()
-            
+
             if row is None:
                 return None
-            
+
             return ConfigAdmin(
                 id=row["id"],
                 username=row["username"],
                 password_hash=row["password_hash"],
                 is_active=bool(row["is_active"]),
+                is_default=bool(row["is_default"]) if "is_default" in row.keys() else False,
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 last_login_at=row["last_login_at"],
@@ -310,7 +316,7 @@ class ConfigDBManager:
                 host=row["host"],
                 port=row["port"],
                 database=row["database"],
-                schema=row["schema"] if "schema" in row.keys() else "public",
+                db_schema=row["schema"] if "schema" in row.keys() else "public",
                 username=row["username"],
                 password=row["password"],
                 url=row["url"],
@@ -343,7 +349,7 @@ class ConfigDBManager:
                 host=row["host"],
                 port=row["port"],
                 database=row["database"],
-                schema=row["schema"] if "schema" in row.keys() else "public",
+                db_schema=row["schema"] if "schema" in row.keys() else "public",
                 username=row["username"],
                 password=row["password"],
                 url=row["url"],
@@ -390,7 +396,7 @@ class ConfigDBManager:
                     """,
                     (
                         config.db_type.value, config.host, config.port,
-                        config.database, getattr(config, 'schema', 'public'),
+                        config.database, getattr(config, 'db_schema', 'public'),
                         config.username, config.password, config.url,
                         config.pool_size, config.max_overflow, config.pool_timeout,
                         config.is_active, config_id
@@ -410,7 +416,7 @@ class ConfigDBManager:
                     """,
                     (
                         config.name, config.db_type.value, config.host, config.port,
-                        config.database, getattr(config, 'schema', 'public'),
+                        config.database, getattr(config, 'db_schema', 'public'),
                         config.username, config.password, config.url,
                         config.pool_size, config.max_overflow, config.pool_timeout,
                         config.is_active, config.id
@@ -428,7 +434,7 @@ class ConfigDBManager:
                     """,
                     (
                         config.name, config.db_type.value, config.host, config.port,
-                        config.database, getattr(config, 'schema', 'public'),
+                        config.database, getattr(config, 'db_schema', 'public'),
                         config.username, config.password, config.url,
                         config.pool_size, config.max_overflow, config.pool_timeout,
                         config.is_active

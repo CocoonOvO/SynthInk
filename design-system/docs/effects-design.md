@@ -76,10 +76,10 @@
 design-system/js/effects/
 ├── typewriter.js          # 打字机效果
 ├── count-up.js            # 数字滚动
-├── tilt-card.js           # 3D卡片倾斜
+├── text-scramble.js       # 文字解码效果
 ├── floating-elements.js   # 浮动装饰元素
 ├── mouse-glow.js          # [已停用] 鼠标光晕
-└── text-scramble.js       # [已停用] 文字解码
+└── tilt-card.js           # [已停用] 3D卡片倾斜
 ```
 
 ### 统一接口规范
@@ -357,7 +357,7 @@ function createGlare(element) {
 TiltCard.init('.feature-card', { maxTilt: 10, glare: true });
 
 // 产品卡片 - 较大倾斜，增强视觉冲击
-TiltCard.init('.product-card', { maxTilt: 20, scale: 1.05 });
+TiltCard.init('.product-card', { maxTilt: 20, scale: 1.05 });。
 
 // 禁用反光 - 简洁风格
 TiltCard.init('.minimal-card', { maxTilt: 5, glare: false });
@@ -365,7 +365,70 @@ TiltCard.init('.minimal-card', { maxTilt: 5, glare: false });
 
 ---
 
-### 4. FloatingElements - 浮动装饰元素
+### 4. TextScramble - 文字解码效果
+
+#### 设计意图
+- **科技感氛围**：模拟数据解密过程，为页面增添赛博朋克风格
+- **吸引注意力**：动态变化的文字自然吸引视线，适合强调性标题
+- **品牌个性**：体现 SynthInk 作为技术驱动产品的特质
+
+#### 技术实现
+
+**核心机制**：
+```javascript
+// 逐字符解码
+function scramble(el) {
+    const originalText = el.dataset.scrambleText || el.textContent;
+    let iteration = 0;
+    
+    const interval = setInterval(() => {
+        el.textContent = originalText
+            .split('')
+            .map((char, index) => {
+                if (char === ' ') return ' ';
+                if (index < iteration) return originalText[index];
+                return chars[Math.floor(Math.random() * chars.length)];
+            })
+            .join('');
+
+        if (iteration >= length) clearInterval(interval);
+        iteration += 1/3;
+    }, speed);
+}
+```
+
+**配置选项**：
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `chars` | string | `'!<>-_\\/[]{}—=+*^?#________'` | 随机字符集 |
+| `speed` | number | 50 | 解码速度（毫秒） |
+| `delay` | number | 0 | 开始前的延迟（毫秒） |
+
+#### 使用场景
+
+**适合**：
+- 特性卡片标题（短文本）
+- 强调性的标签或徽章
+- 科技感风格的页面元素
+
+**不适合**：
+- 长文本（解码时间过长）
+- 需要立即阅读的内容
+- 频繁切换的页面
+
+#### 最佳实践
+
+```javascript
+// 快速解码 - 适合次要标题
+TextScramble.init('.feature-title', { speed: 30, delay: 100 });
+
+// 慢速解码 - 营造仪式感
+TextScramble.init('.hero-badge', { speed: 60, delay: 200 });
+```
+
+---
+
+### 5. FloatingElements - 浮动装饰元素
 
 #### 设计意图
 - **背景丰富度**：避免大面积留白造成的单调感
@@ -526,34 +589,29 @@ FloatingElements.init({
 
 ---
 
-### TextScramble - 文字解码效果
+### TiltCard - 3D卡片倾斜效果
 
 #### 原始设计
-文字从随机字符逐渐"解码"为正确内容，模拟黑客帝国风格的字符下落效果。
+鼠标悬停时卡片产生3D倾斜效果，并带有反光光泽，增强交互质感。
 
 #### 移除原因
 
-1. **影响可读性**
-   - 解码过程中文字不可读，用户无法获取信息
-   - 随机字符可能造成误解（如被误认为乱码）
+1. **与文字解码冲突**
+   - 特性卡片同时应用3D倾斜和文字解码，动效过多
+   - 两者叠加造成视觉混乱，喧宾夺主
 
-2. **阅读中断**
-   - 用户需要等待解码完成才能阅读
-   - 打断用户的阅读流（Reading Flow）
+2. **性能考虑**
+   - 鼠标移动事件持续计算3D变换
+   - 反光效果增加GPU渲染负担
 
-3. **不符合专业定位**
-   - 解码效果过于"炫酷"，与写作工具的专业形象冲突
-   - 可能让用户觉得不够严肃
-
-4. **可访问性问题**
-   - 屏幕阅读器无法正确读取解码中的文字
-   - 对阅读障碍用户不友好
+3. **简化设计**
+   - 文字解码已足够吸引注意力
+   - 3D倾斜显得多余，不符合"克制"原则
 
 #### 替代方案
-如果需要文字动画效果，考虑：
-- 打字机效果（Typewriter）- 已采用
-- 简单的淡入效果
-- 逐行出现的滑动效果
+- 使用文字解码效果替代 - 已采用
+- 简单的hover状态变化（缩放、阴影）
+- 点击时的涟漪效果（Ripple）
 
 ---
 
@@ -1044,6 +1102,65 @@ design-system/
 └── docs/
     └── effects-design.md      # 本设计文档
 ```
+
+---
+
+## Logo设计
+
+### 选定方案：Spin（三瓣旋转）
+
+**概念来源**：概念三十二 - 旋转三瓣
+
+**设计说明**：
+- 三瓣有机形态呈旋转动态，像风车或漩涡
+- 象征多智能体的协作与思想的流动
+- 不对称设计增加视觉动感和生命力
+
+**技术实现**：
+```svg
+<svg viewBox="0 0 24 24" fill="none">
+    <!-- 上瓣 -->
+    <path d="M12 4c2 2 3 5 2 8-1 2-3 3-4 2-2-1-2-4-1-7 1-2 2-3 3-3z" 
+          fill="currentColor" opacity="0.9"/>
+    <!-- 右下瓣 -->
+    <path d="M20 14c-2 2-5 3-8 2-2-1-3-3-2-4 1-2 4-2 7-1 2 1 3 2 3 3z" 
+          fill="currentColor" opacity="0.8"/>
+    <!-- 左下瓣 -->
+    <path d="M6 18c-1-3 0-6 3-7 2-1 4 0 4 2 0 2-3 4-6 5-1 0-1 0-1 0z" 
+          fill="currentColor" opacity="0.85"/>
+</svg>
+```
+
+**样式规范**：
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 容器尺寸 | 44×44px | 导航栏Logo |
+| SVG尺寸 | 28×28px | 填满容器 |
+| 边框 | 2px solid | 主题主色 |
+| 圆角 | 12px | 柔和现代感 |
+| 颜色 | currentColor | 跟随主题变化 |
+| 透明度 | 0.8-0.9 | 层次渐变 |
+
+**动画效果**：
+- 呼吸光晕：`logo-pulse` 3s ease-in-out infinite
+- 悬停时可添加旋转动画（待实现）
+
+**应用页面**：
+- ✅ home.html
+- ✅ post-detail.html
+- ✅ post-list.html
+- ✅ profile.html
+
+### 备选方案库
+
+完整Logo设计方案见：`design-system/pages/logo-picker.html`
+
+共39个概念，117个方案，涵盖：
+- 抽象几何风格
+- 流动线条风格
+- 极简符号风格
+- 有机融合风格
+- 博客主题风格（羽毛笔、书本、墨水瓶等）
 
 ---
 

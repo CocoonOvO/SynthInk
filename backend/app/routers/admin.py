@@ -16,7 +16,8 @@ from ..config_db import (
     config_db_manager, ConfigAdmin, config_admin_auth,
     require_config_admin, DatabaseConfig, SystemConfig, DatabaseType
 )
-from ..dependencies import get_postgres_adapter, DatabaseNotConfiguredException
+from ..dependencies import DatabaseNotConfiguredException
+from ..db_manager import db_manager
 from ..config import get_settings
 
 
@@ -91,12 +92,16 @@ class AdminLoginResponse(BaseModel):
         expires_in: 令牌过期时间（秒）
         admin_id: 超管ID
         username: 超管用户名
+        is_default_password: 是否使用默认密码
+        security_warning: 安全警告信息
     """
     access_token: str = Field(..., description="JWT访问令牌")
     token_type: str = Field(default="bearer", description="令牌类型")
     expires_in: int = Field(..., description="过期时间（秒）")
     admin_id: int = Field(..., description="超管ID")
     username: str = Field(..., description="超管用户名")
+    is_default_password: bool = Field(default=False, description="是否使用默认密码")
+    security_warning: Optional[str] = Field(default=None, description="安全警告信息")
 
 
 class DatabaseConfigRequest(BaseModel):
@@ -124,7 +129,7 @@ class DatabaseConfigRequest(BaseModel):
     host: str = Field(default="localhost", description="主机地址")
     port: int = Field(default=5432, ge=1, le=65535, description="端口号")
     database: str = Field(default="synthink", description="数据库名")
-    schema: str = Field(default="public", description="PostgreSQL schema名称")
+    db_schema: str = Field(default="public", description="PostgreSQL schema名称")
     username: str = Field(default="", description="用户名")
     password: str = Field(default="", description="密码")
     url: Optional[str] = Field(default=None, description="完整连接URL（可选）")
@@ -146,7 +151,7 @@ class DatabaseConfigResponse(BaseModel):
         host: 主机地址
         port: 端口号
         database: 数据库名
-        schema: PostgreSQL schema名称
+        db_schema: PostgreSQL schema名称
         username: 用户名
         url: 连接URL
         pool_size: 连接池大小
@@ -167,7 +172,7 @@ class DatabaseConfigResponse(BaseModel):
     host: str = Field(..., description="主机地址")
     port: int = Field(..., description="端口号")
     database: str = Field(..., description="数据库名")
-    schema: str = Field(default="public", description="PostgreSQL schema名称")
+    db_schema: str = Field(default="public", description="PostgreSQL schema名称")
     username: str = Field(..., description="用户名")
     url: Optional[str] = Field(default=None, description="连接URL")
     pool_size: int = Field(..., description="连接池大小")
@@ -263,12 +268,12 @@ class SwitchDatabaseRequest(BaseModel):
     
     Attributes:
         database: 新数据库名称
-        schema: PostgreSQL schema名称
+        db_schema: PostgreSQL schema名称
         create_if_not_exists: 数据库不存在时是否创建
         init_if_empty: 空数据库是否初始化表结构
     """
     database: str = Field(..., description="新数据库名称")
-    schema: str = Field(default="public", description="PostgreSQL schema名称")
+    db_schema: str = Field(default="public", description="PostgreSQL schema名称")
     create_if_not_exists: bool = Field(default=True, description="数据库不存在时是否创建")
     init_if_empty: bool = Field(default=True, description="空数据库是否初始化表结构")
 
@@ -282,7 +287,7 @@ class SwitchDatabaseResponse(BaseModel):
         message: 结果消息
         old_database: 原数据库名称
         new_database: 新数据库名称
-        schema: schema名称
+        db_schema: schema名称
         created: 是否创建了新数据库
         initialized: 是否初始化了表结构
     """
@@ -290,7 +295,7 @@ class SwitchDatabaseResponse(BaseModel):
     message: str = Field(..., description="结果消息")
     old_database: Optional[str] = Field(default=None, description="原数据库名称")
     new_database: str = Field(..., description="新数据库名称")
-    schema: str = Field(..., description="schema名称")
+    db_schema: str = Field(..., description="schema名称")
     created: bool = Field(default=False, description="是否创建了新数据库")
     initialized: bool = Field(default=False, description="是否初始化了表结构")
 
@@ -516,7 +521,7 @@ async def create_database_config(
             config.host = request.host
             config.port = request.port
             config.database = request.database
-            config.schema = request.schema
+            config.db_schema = request.db_schema
             config.username = request.username
             config.password = request.password
             config.url = request.url
@@ -532,7 +537,7 @@ async def create_database_config(
                 host=request.host,
                 port=request.port,
                 database=request.database,
-                schema=request.schema,
+                db_schema=request.db_schema,
                 username=request.username,
                 password=request.password,
                 url=request.url,
@@ -736,11 +741,14 @@ async def connect_database(
     """
     settings = get_settings()
     try:
-        adapter = await get_postgres_adapter(request)
-        return {
-            "success": True,
-            "message": "数据库连接成功"
-        }
+        # 使用 db_manager 检查数据库连接状态
+        if db_manager.is_biz_db_ready:
+            return {
+                "success": True,
+                "message": "数据库连接成功"
+            }
+        else:
+            raise DatabaseNotConfiguredException()
     except HTTPException:
         raise
     except Exception as e:
@@ -1171,7 +1179,7 @@ async def complete_init_wizard(
             host=db_request.host,
             port=db_request.port,
             database=db_request.database,
-            schema=db_request.schema,
+            db_schema=db_request.db_schema,
             username=db_request.username,
             password=db_request.password,
             url=db_request.url,
@@ -1277,7 +1285,7 @@ async def switch_database(
         
         # 创建新配置（基于当前配置）
         # 使用数据库名作为配置名，确保唯一性
-        config_name = f"{switch_request.database}_{switch_request.schema}"
+        config_name = f"{switch_request.database}_{switch_request.db_schema}"
         
         if current_config:
             new_config = DatabaseConfig(
@@ -1286,7 +1294,7 @@ async def switch_database(
                 host=current_config.host,
                 port=current_config.port,
                 database=switch_request.database,
-                schema=switch_request.schema,
+                db_schema=switch_request.db_schema,
                 username=current_config.username,
                 password=current_config.password,
                 url=current_config.url,
@@ -1303,7 +1311,7 @@ async def switch_database(
                 host="localhost",
                 port=5432,
                 database=switch_request.database,
-                schema=switch_request.schema,
+                db_schema=switch_request.db_schema,
                 username="postgres",
                 password="",
                 is_active=True
@@ -1355,7 +1363,7 @@ async def switch_database(
             old_value={"database": old_database},
             new_value={
                 "database": switch_request.database,
-                "schema": switch_request.schema,
+                "db_schema": switch_request.db_schema,
                 "created": created,
                 "initialized": initialized
             },
@@ -1367,7 +1375,7 @@ async def switch_database(
             message=f"数据库切换成功: {old_database or 'None'} -> {switch_request.database}",
             old_database=old_database,
             new_database=switch_request.database,
-            schema=switch_request.schema,
+            db_schema=switch_request.db_schema,
             created=created,
             initialized=initialized
         )

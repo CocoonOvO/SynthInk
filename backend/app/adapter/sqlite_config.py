@@ -268,7 +268,7 @@ class SQLiteConfigAdapter(BaseAdapter):
         if result["success"]:
             return result["data"]["value"]
         return default
-    
+
     async def set_config(self, key: str, value: Any, description: str = "") -> dict[str, Any]:
         """设置配置值（简化版）"""
         return await self.insert("config", {
@@ -276,3 +276,37 @@ class SQLiteConfigAdapter(BaseAdapter):
             "value": value,
             "description": description
         })
+
+    async def search(
+        self,
+        query: str,
+        search_type: str = "all",
+        limit: int = 20,
+        offset: int = 0
+    ) -> dict[str, Any]:
+        """
+        全文搜索 - 配置库简单实现
+
+        在配置库中搜索匹配的key或value
+        """
+        with self._get_conn() as conn:
+            sql = """
+                SELECT key, value, description, updated_at FROM config
+                WHERE key LIKE ? OR value LIKE ? OR description LIKE ?
+                ORDER BY key
+                LIMIT ? OFFSET ?
+            """
+            search_pattern = f"%{query}%"
+            cursor = conn.execute(sql, (search_pattern, search_pattern, search_pattern, limit, offset))
+            rows = cursor.fetchall()
+
+            results = []
+            for row in rows:
+                results.append({
+                    "key": row["key"],
+                    "value": json.loads(row["value"]),
+                    "description": row["description"],
+                    "updated_at": row["updated_at"]
+                })
+
+            return {"success": True, "data": results, "count": len(results)}

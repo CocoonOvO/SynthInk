@@ -15,4 +15,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    proxy: {
+      // 代理 /api 开头的请求到后端
+      '/api': {
+        target: 'http://localhost:8002',
+        changeOrigin: true,
+      },
+    },
+  },
 })

@@ -2,7 +2,7 @@
 配置库超管认证模块
 独立于博客用户认证，专门用于配置库超管登录和权限验证
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional, Dict, Any
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -27,6 +27,8 @@ class ConfigAdminToken(BaseModel):
     expires_in: int
     admin_id: int
     username: str
+    is_default_password: bool = False  # 标记是否使用默认密码
+    security_warning: Optional[str] = None  # 安全警告信息
 
 
 class ConfigAdminAuth:
@@ -101,16 +103,16 @@ class ConfigAdminAuth:
             JWT令牌字符串
         """
         if expires_delta:
-            expire = datetime.utcnow() + expires_delta
+            expire = datetime.now(UTC) + expires_delta
         else:
-            expire = datetime.utcnow() + timedelta(days=self.ACCESS_TOKEN_EXPIRE_DAYS)
+            expire = datetime.now(UTC) + timedelta(days=self.ACCESS_TOKEN_EXPIRE_DAYS)
         
         to_encode = {
             "sub": str(admin_id),
             "username": username,
             "type": self.TOKEN_TYPE,
             "exp": expire,
-            "iat": datetime.utcnow()
+            "iat": datetime.now(UTC)
         }
         
         encoded_jwt = jwt.encode(
@@ -288,12 +290,20 @@ class ConfigAdminAuth:
             username=admin.username
         )
         
+        # 检查是否使用默认密码
+        is_default = getattr(admin, 'is_default', False) or admin.username == "admin"
+        security_warning = None
+        if is_default:
+            security_warning = "警告：您正在使用默认密码，请立即修改密码以确保安全！"
+        
         return ConfigAdminToken(
             access_token=access_token,
             token_type="bearer",
             expires_in=self.ACCESS_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             admin_id=admin.id,
-            username=admin.username
+            username=admin.username,
+            is_default_password=is_default,
+            security_warning=security_warning
         )
     
     def logout(self, admin: ConfigAdmin, ip_address: Optional[str] = None) -> None:

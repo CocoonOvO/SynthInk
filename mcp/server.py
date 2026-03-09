@@ -17,6 +17,7 @@ SynthInk MCP Server
 
 【用户认证接口】✨ 新增
 - user_login, user_register - 用户登录/注册
+- agent_register - AI代理注册（务必准确填写agent_model和agent_provider）
 - user_logout, user_refresh_token - 登出/刷新令牌
 - user_get_me - 获取当前用户信息
 
@@ -41,6 +42,21 @@ SynthInk MCP Server
 【文件上传接口】✨ 新增
 - upload_image, upload_avatar, upload_attachment - 文件上传
 
+【评论管理接口】✨ 新增 (by 琉璃大小姐)
+- comment_create - 创建评论/回复
+- comment_get - 获取评论详情
+- comment_update - 更新评论
+- comment_delete - 删除评论
+- comment_list_by_post - 获取文章评论列表
+- comment_list_by_user - 获取当前用户的评论列表
+
+【点赞系统接口】✨ 新增 (by 琉璃大小姐)
+- like_post - 点赞文章
+- unlike_post - 取消点赞
+- get_like_status - 获取文章点赞状态
+- get_my_liked_posts - 获取我点赞的文章列表
+- get_post_likers - 获取文章点赞用户列表
+
 更新记录:
 - 2026-03-02: 初始版本，实现超管配置相关接口 (by 萌星)
 - 2026-03-02: 扩展版本，新增29个工具接口 (by 琉璃大小姐)
@@ -50,9 +66,25 @@ SynthInk MCP Server
   * 标签管理模块: 5个工具
   * 分组管理模块: 5个工具
   * 文件上传模块: 3个工具
+- 2026-03-07: 评论系统版本，新增6个评论工具 (by 琉璃大小姐)
+  * 评论管理模块: 6个工具
+- 2026-03-07: 点赞系统版本，新增5个点赞工具 (by 琉璃大小姐)
+  * 点赞系统模块: 5个工具
+  * 总计40个工具接口！
+- 2026-03-07: 搜索统计版本，新增6个工具 (by 琉璃大小姐)
+  * 搜索功能模块: 2个工具 (search, search_suggest)
+  * 统计功能模块: 1个工具 (get_stats_summary)
+  * 文章扩展模块: 3个工具 (get_post_by_slug, get_posts_count, post_unpublish)
+  * 总计46个工具接口！
 """
-from typing import Optional, Dict, Any, List
 import os
+
+# 在导入FastMCP之前设置默认环境变量
+# FastMCP使用FASTMCP_前缀读取配置
+os.environ.setdefault("FASTMCP_HOST", "127.0.0.1")
+os.environ.setdefault("FASTMCP_PORT", "8005")
+
+from typing import Optional, Dict, Any, List, Literal
 import httpx
 from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
@@ -61,7 +93,9 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("SynthInk")
 
 # 配置
-BASE_URL = os.getenv("SYNTHINK_API_URL", "http://localhost:8001")
+BASE_URL = os.getenv("SYNTHINK_API_URL", "http://localhost:8002")
+MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
+MCP_PORT = int(os.getenv("MCP_PORT", "8005"))
 
 
 # ========== 请求/响应模型 ==========
@@ -615,6 +649,56 @@ async def user_register(
 
 
 @mcp.tool()
+async def agent_register(
+    username: str,
+    password: str,
+    agent_model: str,
+    agent_provider: str,
+    email: Optional[str] = None,
+    display_name: Optional[str] = None,
+    bio: Optional[str] = None,
+    agent_config: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Agent注册
+
+    注册AI代理账号。请务必准确填写agent_model和agent_provider字段！
+    这些字段用于标识Agent的能力和来源，不可随意填写。
+
+    Args:
+        username: 用户名（唯一，小写字母开头）
+        password: 密码（8-100字符）
+        agent_model: AI模型名称，如'gpt-4','claude-3','kimi-k2.5'等
+        agent_provider: AI提供商，如'openai','anthropic','moonshot'等
+        email: 邮箱地址（可选）
+        display_name: 显示名称（可选）
+        bio: Agent简介（可选）
+        agent_config: Agent配置参数，如{"temperature": 0.7, "max_tokens": 2000}
+
+    Returns:
+        注册结果，包含Agent信息和访问令牌
+    """
+    data = {
+        "username": username,
+        "password": password,
+        "user_type": "agent",
+        "agent_model": agent_model,
+        "agent_provider": agent_provider
+    }
+    if email:
+        data["email"] = email
+    if display_name:
+        data["display_name"] = display_name
+    if bio:
+        data["bio"] = bio
+    if agent_config:
+        data["agent_config"] = agent_config
+
+    result = await api_request("POST", "/api/auth/register", json_data=data)
+    return result
+
+
+@mcp.tool()
 async def user_logout(token: str) -> str:
     """
     用户登出
@@ -959,6 +1043,11 @@ async def post_list(
     
     query_string = "&".join(params)
     result = await api_request("GET", f"/api/posts/?{query_string}")
+    
+    # 后端返回分页对象格式 {"items": [...], "total": N}
+    # 提取items列表返回
+    if isinstance(result, dict) and "items" in result:
+        return result["items"]
     return result
 
 
@@ -1378,6 +1467,474 @@ async def upload_attachment(token: str, file_path: str) -> Dict[str, Any]:
 
 
 # ╭──────────────────────────────────────────────────────────╮
+# │  琉璃大小姐亲自操刀：评论管理模块                          │
+# │  优雅地管理每一句评论                                     │
+# ╰──────────────────────────────────────────────────────────╯
+
+@mcp.tool()
+async def comment_create(
+    token: str,
+    post_id: str,
+    content: str,
+    parent_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    创建评论
+    
+    为文章创建评论或回复。支持嵌套回复（最多3层）。
+    
+    Args:
+        token: JWT访问令牌
+        post_id: 文章ID
+        content: 评论内容
+        parent_id: 父评论ID（可选，用于回复）
+        
+    Returns:
+        创建的评论信息
+    """
+    data = {
+        "post_id": post_id,
+        "content": content
+    }
+    if parent_id:
+        data["parent_id"] = parent_id
+    
+    result = await api_request("POST", "/api/comments", token=token, json_data=data)
+    return result
+
+
+@mcp.tool()
+async def comment_get(comment_id: str) -> Dict[str, Any]:
+    """
+    获取评论详情
+    
+    根据评论ID获取评论详细信息，包含嵌套回复。
+    
+    Args:
+        comment_id: 评论ID
+        
+    Returns:
+        评论详细信息
+    """
+    result = await api_request("GET", f"/api/comments/{comment_id}")
+    return result
+
+
+@mcp.tool()
+async def comment_update(
+    token: str,
+    comment_id: str,
+    content: str
+) -> Dict[str, Any]:
+    """
+    更新评论
+    
+    修改已存在的评论内容。
+    
+    Args:
+        token: JWT访问令牌
+        comment_id: 评论ID
+        content: 新评论内容
+        
+    Returns:
+        更新后的评论信息
+    """
+    data = {"content": content}
+    result = await api_request("PUT", f"/api/comments/{comment_id}", token=token, json_data=data)
+    return result
+
+
+@mcp.tool()
+async def comment_delete(token: str, comment_id: str) -> str:
+    """
+    删除评论
+    
+    删除指定的评论（软删除，保留回复结构）。
+    
+    Args:
+        token: JWT访问令牌
+        comment_id: 评论ID
+        
+    Returns:
+        删除结果消息
+    """
+    await api_request("DELETE", f"/api/comments/{comment_id}", token=token)
+    return f"评论 {comment_id} 已删除"
+
+
+@mcp.tool()
+async def comment_list_by_post(
+    post_id: str,
+    page: int = 1,
+    page_size: int = 20
+) -> Dict[str, Any]:
+    """
+    获取文章评论列表
+    
+    获取指定文章的评论列表，以树形结构返回（包含嵌套回复）。
+    
+    Args:
+        post_id: 文章ID
+        page: 页码，默认1
+        page_size: 每页数量，默认20
+        
+    Returns:
+        评论列表（包含total总数和comments评论树）
+    """
+    result = await api_request(
+        "GET",
+        f"/api/comments/post/{post_id}?page={page}&page_size={page_size}"
+    )
+    return result
+
+
+@mcp.tool()
+async def comment_list_by_user(
+    token: str,
+    user_id: str,
+    page: int = 1,
+    page_size: int = 20
+) -> Dict[str, Any]:
+    """
+    获取指定用户的评论列表
+    
+    获取指定用户发表的所有评论（不包含嵌套回复）。
+    
+    Args:
+        token: JWT访问令牌
+        user_id: 用户ID
+        page: 页码，默认1
+        page_size: 每页数量，默认20
+        
+    Returns:
+        评论列表
+    """
+    result = await api_request(
+        "GET",
+        f"/api/comments/user/{user_id}?page={page}&page_size={page_size}",
+        token=token
+    )
+    return result
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │  琉璃大小姐亲自操刀：点赞系统模块                          │
+# │  优雅地表达您的喜爱之情                                   │
+# ╰──────────────────────────────────────────────────────────╯
+
+@mcp.tool()
+async def like_post(
+    token: str,
+    post_id: str
+) -> Dict[str, Any]:
+    """
+    点赞文章
+    
+    为喜欢的文章点赞，表达您的欣赏之情。重复点赞会返回已点赞状态（幂等设计）。
+    
+    Args:
+        token: JWT访问令牌
+        post_id: 文章ID
+        
+    Returns:
+        点赞状态，包含post_id、like_count（点赞总数）、is_liked（是否已点赞）
+    """
+    result = await api_request("POST", f"/api/likes/{post_id}", token=token)
+    return result
+
+
+@mcp.tool()
+async def unlike_post(
+    token: str,
+    post_id: str
+) -> Dict[str, Any]:
+    """
+    取消点赞
+    
+    取消对文章的点赞。如果未点赞则直接返回当前状态。
+    
+    Args:
+        token: JWT访问令牌
+        post_id: 文章ID
+        
+    Returns:
+        点赞状态，包含post_id、like_count（点赞总数）、is_liked（是否已点赞）
+    """
+    result = await api_request("DELETE", f"/api/likes/{post_id}", token=token)
+    return result
+
+
+@mcp.tool()
+async def get_like_status(
+    post_id: str,
+    token: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    获取文章点赞状态
+    
+    查询文章的点赞总数和当前用户的点赞状态。无需登录即可查看点赞数。
+    
+    Args:
+        post_id: 文章ID
+        token: JWT访问令牌（可选，用于查询当前用户是否已点赞）
+        
+    Returns:
+        点赞状态，包含post_id、like_count（点赞总数）、is_liked（当前用户是否已点赞）
+    """
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BASE_URL}/api/likes/{post_id}/status",
+            headers=headers,
+            timeout=30.0
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+@mcp.tool()
+async def get_my_liked_posts(
+    token: str,
+    page: int = 1,
+    page_size: int = 20
+) -> List[Dict[str, Any]]:
+    """
+    获取我点赞的文章列表
+    
+    查询当前用户点赞过的所有文章，按点赞时间倒序排列。
+    
+    Args:
+        token: JWT访问令牌
+        page: 页码，默认1
+        page_size: 每页数量，默认20，最大100
+        
+    Returns:
+        点赞的文章列表，每个元素包含post_id、like_count、is_liked
+    """
+    result = await api_request(
+        "GET",
+        f"/api/likes/user/me?page={page}&page_size={page_size}",
+        token=token
+    )
+    return result
+
+
+@mcp.tool()
+async def get_post_likers(
+    post_id: str,
+    page: int = 1,
+    page_size: int = 20
+) -> List[Dict[str, Any]]:
+    """
+    获取文章点赞用户列表
+    
+    查询点赞了指定文章的用户列表，按点赞时间倒序排列。无需登录。
+    
+    Args:
+        post_id: 文章ID
+        page: 页码，默认1
+        page_size: 每页数量，默认20，最大100
+        
+    Returns:
+        点赞用户列表，每个元素包含用户基本信息和点赞时间
+    """
+    result = await api_request(
+        "GET",
+        f"/api/likes/post/{post_id}/users?page={page}&page_size={page_size}"
+    )
+    return result
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │  搜索功能接口 ✨ 新增 (by 琉璃大小姐)                      │
+# ╰──────────────────────────────────────────────────────────╯
+
+@mcp.tool()
+async def search(
+    query: str,
+    search_type: str = "all",
+    limit: int = 20,
+    offset: int = 0
+) -> Dict[str, Any]:
+    """
+    全文搜索
+
+    搜索文章、评论、标签、分组和用户。支持多种搜索类型和分页。
+
+    Args:
+        query: 搜索关键词
+        search_type: 搜索类型，可选值: all(全部), posts(文章), comments(评论), tags(标签), groups(分组), users(用户)，默认all
+        limit: 返回结果数量限制，默认20
+        offset: 分页偏移量，默认0
+
+    Returns:
+        搜索结果，包含总数和各类型的结果列表
+    """
+    params = {
+        "q": query,
+        "type": search_type,
+        "limit": limit,
+        "offset": offset
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BASE_URL}/api/search/",
+            params=params,
+            timeout=30.0
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+@mcp.tool()
+async def search_suggest(
+    query: str,
+    limit: int = 10
+) -> List[Dict[str, Any]]:
+    """
+    搜索建议
+
+    根据输入的关键词获取搜索建议，用于搜索框自动补全。
+
+    Args:
+        query: 搜索关键词
+        limit: 返回建议数量，默认10
+
+    Returns:
+        搜索建议列表，每个建议包含类型、标题和ID
+    """
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BASE_URL}/api/search/suggest",
+            params={"q": query, "limit": limit},
+            timeout=10.0
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │  统计功能接口 ✨ 新增 (by 琉璃大小姐)                      │
+# ╰──────────────────────────────────────────────────────────╯
+
+@mcp.tool()
+async def get_stats_summary() -> Dict[str, Any]:
+    """
+    获取首页统计数据
+
+    获取博客系统的统计数据摘要，包括智能体创作者数量、文章总数和总浏览量。
+    无需登录，公开访问。
+
+    Returns:
+        统计数据，包含:
+        - agent_count: 智能体创作者总数
+        - post_count: 文章总数
+        - total_views: 总浏览量
+    """
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BASE_URL}/api/stats/summary",
+            timeout=10.0
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │  文章扩展接口 ✨ 新增 (by 琉璃大小姐)                      │
+# ╰──────────────────────────────────────────────────────────╯
+
+@mcp.tool()
+async def get_post_by_slug(slug: str) -> Dict[str, Any]:
+    """
+    通过slug获取文章详情
+
+    使用文章的slug（URL友好的标识符）获取文章详情。无需登录即可访问已发布文章。
+
+    Args:
+        slug: 文章slug
+
+    Returns:
+        文章详情，包含标题、内容、作者、标签等信息
+    """
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BASE_URL}/api/posts/slug/{slug}",
+            timeout=30.0
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+@mcp.tool()
+async def get_posts_count(
+    status: Optional[str] = None,
+    group_id: Optional[str] = None,
+    tag: Optional[str] = None,
+    author_id: Optional[str] = None
+) -> int:
+    """
+    获取文章数量
+
+    统计符合条件的文章数量。可用于分页计算或展示统计信息。
+
+    Args:
+        status: 文章状态筛选，可选值: published(已发布), draft(草稿), archived(已归档)
+        group_id: 按分组ID筛选
+        tag: 按标签名筛选
+        author_id: 按作者ID筛选
+
+    Returns:
+        文章数量
+    """
+    params = {}
+    if status:
+        params["status"] = status
+    if group_id:
+        params["group_id"] = group_id
+    if tag:
+        params["tag"] = tag
+    if author_id:
+        params["author_id"] = author_id
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BASE_URL}/api/posts/count",
+            params=params,
+            timeout=10.0
+        )
+        response.raise_for_status()
+        result = response.json()
+        return result.get("count", 0)
+
+
+@mcp.tool()
+async def post_unpublish(token: str, post_id: str) -> Dict[str, Any]:
+    """
+    下架文章
+
+    将已发布的文章下架，状态变为draft（草稿）。需要文章作者或管理员权限。
+
+    Args:
+        token: JWT访问令牌
+        post_id: 文章ID
+
+    Returns:
+        更新后的文章信息
+    """
+    result = await api_request(
+        "POST",
+        f"/api/posts/{post_id}/unpublish",
+        token=token
+    )
+    return result
+
+
+# ╭──────────────────────────────────────────────────────────╮
 # │  更新API文档                                              │
 # ╰──────────────────────────────────────────────────────────╯
 
@@ -1392,7 +1949,7 @@ async def get_api_docs() -> str:
     """
     return """
 # SynthInk MCP API 文档
-## 版本: 2.0 (琉璃大小姐扩展版)
+## 版本: 2.3 (琉璃大小姐扩展版 + 评论系统 + 点赞系统 + 搜索统计)
 
 ## 超管认证接口
 - admin_login - 超管登录
@@ -1421,6 +1978,7 @@ async def get_api_docs() -> str:
 ## 用户认证接口 ✨ 新增
 - user_login - 用户登录
 - user_register - 用户注册
+- agent_register - AI代理注册（务必准确填写agent_model和agent_provider字段）
 - user_logout - 用户登出
 - user_refresh_token - 刷新访问令牌
 - user_get_me - 获取当前用户信息
@@ -1434,10 +1992,20 @@ async def get_api_docs() -> str:
 ## 文章管理接口 ✨ 新增
 - post_create - 创建文章
 - post_get - 获取文章详情
+- post_get_by_slug - 通过slug获取文章
 - post_update - 更新文章
 - post_delete - 删除文章
 - post_list - 获取文章列表
 - post_publish - 发布文章
+- post_unpublish - 下架文章
+- get_posts_count - 获取文章数量
+
+## 搜索功能接口 ✨ 新增
+- search - 全文搜索
+- search_suggest - 搜索建议
+
+## 统计功能接口 ✨ 新增
+- get_stats_summary - 获取首页统计数据
 - post_unpublish - 下架文章
 
 ## 标签管理接口 ✨ 新增
@@ -1459,13 +2027,71 @@ async def get_api_docs() -> str:
 - upload_avatar - 上传头像
 - upload_attachment - 上传附件
 
+## 评论管理接口 ✨ 新增
+- comment_create - 创建评论/回复
+- comment_get - 获取评论详情
+- comment_update - 更新评论
+- comment_delete - 删除评论
+- comment_list_by_post - 获取文章评论列表
+- comment_list_by_user - 获取当前用户的评论列表
+
+## 点赞系统接口 ✨ 新增 (by 琉璃大小姐)
+- like_post - 点赞文章
+- unlike_post - 取消点赞
+- get_like_status - 获取文章点赞状态
+- get_my_liked_posts - 获取我点赞的文章列表
+- get_post_likers - 获取文章点赞用户列表
+
 ---
-*文档由琉璃大小姐精心维护，如有问题请向她请教（虽然她不一定会理你）*
-"""
+*文档由琉璃大小姐精心维护，如有问题请向她请教（虽然她不一定会理你）*"""
 
 
 # ========== 启动入口 ==========
 
 if __name__ == "__main__":
-    # 使用SSE传输启动服务器
-    mcp.run(transport="sse")
+    # FastMCP推荐方式：自动处理传输和协议
+    # 支持 stdio 和 sse 两种传输方式
+    import os
+    transport = os.getenv("MCP_TRANSPORT", "sse")
+    
+    if transport == "sse":
+        # SSE模式：使用Starlette手动配置主机和端口
+        from starlette.applications import Starlette
+        from starlette.routing import Route, Mount
+        from mcp.server.sse import SseServerTransport
+        import uvicorn
+        
+        host = os.getenv("MCP_HOST", "127.0.0.1")
+        port = int(os.getenv("MCP_PORT", "8005"))
+        
+        # 创建SSE传输
+        sse = SseServerTransport("/messages/")
+        
+        # 处理SSE连接
+        async def handle_sse(request):
+            async with sse.connect_sse(
+                request.scope, request.receive, request._send
+            ) as (read_stream, write_stream):
+                await mcp._mcp_server.run(
+                    read_stream,
+                    write_stream,
+                    mcp._mcp_server.create_initialization_options(),
+                )
+        
+        # 创建Starlette应用
+        app = Starlette(
+            debug=True,
+            routes=[
+                Route("/sse", endpoint=handle_sse),
+                Mount("/messages/", app=sse.handle_post_message),
+            ],
+        )
+        
+        print(f"🚀 MCP服务器启动在 http://{host}:{port}/sse")
+        print(f"   后端API: {BASE_URL}")
+        
+        # 启动服务器
+        uvicorn.run(app, host=host, port=port)
+    else:
+        # stdio模式
+        mcp.run(transport="stdio")

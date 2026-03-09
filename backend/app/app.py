@@ -50,25 +50,26 @@ async def lifespan(app: FastAPI):
             # 获取数据库配置并创建适配器实例
             db_config = config_db_manager.get_active_database_config()
             if db_config:
-                from .adapter.postgres_adapter import PostgresAdapter
                 from .db_manager import db_manager
                 
-                # 传递schema参数
-                schema = getattr(db_config, 'schema', 'public') or 'public'
-                postgres_adapter = PostgresAdapter(
+                # 使用 db_manager 初始化业务数据库
+                await db_manager.init_biz_db(
                     db_config.get_connection_string(),
-                    schema=schema
+                    schema=getattr(db_config, 'db_schema', 'public') or 'public'
                 )
-                await postgres_adapter.connect()
-                
-                # 将适配器实例存储到 app.state 和 db_manager
-                app.state.postgres_adapter = postgres_adapter
-                db_manager._postgres_adapter = postgres_adapter
                 
                 # 更新连接状态
                 config_db_manager.update_database_connection_status(
                     db_config.id, is_connected=True
                 )
+                
+                # 3. 初始化SEO表结构
+                try:
+                    from .seo.factory import init_seo_tables
+                    await init_seo_tables(db_manager.db)
+                    logger.info("SEO表结构初始化完成")
+                except Exception as e:
+                    logger.warning(f"SEO表结构初始化失败: {e}")
                 
                 logger.info("业务数据库连接成功")
         except Exception as e:
@@ -82,14 +83,9 @@ async def lifespan(app: FastAPI):
     
     yield
     
-    # 关闭时清理
+    # 关闭时清理 - 统一使用 db_manager 关闭所有连接
     from .db_manager import db_manager
-    
-    postgres_adapter = getattr(app.state, "postgres_adapter", None)
-    if postgres_adapter is not None:
-        await postgres_adapter.disconnect()
-        app.state.postgres_adapter = None
-        db_manager._postgres_adapter = None
+    await db_manager.close()
     logger.info("应用关闭，资源已清理")
 
 
@@ -120,7 +116,15 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
+    # 配置SEO中间件（在CORS之后，限流之前）
+    from .seo.middleware import SEOInterceptor
+    from .seo.config import get_seo_settings
+    seo_settings = get_seo_settings()
+    if seo_settings.SEO_ENABLED:
+        app.add_middleware(SEOInterceptor)
+        logger.info("SEO中间件已启用")
+
     # 配置限流
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)

@@ -26,37 +26,48 @@ async def list_tags(
     
     - 按使用数量排序
     """
-    result = await db_manager.postgres.find(
-        "tags",
-        limit=limit,
-        offset=skip,
-        sort_by="post_count",
-        sort_desc=True
-    )
+    # 检查数据库是否已初始化
+    try:
+        _ = db_manager.db
+    except RuntimeError:
+        # 数据库未初始化，返回空列表
+        return []
     
-    if not result.get("success"):
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="获取标签列表失败"
+    try:
+        result = await db_manager.db.find(
+            "tags",
+            limit=limit,
+            offset=skip,
+            sort_by="post_count",
+            sort_desc=True
         )
-    
-    tags_data = result.get("data", [])
-    return [Tag(**tag_data) for tag_data in tags_data]
+        
+        if not result.get("success"):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="获取标签列表失败"
+            )
+        
+        tags_data = result.get("data", [])
+        return [Tag(**tag_data) for tag_data in tags_data]
+    except Exception as e:
+        # 数据库操作异常，返回空列表
+        return []
 
 
 @router.post("/", response_model=Tag, summary="创建标签", status_code=status.HTTP_201_CREATED)
 async def create_tag(
     tag: TagCreate,
-    current_user: Annotated[User, Depends(get_current_active_superuser)]
+    current_user: Annotated[User, Depends(get_current_active_user)]
 ) -> Tag:
     """
     创建新标签
-    
-    - 管理员权限
+
+    - 需要登录
     - 标签名不能重复
     """
     # 检查标签名是否已存在
-    existing_result = await db_manager.postgres.find(
+    existing_result = await db_manager.db.find(
         "tags",
         filters={"name": tag.name},
         limit=1
@@ -75,7 +86,7 @@ async def create_tag(
     tag_data["created_at"] = datetime.utcnow()
     
     # 创建标签
-    result = await db_manager.postgres.insert("tags", tag_data)
+    result = await db_manager.db.insert("tags", tag_data)
     
     if not result.get("success"):
         raise HTTPException(
@@ -93,7 +104,7 @@ async def get_tag(
     """
     获取指定标签的详细信息
     """
-    result = await db_manager.postgres.get("tags", tag_id)
+    result = await db_manager.db.get("tags", tag_id)
     
     if not result.get("success"):
         raise HTTPException(
@@ -116,7 +127,7 @@ async def update_tag(
     - 管理员权限
     """
     # 检查标签是否存在
-    existing_result = await db_manager.postgres.get("tags", tag_id)
+    existing_result = await db_manager.db.get("tags", tag_id)
     if not existing_result.get("success"):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -126,7 +137,7 @@ async def update_tag(
     # 如果修改了标签名，检查是否与其他标签冲突
     existing_tag = existing_result["data"]
     if tag_update.name != existing_tag["name"]:
-        name_check = await db_manager.postgres.find(
+        name_check = await db_manager.db.find(
             "tags",
             filters={"name": tag_update.name},
             limit=1
@@ -141,7 +152,7 @@ async def update_tag(
     update_data = tag_update.model_dump()
     
     # 更新标签
-    result = await db_manager.postgres.update("tags", tag_id, update_data)
+    result = await db_manager.db.update("tags", tag_id, update_data)
     
     if not result.get("success"):
         raise HTTPException(
@@ -150,7 +161,7 @@ async def update_tag(
         )
     
     # 获取更新后的标签
-    updated_result = await db_manager.postgres.get("tags", tag_id)
+    updated_result = await db_manager.db.get("tags", tag_id)
     return Tag(**updated_result["data"])
 
 
@@ -166,7 +177,7 @@ async def delete_tag(
     - 删除后相关文章的标签关联也会被移除
     """
     # 检查标签是否存在
-    existing_result = await db_manager.postgres.get("tags", tag_id)
+    existing_result = await db_manager.db.get("tags", tag_id)
     if not existing_result.get("success"):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -174,7 +185,7 @@ async def delete_tag(
         )
     
     # 删除标签（关联的文章标签关联会自动删除）
-    result = await db_manager.postgres.delete("tags", tag_id)
+    result = await db_manager.db.delete("tags", tag_id)
     
     if not result.get("success"):
         raise HTTPException(

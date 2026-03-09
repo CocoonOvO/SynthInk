@@ -1,0 +1,261 @@
+/**
+ * Milkdown 基础样式
+ * 映射项目主题变量
+ */
+
+/* 编辑器容器 */
+.milkdown {
+  /* 基础颜色映射 */
+  --milkdown-bg: var(--bg-primary);
+  --milkdown-text: var(--text-primary);
+  --milkdown-text-secondary: var(--text-secondary);
+  --milkdown-accent: var(--accent-primary);
+  --milkdown-accent-secondary: var(--accent-secondary);
+  
+  /* 代码块 */
+  --code-bg: var(--bg-secondary);
+  --code-border: var(--border-subtle);
+  --code-glow: var(--glow-primary);
+  
+  /* 引用块 */
+  --quote-border: var(--accent-primary);
+  --quote-bg: var(--glow-primary);
+  
+  /* 表格 */
+  --table-border: var(--border-subtle);
+  --table-header-bg: var(--bg-secondary);
+  
+  /* 链接 */
+  --link-color: var(--accent-primary);
+  --link-hover: var(--accent-secondary);
+  
+  /* 列表 */
+  --list-marker: var(--accent-primary);
+  
+  /* 字体 */
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+  
+  background: var(--milkdown-bg) !important;
+  color: var(--milkdown-text) !important;
+  font-family: var(--font-body);
+}
+
+/* 编辑器内容区 */
+.milkdown .editor {
+  padding: 0;
+  min-height: 100%;
+}
+
+/* 段落 */
+.milkdown p {
+  margin: 0.75em 0;
+  line-height: 1.8;
+  color: var(--milkdown-text);
+}
+
+/* 标题系统 */
+.milkdown h1,
+.milkdown h2,
+.milkdown h3,
+.milkdown h4,
+.milkdown h5,
+.milkdown h6 {
+  margin: 1.5em 0 0.75em;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--milkdown-text);
+  position: relative;
+}
+
+.milkdown h1 {
+  font-size: 1.8em;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 0.3em;
+}
+
+.milkdown h2 {
+  font-size: 1.5em;
+}
+
+.milkdown h3 {
+  font-size: 1.25em;
+}
+
+.milkdown h4 {
+  font-size: 1.1em;
+}
+
+/* 粗体和斜体 */
+.milkdown strong {
+  color: var(--milkdown-accent);
+  font-weight: 600;
+}
+
+.milkdown em {
+  color: var(--milkdown-accent-secondary);
+  font-style: italic;
+}
+
+/* 删除线 */
+.milkdown del {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+  text-decoration-color: var(--milkdown-accent);
+}
+
+/* 行内代码 */
+.milkdown code {
+  background: var(--code-bg);
+  color: var(--milkdown-accent);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  border: 1px solid var(--code-border);
+}
+
+/* 代码块 */
+.milkdown pre {
+  background: var(--code-bg) !important;
+  border: 1px solid var(--code-border);
+  border-radius: var(--card-radius);
+  padding: 1em;
+  margin: 1em 0;
+  overflow-x: auto;
+  position: relative;
+}
+
+.milkdown pre code {
+  background: transparent !important;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: 0.85em;
+  line-height: 1.6;
+}
+
+/* 引用块 */
+.milkdown blockquote {
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  border-left: 3px solid var(--quote-border);
+  background: linear-gradient(90deg, var(--quote-bg), transparent);
+  color: var(--milkdown-text-secondary);
+  font-style: italic;
+}
+
+.milkdown blockquote p {
+  margin: 0.5em 0;
+}
+
+/* 链接 */
+.milkdown a {
+  color: var(--link-color);
+  text-decoration: none;
+  position: relative;
+  transition: color var(--transition-fast);
+}
+
+.milkdown a:hover {
+  color: var(--link-hover);
+}
+
+/* 列表 */
+.milkdown ul,
+.milkdown ol {
+  margin: 0.75em 0;
+  padding-left: 1.5em;
+}
+
+.milkdown li {
+  margin: 0.25em 0;
+  color: var(--milkdown-text);
+}
+
+.milkdown ul li::marker {
+  color: var(--list-marker);
+}
+
+.milkdown ol li::marker {
+  color: var(--list-marker);
+  font-weight: 600;
+}
+
+/* 任务列表 */
+.milkdown li[data-type="taskItem"] {
+  list-style: none;
+  position: relative;
+}
+
+.milkdown li[data-type="taskItem"] input[type="checkbox"] {
+  position: absolute;
+  left: -1.5em;
+  top: 0.3em;
+  width: 1em;
+  height: 1em;
+  accent-color: var(--milkdown-accent);
+  cursor: pointer;
+}
+
+/* 表格 */
+.milkdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.9em;
+}
+
+.milkdown th,
+.milkdown td {
+  padding: 0.6em 0.8em;
+  border: 1px solid var(--table-border);
+  text-align: left;
+}
+
+.milkdown th {
+  background: var(--table-header-bg);
+  font-weight: 600;
+  color: var(--milkdown-accent);
+}
+
+.milkdown tr:nth-child(even) {
+  background: var(--bg-card);
+}
+
+/* 水平线 */
+.milkdown hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--border-subtle),
+    transparent
+  );
+  margin: 2em 0;
+}
+
+/* 图片 */
+.milkdown img {
+  max-width: 100%;
+  border-radius: var(--card-radius);
+  border: 1px solid var(--border-subtle);
+}
+
+/* 焦点状态 */
+.milkdown .ProseMirror:focus {
+  outline: none;
+}
+
+/* 选中状态 */
+.milkdown .ProseMirror-selectednode {
+  outline: 2px solid var(--milkdown-accent);
+  outline-offset: 2px;
+}
+
+/* 占位符 */
+.milkdown .ProseMirror-placeholder {
+  color: var(--text-tertiary);
+  pointer-events: none;
+}

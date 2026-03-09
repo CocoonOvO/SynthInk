@@ -2,12 +2,12 @@
 用户路由模块
 处理用户信息的查询和更新
 """
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..db_manager import db_manager
 from ..models.user import User, UserUpdate
-from .auth import get_current_active_user, get_current_active_superuser
+from .auth import get_current_active_user, get_current_active_superuser, get_current_user_optional
 
 router = APIRouter()
 
@@ -43,7 +43,7 @@ async def update_user_me(
         )
     
     # 更新用户信息
-    result = await db_manager.postgres.update(
+    result = await db_manager.db.update(
         "users",
         current_user.id,
         update_data
@@ -56,7 +56,7 @@ async def update_user_me(
         )
     
     # 获取更新后的用户信息
-    user_result = await db_manager.postgres.get("users", current_user.id)
+    user_result = await db_manager.db.get("users", current_user.id)
     if not user_result.get("success"):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -66,36 +66,88 @@ async def update_user_me(
     return User(**user_result["data"])
 
 
-@router.get("/{user_id}", response_model=User, summary="获取指定用户信息")
-async def read_user(
-    user_id: str,
-    current_user: Annotated[User, Depends(get_current_active_user)]
-) -> User:
-    """
-    获取指定用户的公开信息
-    
-    - 普通用户只能查看基本信息
-    - 管理员可以查看更多信息
-    """
-    # 获取用户信息
-    result = await db_manager.postgres.get("users", user_id)
-    
-    if not result.get("success"):
+async def _get_user_by_id(user_id: str) -> dict:
+    """通过ID获取用户数据"""
+    result = await db_manager.db.get("users", user_id)
+    if not result.get("success") or not result.get("data"):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="用户不存在"
         )
+    return result["data"]
+
+
+async def _get_user_by_username(username: str) -> dict:
+    """通过用户名获取用户数据"""
+    result = await db_manager.db.find(
+        "users",
+        filters={"username": username},
+        limit=1
+    )
+    if not result.get("success") or not result.get("data") or len(result["data"]) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="用户不存在"
+        )
+    return result["data"][0]
+
+
+def _sanitize_user_data(user_data: dict) -> dict:
+    """移除敏感字段"""
+    user_data.pop("email", None)
+    user_data.pop("is_active", None)
+    user_data.pop("is_superuser", None)
+    return user_data
+
+
+@router.get("/by-username/{username}", response_model=User, summary="通过用户名获取用户信息")
+async def read_user_by_username(
+    username: str,
+    current_user: Annotated[Optional[User], Depends(get_current_user_optional)] = None
+) -> User:
+    """
+    通过用户名获取指定用户的公开信息
     
-    user_data = result["data"]
+    - 公开接口，无需登录即可访问
+    - 返回用户的基本公开信息
+    - 敏感字段（邮箱、状态等）已过滤
+    """
+    try:
+        user_data = await _get_user_by_username(username)
+        user_data = _sanitize_user_data(user_data)
+        return User(**user_data)
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="用户不存在"
+        )
+
+
+@router.get("/{user_id}", response_model=User, summary="获取指定用户信息")
+async def read_user(
+    user_id: str,
+    current_user: Annotated[Optional[User], Depends(get_current_user_optional)] = None
+) -> User:
+    """
+    获取指定用户的公开信息
     
-    # 如果不是管理员且不是查看自己，则只返回公开信息
-    if not current_user.is_superuser and current_user.id != user_id:
-        # 移除敏感字段
-        user_data.pop("email", None)
-        user_data.pop("is_active", None)
-        user_data.pop("is_superuser", None)
-    
-    return User(**user_data)
+    - 公开接口，无需登录即可访问
+    - 返回用户的基本公开信息
+    - 敏感字段（邮箱、状态等）已过滤
+    """
+    try:
+        user_data = await _get_user_by_id(user_id)
+        user_data = _sanitize_user_data(user_data)
+        return User(**user_data)
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="用户不存在"
+        )
 
 
 @router.get("/", response_model=List[User], summary="获取用户列表")
@@ -110,7 +162,7 @@ async def list_users(
     - 支持分页
     - 仅管理员可访问
     """
-    result = await db_manager.postgres.find(
+    result = await db_manager.db.find(
         "users",
         limit=limit,
         offset=skip,
@@ -147,7 +199,7 @@ async def delete_user(
         )
     
     # 检查用户是否存在
-    user_result = await db_manager.postgres.get("users", user_id)
+    user_result = await db_manager.db.get("users", user_id)
     if not user_result.get("success"):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -155,7 +207,7 @@ async def delete_user(
         )
     
     # 删除用户
-    result = await db_manager.postgres.delete("users", user_id)
+    result = await db_manager.db.delete("users", user_id)
     
     if not result.get("success"):
         raise HTTPException(

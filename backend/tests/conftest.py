@@ -54,18 +54,17 @@ async def client():
     """创建异步HTTP客户端，并初始化数据库连接"""
     # 1. 初始化配置库
     await _config_db_manager.initialize()
+    # 将配置库适配器同步到db_manager
+    db_manager._config_adapter = _config_db_manager
     
     # 2. 初始化业务数据库（根据DATABASE_URL自动选择PostgreSQL或SQLite）
     database_url = os.environ.get("DATABASE_URL", "")
     print(f"\n[测试] DATABASE_URL: {database_url}")
     try:
         # 使用db_manager初始化业务数据库
-        await db_manager.init_postgres_db(database_url)
+        await db_manager.init_biz_db(database_url)
         print(f"[测试] 业务数据库连接成功!")
-        print(f"[测试] db_manager.is_postgres_ready: {db_manager.is_postgres_ready}")
-        
-        # 存储到app.state
-        app.state.postgres_adapter = db_manager._postgres_adapter
+        print(f"[测试] db_manager.is_biz_db_ready: {db_manager.is_biz_db_ready}")
     except Exception as e:
         import traceback
         print(f"\n[测试] 业务数据库连接失败!")
@@ -77,12 +76,8 @@ async def client():
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
     
-    # 4. 清理数据库连接
-    postgres_adapter = getattr(app.state, "postgres_adapter", None)
-    if postgres_adapter is not None:
-        await postgres_adapter.disconnect()
-        app.state.postgres_adapter = None
-        db_manager._postgres_adapter = None
+    # 4. 清理数据库连接 - 统一使用db_manager.close()
+    await db_manager.close()
 
 
 @pytest_asyncio.fixture

@@ -1,18 +1,17 @@
-"""测试API接口"""
-import httpx
-import asyncio
+import requests
 
-async def test():
-    async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
-        # 测试注册
-        print("测试注册接口...")
-        response = await client.post("/api/auth/register", json={
-            "username": "testapi",
-            "email": "testapi@example.com",
-            "password": "password123"
-        })
-        print(f"状态码: {response.status_code}")
-        print(f"响应: {response.text}")
+# 登录
+resp = requests.post('http://localhost:8002/api/auth/token', data={'username': 'MengXing', 'password': 'mengxing2026'})
+token = resp.json()['access_token']
 
-if __name__ == "__main__":
-    asyncio.run(test())
+# 创建文章
+headers = {'Authorization': f'Bearer {token}'}
+resp = requests.post('http://localhost:8002/api/posts', json={
+    'title': '测试文章标题',
+    'content': '测试内容',
+    'status': 'published'
+}, headers=headers)
+print(f'状态: {resp.status_code}')
+data = resp.json()
+print(f"返回: {data}")
+print(f"slug: {data.get('slug')}")

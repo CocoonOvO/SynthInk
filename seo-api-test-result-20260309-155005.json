@@ -1,0 +1,109 @@
+{
+  "test_time": "2026-03-09T15:50:05.103874",
+  "base_url": "http://localhost:8002/api",
+  "total": 10,
+  "passed": 4,
+  "failed": 6,
+  "results": [
+    {
+      "module": "SEO",
+      "case_id": "META-CREATE",
+      "case_name": "创建SEO元数据",
+      "expected": "状态码201",
+      "actual": "状态码500",
+      "status_code": 500,
+      "passed": false,
+      "timestamp": "2026-03-09T15:49:42.610296"
+    },
+    {
+      "module": "SEO",
+      "case_id": "META-LIST",
+      "case_name": "获取SEO元数据列表",
+      "expected": "状态码200",
+      "actual": "状态码200",
+      "status_code": 200,
+      "passed": true,
+      "timestamp": "2026-03-09T15:49:44.661677"
+    },
+    {
+      "module": "SEO",
+      "case_id": "META-GET",
+      "case_name": "获取指定SEO元数据",
+      "expected": "状态码200",
+      "actual": "状态码404",
+      "status_code": 404,
+      "passed": false,
+      "timestamp": "2026-03-09T15:49:46.696513"
+    },
+    {
+      "module": "SEO",
+      "case_id": "META-UPDATE",
+      "case_name": "更新SEO元数据",
+      "expected": "状态码200",
+      "actual": "状态码404",
+      "status_code": 404,
+      "passed": false,
+      "timestamp": "2026-03-09T15:49:48.743564"
+    },
+    {
+      "module": "SEO",
+      "case_id": "META-SEARCH",
+      "case_name": "搜索SEO元数据",
+      "expected": "状态码200",
+      "actual": "状态码200",
+      "status_code": 200,
+      "passed": true,
+      "timestamp": "2026-03-09T15:49:50.784565"
+    },
+    {
+      "module": "SEO",
+      "case_id": "REDIRECT-CREATE",
+      "case_name": "创建重定向规则",
+      "expected": "状态码201",
+      "actual": "状态码500",
+      "status_code": 500,
+      "passed": false,
+      "timestamp": "2026-03-09T15:49:52.826966"
+    },
+    {
+      "module": "SEO",
+      "case_id": "REDIRECT-LIST",
+      "case_name": "获取重定向规则列表",
+      "expected": "状态码200",
+      "actual": "状态码200",
+      "status_code": 200,
+      "passed": true,
+      "timestamp": "2026-03-09T15:49:54.909683"
+    },
+    {
+      "module": "SEO",
+      "case_id": "REDIRECT-GET",
+      "case_name": "获取指定重定向规则",
+      "expected": "状态码200",
+      "actual": "状态码404",
+      "status_code": 404,
+      "passed": false,
+      "timestamp": "2026-03-09T15:49:56.961256"
+    },
+    {
+      "module": "SEO",
+      "case_id": "REDIRECT-UPDATE",
+      "case_name": "更新重定向规则",
+      "expected": "状态码200",
+      "actual": "状态码404",
+      "status_code": 404,
+      "passed": false,
+      "timestamp": "2026-03-09T15:49:58.990245"
+    },
+    {
+      "module": "SEO",
+      "case_id": "STATS-GET",
+      "case_name": "获取SEO统计",
+      "expected": "状态码200",
+      "actual": "状态码200",
+      "status_code": 200,
+      "passed": true,
+      "timestamp": "2026-03-09T15:50:01.038638"
+    }
+  ]
+}

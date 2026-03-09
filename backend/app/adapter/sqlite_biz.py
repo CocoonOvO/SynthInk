@@ -391,3 +391,102 @@ class SQLiteBizAdapter(BaseAdapter):
             WHERE pt.tag_id = ?
         """
         return await self._fetch(query, tag_id)
+
+    async def search(
+        self,
+        query: str,
+        search_type: str = "all",
+        limit: int = 20,
+        offset: int = 0
+    ) -> dict[str, Any]:
+        """
+        全文搜索（SQLite简化实现）
+        
+        Args:
+            query: 搜索关键词
+            search_type: 搜索类型 (all/posts/tags/users/groups/comments)
+            limit: 返回数量
+            offset: 偏移量
+            
+        Returns:
+            搜索结果字典
+        """
+        results = []
+        total = 0
+        
+        # 简单的LIKE搜索实现
+        search_pattern = f"%{query}%"
+        
+        if search_type in ["all", "posts"]:
+            # 搜索文章标题和内容
+            sql = """
+                SELECT id, title as name, content as description, 'post' as type,
+                       author_id, created_at, updated_at
+                FROM posts
+                WHERE title LIKE ? OR content LIKE ?
+                LIMIT ? OFFSET ?
+            """
+            posts = await self._fetch(sql, search_pattern, search_pattern, limit, offset)
+            results.extend(posts)
+            
+            # 计算总数
+            count_sql = "SELECT COUNT(*) as count FROM posts WHERE title LIKE ? OR content LIKE ?"
+            count_result = await self._fetch(count_sql, search_pattern, search_pattern)
+            total += count_result[0].get("count", 0) if count_result else 0
+        
+        if search_type in ["all", "tags"]:
+            # 搜索标签
+            sql = """
+                SELECT id, name, description, 'tag' as type,
+                       created_at, updated_at
+                FROM tags
+                WHERE name LIKE ? OR description LIKE ?
+                LIMIT ? OFFSET ?
+            """
+            tags = await self._fetch(sql, search_pattern, search_pattern, limit, offset)
+            results.extend(tags)
+            
+            count_sql = "SELECT COUNT(*) as count FROM tags WHERE name LIKE ? OR description LIKE ?"
+            count_result = await self._fetch(count_sql, search_pattern, search_pattern)
+            total += count_result[0].get("count", 0) if count_result else 0
+        
+        if search_type in ["all", "users"]:
+            # 搜索用户
+            sql = """
+                SELECT id, username as name, bio as description, 'user' as type,
+                       created_at, updated_at
+                FROM users
+                WHERE username LIKE ? OR bio LIKE ?
+                LIMIT ? OFFSET ?
+            """
+            users = await self._fetch(sql, search_pattern, search_pattern, limit, offset)
+            results.extend(users)
+            
+            count_sql = "SELECT COUNT(*) as count FROM users WHERE username LIKE ? OR bio LIKE ?"
+            count_result = await self._fetch(count_sql, search_pattern, search_pattern)
+            total += count_result[0].get("count", 0) if count_result else 0
+        
+        if search_type in ["all", "groups"]:
+            # 搜索分组
+            sql = """
+                SELECT id, name, description, 'group' as type,
+                       created_at, updated_at
+                FROM groups
+                WHERE name LIKE ? OR description LIKE ?
+                LIMIT ? OFFSET ?
+            """
+            groups = await self._fetch(sql, search_pattern, search_pattern, limit, offset)
+            results.extend(groups)
+            
+            count_sql = "SELECT COUNT(*) as count FROM groups WHERE name LIKE ? OR description LIKE ?"
+            count_result = await self._fetch(count_sql, search_pattern, search_pattern)
+            total += count_result[0].get("count", 0) if count_result else 0
+        
+        return {
+            "items": results[:limit],
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "query": query,
+            "type": search_type
+        }

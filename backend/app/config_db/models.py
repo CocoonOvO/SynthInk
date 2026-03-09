@@ -18,6 +18,7 @@ class ConfigAdmin(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="超管用户名")
     password_hash: str = Field(..., description="密码哈希")
     is_active: bool = Field(default=True, description="账号是否激活")
+    is_default: bool = Field(default=False, description="是否为默认账号（需要修改密码）")
     created_at: Optional[datetime] = Field(default=None, description="创建时间")
     updated_at: Optional[datetime] = Field(default=None, description="更新时间")
     last_login_at: Optional[datetime] = Field(default=None, description="最后登录时间")
@@ -43,7 +44,7 @@ class DatabaseConfig(BaseModel):
     host: str = Field(default="localhost", description="主机地址")
     port: int = Field(default=5432, description="端口")
     database: str = Field(default="synthink", description="数据库名")
-    schema: str = Field(default="public", description="PostgreSQL schema名称")
+    db_schema: str = Field(default="public", description="PostgreSQL schema名称")
     username: str = Field(default="", description="用户名")
     password: str = Field(default="", description="密码")
     # 或者使用完整URL
@@ -252,7 +253,9 @@ DEFAULT_SYSTEM_CONFIGS = [
 
 
 # 默认超管账号
+# 注意：首次启动后必须修改默认密码！
 DEFAULT_ADMIN = {
     "username": "admin",
-    "password": "123456"  # 明文密码，会在创建时哈希
+    "password": "123456",  # 明文密码，会在创建时哈希
+    "is_default": True     # 标记为默认账号，需要强制修改密码
 }
