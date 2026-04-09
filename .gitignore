@@ -95,6 +95,7 @@ mcp/check_*.py
 # SQL temp files
 *_test.sql
 check_*.sql
+alter_*.sql
 
 # Test results
 test-results/
