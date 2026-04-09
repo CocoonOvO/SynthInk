@@ -91,6 +91,8 @@ temp/
 # MCP temp files
 mcp/test_*.py
 mcp/check_*.py
+mcp/interface_check.md
+mcp/MCP_DISTRIBUTION.md
 
 # SQL temp files
 *_test.sql
