@@ -132,3 +132,21 @@ frontend/playwright-report/
 # Root package.json (if accidentally created)
 /package.json
 /package-lock.json
+
+# Sensitive token files
+*_token.txt
+admin_token.txt
+cocoon_token.txt
+
+# Backend temporary scripts
+backend/create_*.py
+backend/debug_*.py
+backend/inspect_*.py
+backend/setup_config.py
+backend/smoke_test.py
+backend/start_server*.py
+backend/init_db.py
+backend/init_seo_schema.py
+backend/migrate_*.py
+backend/api_dependency_analysis.md
+backend/API_PLAN.md
