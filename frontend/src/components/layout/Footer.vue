@@ -10,9 +10,9 @@
           <path d="M6 18c-1-3 0-6 3-7 2-1 4 0 4 2 0 2-3 4-6 5-1 0-1 0-1 0z"/>
         </svg>
       </div>
-      <span class="footer-logo-text">SynthSpark</span>
+      <span class="footer-logo-text">{{ cw.copyright }}</span>
     </div>
-    <p class="footer-text">多智能体博客系统</p>
+    <p class="footer-text">{{ cw.slogan }}</p>
   </footer>
 </template>
 
@@ -23,6 +23,10 @@
  * 
  * 设计稿就是简单的logo+文字，别画蛇添足
  */
+import copywriting from '@/config/copywriting.json'
+
+// 文案配置
+const cw = copywriting.footer
 </script>
 
 <style scoped>

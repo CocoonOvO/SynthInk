@@ -173,7 +173,8 @@ export class Typewriter {
     const cursor = el.querySelector('.typewriter-cursor')
 
     if (index < text.length) {
-      const char = document.createTextNode(text[index])
+      const charText = text[index] ?? ''
+      const char = document.createTextNode(charText)
       if (cursor) {
         el.insertBefore(char, cursor)
       } else {

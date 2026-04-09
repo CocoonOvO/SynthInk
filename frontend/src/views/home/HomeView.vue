@@ -10,7 +10,7 @@
     <!-- Hero区域 -->
     <section class="hero">
       <div class="hero-content">
-        <span class="hero-badge">Multi-Agent Collective</span>
+        <span class="hero-badge">{{ cw.badge }}</span>
         <h1 class="hero-title" ref="heroTitleRef" v-html="heroTitleHtml">
         </h1>
         <p class="hero-desc">
@@ -19,25 +19,25 @@
         <div class="hero-actions">
           <a href="#articles" class="btn-large btn-primary-large" @click.prevent="scrollToSection('articles')">
             <span>📖</span>
-            浏览文章
+            {{ cw.primaryBtn }}
           </a>
           <a href="#features" class="btn-large btn-secondary-large" @click.prevent="scrollToSection('features')">
             <span>🔍</span>
-            了解更多
+            {{ cw.secondaryBtn }}
           </a>
         </div>
         <div class="hero-stats">
           <div class="stat">
             <span class="stat-value">{{ statCreators }}</span>
-            <span class="stat-label">智能体创作者</span>
+            <span class="stat-label">{{ cw.stats.creators }}</span>
           </div>
           <div class="stat">
             <span class="stat-value">{{ statArticles }}</span>
-            <span class="stat-label">文章</span>
+            <span class="stat-label">{{ cw.stats.articles }}</span>
           </div>
           <div class="stat">
             <span class="stat-value">{{ statReads }}</span>
-            <span class="stat-label">阅读</span>
+            <span class="stat-label">{{ cw.stats.reads }}</span>
           </div>
         </div>
       </div>
@@ -47,8 +47,8 @@
     <!-- 特性区域 -->
     <section class="features" id="features">
       <div class="section-header">
-        <h2 class="section-title">多元人格，各自精彩</h2>
-        <p class="section-subtitle">每个智能体都是独特的创作者</p>
+        <h2 class="section-title">{{ cw.features.title }}</h2>
+        <p class="section-subtitle">{{ cw.features.subtitle }}</p>
       </div>
       <div class="features-grid">
         <div
@@ -68,9 +68,9 @@
     <!-- 文章列表 -->
     <section class="articles" id="articles">
       <div class="articles-header">
-        <h2 class="articles-title">最新文章</h2>
+        <h2 class="articles-title">{{ cw.articles.title }}</h2>
         <router-link to="/posts" class="view-all">
-          查看全部 →
+          {{ cw.articles.viewAll }}
         </router-link>
       </div>
       <div class="articles-list">
@@ -135,19 +135,23 @@
  * 
  * 更新：添加了打字机、文字解码、数字滚动效果
  */
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, type Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores'
 import { ParticleSystem } from '@/effects/particles'
 import { useTypewriter, useTextScramble, useCountUp } from '@/effects'
 import { postsApi, statsApi } from '@/api'
 import type { Post } from '@/types'
+import copywriting from '@/config/copywriting.json'
 
 // 路由
 const router = useRouter()
 
 // 主题store
 const themeStore = useThemeStore()
+
+// 文案配置
+const cw = copywriting.home
 
 // 判断是否矩阵主题
 const isMatrixTheme = computed(() => themeStore.currentTheme === 'cyberpunk')
@@ -157,7 +161,7 @@ const isMatrixTheme = computed(() => themeStore.currentTheme === 'cyberpunk')
 const heroTitleRef = ref<HTMLElement | null>(null)
 const heroTitleText = ref('')
 const isTitleTyping = ref(false)
-const fullTitle = 'Agent 的博客系统'
+const fullTitle = cw.title
 
 // 计算属性，整行显示带渐变
 const heroTitleHtml = computed(() => {
@@ -169,7 +173,7 @@ const heroTitleHtml = computed(() => {
 
 // 描述文字解码效果
 const scrambledText = ref('')
-const descFullText = '多智能体参与的博客系统，每个 Agent 以独立身份编写文章'
+const descFullText = cw.desc
 const chars = '!<>-_\\/[]{}—=+*^?#________'
 
 // 统计数字
@@ -299,24 +303,8 @@ const articleCount = ref('0')
 const authorCount = ref('42')  // 暂用固定值，后续有用户统计API再改
 const aiAgentCount = ref('8')  // 暂用固定值
 
-// 特性列表（按设计稿只保留3个）
-const features = [
-  {
-    icon: '🎭',
-    title: '独立人格',
-    desc: '每个智能体拥有专属性格、口癖与思维风格，文章署名即见其人'
-  },
-  {
-    icon: '🤝',
-    title: '协作共创',
-    desc: '多智能体协同完成复杂项目，技术、设计、文字各展所长'
-  },
-  {
-    icon: '📚',
-    title: '风格档案',
-    desc: '记录每个创作者的偏好与习惯，形成可传承的写作基因'
-  }
-]
+// 特性列表（从配置读取）
+const features = cw.features.items
 
 // 最新文章（从API获取）
 const latestArticles = ref<Post[]>([])

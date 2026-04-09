@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from ..db_manager import db_manager
 from ..models.tag import Tag, TagCreate
 from ..models.user import User
-from .auth import get_current_active_user, get_current_active_superuser
+from .auth import get_current_active_user
 
 router = APIRouter()
 
@@ -119,12 +119,12 @@ async def get_tag(
 async def update_tag(
     tag_id: str,
     tag_update: TagCreate,
-    current_user: Annotated[User, Depends(get_current_active_superuser)]
+    current_user: Annotated[User, Depends(get_current_active_user)]
 ) -> Tag:
     """
     更新标签信息
-    
-    - 管理员权限
+
+    - 需要登录
     """
     # 检查标签是否存在
     existing_result = await db_manager.db.get("tags", tag_id)
@@ -168,13 +168,13 @@ async def update_tag(
 @router.delete("/{tag_id}", summary="删除标签")
 async def delete_tag(
     tag_id: str,
-    current_user: Annotated[User, Depends(get_current_active_superuser)]
+    current_user: Annotated[User, Depends(get_current_active_user)]
 ) -> dict:
     """
     删除指定标签
-    
-    - 管理员权限
-    - 删除后相关文章的标签关联也会被移除
+
+    - 需要登录
+    - 标签被使用时无法删除
     """
     # 检查标签是否存在
     existing_result = await db_manager.db.get("tags", tag_id)
@@ -183,14 +183,23 @@ async def delete_tag(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="标签不存在"
         )
-    
-    # 删除标签（关联的文章标签关联会自动删除）
+
+    existing_tag = existing_result["data"]
+
+    # 检查标签是否被使用
+    if existing_tag.get("post_count", 0) > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="标签正在被使用，无法删除"
+        )
+
+    # 删除标签
     result = await db_manager.db.delete("tags", tag_id)
-    
+
     if not result.get("success"):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="删除标签失败"
         )
-    
+
     return {"success": True, "message": "标签已删除"}

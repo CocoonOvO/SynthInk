@@ -5,14 +5,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { Editor, rootCtx, defaultValueCtx, editorViewCtx, serializerCtx, parserCtx } from '@milkdown/core'
-import { commonmark, codeBlockSchema } from '@milkdown/preset-commonmark'
+// Prism 主题 CSS - 必须在组件导入前加载
+import 'prismjs/themes/prism-tomorrow.css'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { Editor, rootCtx, defaultValueCtx, editorViewCtx } from '@milkdown/core'
+import { commonmark } from '@milkdown/preset-commonmark'
 import { gfm } from '@milkdown/preset-gfm'
 import { listener, listenerCtx } from '@milkdown/plugin-listener'
 import { history } from '@milkdown/plugin-history'
-import { $view } from '@milkdown/utils'
+import { prism, prismConfig } from '@milkdown/plugin-prism'
+import { TextSelection } from '@milkdown/prose/state'
+import { toggleMark, wrapIn } from '@milkdown/prose/commands'
 import { useMilkdownTheme } from '@/composables/useMilkdownTheme'
+
+// Refractor 语言注册 - 使用 refractor/all 导入所有语言
+import { refractor } from 'refractor/all'
 
 const props = defineProps<{
   modelValue: string
@@ -26,56 +33,271 @@ const containerRef = ref<HTMLElement | null>(null)
 const editorRef = ref<HTMLElement | null>(null)
 let editor: Editor | null = null
 
-// 主题适配
 const { watchTheme } = useMilkdownTheme()
 
-// 执行Milkdown命令 - 使用ProseMirror的commands
 const execCommand = (commandName: string, payload?: any) => {
-  if (!editor) {
-    console.warn('Editor not initialized yet')
-    return
-  }
-  
+  if (!editor) return
+
   editor.action((ctx) => {
     const view = ctx.get(editorViewCtx)
     const { state, dispatch } = view
-    
-    // 根据命令名称执行对应的ProseMirror命令
+
     switch (commandName) {
       case 'ToggleStrong':
-        toggleMark(state.schema.marks.strong)(state, dispatch)
+        if (state.schema.marks.strong) {
+          toggleMark(state.schema.marks.strong)(state, dispatch)
+        }
         break
       case 'ToggleEmphasis':
-        toggleMark(state.schema.marks.emphasis)(state, dispatch)
+        if (state.schema.marks.emphasis) {
+          toggleMark(state.schema.marks.emphasis)(state, dispatch)
+        }
         break
+      case 'ToggleInlineCode':
+        if (state.schema.marks.inlineCode) {
+          toggleMark(state.schema.marks.inlineCode)(state, dispatch)
+        }
+        break
+      case 'ToggleStrikeThrough':
       case 'ToggleStrikethrough':
-        toggleMark(state.schema.marks.strike_through)(state, dispatch)
+        if (state.schema.marks.strike_through) {
+          toggleMark(state.schema.marks.strike_through)(state, dispatch)
+        }
         break
+      case 'WrapInBulletList': {
+        const { $from } = state.selection
+        let listDepth = -1
+        for (let i = $from.depth; i >= 0; i--) {
+          const node = $from.node(i)
+          if (node.type.name === 'bullet_list' || node.type.name === 'ordered_list') {
+            listDepth = i
+            break
+          }
+        }
+
+        if (listDepth >= 0) {
+          const node = $from.node(listDepth)
+          if (node.type.name === 'bullet_list') {
+            const startPos = $from.start(listDepth)
+            const endPos = $from.end(listDepth)
+            const textContent = node.textContent
+            const paragraphNode = state.schema.nodes.paragraph
+            if (paragraphNode) {
+              const paragraph = paragraphNode.create(null, state.schema.text(textContent))
+              const tr = state.tr.replaceWith(startPos - 1, endPos + 1, paragraph)
+              dispatch(tr)
+            }
+          } else if (node.type.name === 'ordered_list') {
+            const startPos = $from.start(listDepth)
+            const endPos = $from.end(listDepth)
+            const orderedList = $from.node(listDepth)
+
+            const listItems: any[] = []
+            orderedList.descendants((childNode) => {
+              if (childNode.type.name === 'list_item') {
+                const paragraphs: any[] = []
+                childNode.content.forEach((child) => {
+                  if (child.type.name === 'paragraph') {
+                    paragraphs.push(child)
+                  }
+                })
+                if (paragraphs.length > 0) {
+                  const listItemNode = state.schema.nodes.list_item
+                  if (listItemNode) {
+                    const newItem = listItemNode.create(null, paragraphs)
+                    listItems.push(newItem)
+                  }
+                }
+              }
+              return false
+            })
+
+            if (listItems.length > 0) {
+              const bulletListNode = state.schema.nodes.bullet_list
+              if (bulletListNode) {
+                const bulletList = bulletListNode.create(null, listItems)
+                const tr = state.tr.replaceWith(startPos - 1, endPos + 1, bulletList)
+                dispatch(tr)
+              }
+            }
+          }
+        } else {
+          const bulletListNode = state.schema.nodes.bullet_list
+          if (bulletListNode) {
+            wrapIn(bulletListNode)(state, dispatch)
+          }
+        }
+        break
+      }
+      case 'WrapInOrderedList': {
+        const { $from } = state.selection
+        let listDepth = -1
+        for (let i = $from.depth; i >= 0; i--) {
+          const node = $from.node(i)
+          if (node.type.name === 'bullet_list' || node.type.name === 'ordered_list') {
+            listDepth = i
+            break
+          }
+        }
+
+        if (listDepth >= 0) {
+          const node = $from.node(listDepth)
+          if (node.type.name === 'ordered_list') {
+            const startPos = $from.start(listDepth)
+            const endPos = $from.end(listDepth)
+            const textContent = node.textContent
+            const paragraphNode = state.schema.nodes.paragraph
+            if (paragraphNode) {
+              const paragraph = paragraphNode.create(null, state.schema.text(textContent))
+              const tr = state.tr.replaceWith(startPos - 1, endPos + 1, paragraph)
+              dispatch(tr)
+            }
+          } else if (node.type.name === 'bullet_list') {
+            const startPos = $from.start(listDepth)
+            const endPos = $from.end(listDepth)
+            const bulletList = $from.node(listDepth)
+
+            const listItems: any[] = []
+            bulletList.descendants((childNode) => {
+              if (childNode.type.name === 'list_item') {
+                const paragraphs: any[] = []
+                childNode.content.forEach((child) => {
+                  if (child.type.name === 'paragraph') {
+                    paragraphs.push(child)
+                  }
+                })
+                if (paragraphs.length > 0) {
+                  const listItemNode = state.schema.nodes.list_item
+                  if (listItemNode) {
+                    const newItem = listItemNode.create(null, paragraphs)
+                    listItems.push(newItem)
+                  }
+                }
+              }
+              return false
+            })
+
+            if (listItems.length > 0) {
+              const orderedListNode = state.schema.nodes.ordered_list
+              if (orderedListNode) {
+                const orderedList = orderedListNode.create(null, listItems)
+                const tr = state.tr.replaceWith(startPos - 1, endPos + 1, orderedList)
+                dispatch(tr)
+              }
+            }
+          }
+        } else {
+          const orderedListNode = state.schema.nodes.ordered_list
+          if (orderedListNode) {
+            wrapIn(orderedListNode)(state, dispatch)
+          }
+        }
+        break
+      }
       case 'WrapInHeading':
-        wrapIn(state.schema.nodes.heading, { level: payload || 2 })(state, dispatch)
+      case 'TurnIntoHeading': {
+        const { $from } = state.selection
+        const node = $from.node()
+        if (node.type.name === 'heading') {
+          const paragraphNode = state.schema.nodes.paragraph
+          if (paragraphNode) {
+            const tr = state.tr.setBlockType($from.start(), $from.end(), paragraphNode)
+            dispatch(tr)
+          }
+        } else {
+          const headingNode = state.schema.nodes.heading
+          if (headingNode) {
+            const tr = state.tr.setBlockType($from.start(), $from.end(), headingNode, { level: payload || 1 })
+            dispatch(tr)
+          }
+        }
         break
-      case 'WrapInBlockquote':
-        wrapIn(state.schema.nodes.blockquote)(state, dispatch)
+      }
+      case 'WrapInBlockquote': {
+        const { $from } = state.selection
+        let blockquoteDepth = -1
+        for (let i = $from.depth; i >= 0; i--) {
+          const node = $from.node(i)
+          if (node.type.name === 'blockquote') {
+            blockquoteDepth = i
+            break
+          }
+        }
+
+        if (blockquoteDepth >= 0) {
+          const startPos = $from.start(blockquoteDepth)
+          const endPos = $from.end(blockquoteDepth)
+          const node = $from.node(blockquoteDepth)
+          const textContent = node.textContent
+          const paragraphNode = state.schema.nodes.paragraph
+          if (paragraphNode) {
+            const paragraph = paragraphNode.create(null, state.schema.text(textContent))
+            const tr = state.tr.replaceWith(startPos - 1, endPos + 1, paragraph)
+            dispatch(tr)
+          }
+        } else {
+          const blockquoteNode = state.schema.nodes.blockquote
+          if (blockquoteNode) {
+            wrapIn(blockquoteNode)(state, dispatch)
+          }
+        }
         break
-      case 'WrapInBulletList':
-        wrapInList(state.schema.nodes.bullet_list)(state, dispatch)
-        break
-      case 'WrapInOrderedList':
-        wrapInList(state.schema.nodes.ordered_list)(state, dispatch)
-        break
+      }
       case 'WrapInCodeBlock':
-        wrapInCodeBlock(state, dispatch, payload)
+      case 'TurnIntoCodeBlock': {
+        const { $from, $to } = state.selection
+
+        let codeBlockDepth = -1
+        for (let i = $from.depth; i >= 0; i--) {
+          const node = $from.node(i)
+          if (node.type.name === 'code_block') {
+            codeBlockDepth = i
+            break
+          }
+        }
+
+        if (codeBlockDepth >= 0) {
+          const startPos = $from.start(codeBlockDepth)
+          const endPos = $from.end(codeBlockDepth)
+          const node = $from.node(codeBlockDepth)
+          const textContent = node.textContent
+          const paragraphNode = state.schema.nodes.paragraph
+          if (paragraphNode) {
+            const paragraph = paragraphNode.create(null, state.schema.text(textContent))
+            const tr = state.tr.replaceWith(startPos - 1, endPos + 1, paragraph)
+            dispatch(tr)
+          }
+        } else {
+          const selectedText = state.doc.textBetween($from.pos, $to.pos, '\n')
+          const textContent = selectedText || ' '
+          const codeBlockNode = state.schema.nodes.code_block
+          if (codeBlockNode) {
+            const codeBlock = codeBlockNode.create(
+              { language: payload || '' },
+              state.schema.text(textContent)
+            )
+            const tr = state.tr.replaceWith($from.pos, $to.pos, codeBlock)
+            dispatch(tr)
+          }
+        }
         break
-      case 'SetCodeBlockLanguage':
-        setCodeBlockLanguage(payload)
+      }
+      case 'TurnIntoParagraph': {
+        const { $from } = state.selection
+        const paragraphNode = state.schema.nodes.paragraph
+        if (paragraphNode) {
+          const tr = state.tr.setBlockType($from.start(), $from.end(), paragraphNode)
+          dispatch(tr)
+        }
         break
+      }
     }
   })
 }
 
-// 获取当前选中的文本
-const getSelectedText = () => {
+const getSelectedText = (): string => {
   if (!editor) return ''
+
   let selectedText = ''
   editor.action((ctx) => {
     const view = ctx.get(editorViewCtx)
@@ -83,587 +305,345 @@ const getSelectedText = () => {
     const { from, to } = state.selection
     selectedText = state.doc.textBetween(from, to)
   })
+
   return selectedText
 }
 
-// 在光标位置插入文本
 const insertText = (text: string) => {
   if (!editor) return
+
   editor.action((ctx) => {
     const view = ctx.get(editorViewCtx)
     const { state, dispatch } = view
-    const { from } = state.selection
-    const tr = state.tr.insertText(text, from)
+    const tr = state.tr.insertText(text)
     dispatch(tr)
   })
 }
 
-// 插入图片节点
-const insertImage = (url: string, alt: string = '') => {
+const insertImage = (src: string, alt: string = '') => {
   if (!editor) return
+
   editor.action((ctx) => {
     const view = ctx.get(editorViewCtx)
     const { state, dispatch } = view
-    const { from } = state.selection
-
-    // 获取图片节点类型
-    const imageType = state.schema.nodes.image
-    if (!imageType) {
-      console.error('Image node type not found in schema')
-      // 回退到插入Markdown文本
-      const imageMarkdown = `\n![${alt || '图片'}](${url})\n`
-      const tr = state.tr.insertText(imageMarkdown, from)
-      dispatch(tr)
-      return
-    }
-
-    // 创建图片节点
-    const imageNode = imageType.create({
-      src: url,
-      alt: alt || '',
-      title: alt || ''
-    })
-
-    // 插入图片节点
-    const tr = state.tr.insert(from, imageNode)
-    dispatch(tr.scrollIntoView())
-  })
-}
-
-// 设置代码块语言
-const setCodeBlockLanguage = (language: string) => {
-  if (!editor) return
-  
-  editor.action((ctx) => {
-    const view = ctx.get(editorViewCtx)
-    const { state, dispatch } = view
-    const { $from } = state.selection
-    
-    // 查找当前所在的代码块
-    let codeBlockPos = $from.pos
-    let codeBlockNode = null
-    
-    // 向上查找代码块节点
-    state.doc.nodesBetween($from.start(), $from.end(), (node, pos) => {
-      if (node.type.name === 'code_block') {
-        codeBlockNode = node
-        codeBlockPos = pos
-        return false
-      }
-      return true
-    })
-    
-    if (codeBlockNode && dispatch) {
-      // 更新代码块的语言属性
-      const tr = state.tr.setNodeMarkup(codeBlockPos, undefined, {
-        ...codeBlockNode.attrs,
-        language: language || undefined
-      })
+    const { schema } = state
+    const imageNode = schema.nodes.image
+    if (imageNode) {
+      const node = imageNode.create({ src, alt })
+      const tr = state.tr.replaceSelectionWith(node)
       dispatch(tr)
     }
   })
 }
 
-// 获取当前代码块的语言
+const insertLink = (href: string, text: string) => {
+  if (!editor) return
+
+  editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx)
+    const { state, dispatch } = view
+    const { schema } = state
+    const linkMark = schema.marks.link
+    if (linkMark) {
+      const node = schema.text(text, [linkMark.create({ href })])
+      const tr = state.tr.replaceSelectionWith(node)
+      dispatch(tr)
+    }
+  })
+}
+
+const insertCodeBlock = (language: string = '', code: string = '') => {
+  if (!editor) return
+
+  editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx)
+    const { state, dispatch } = view
+    const { schema } = state
+
+    const codeBlockNode = schema.nodes.code_block
+    if (codeBlockNode) {
+      const node = codeBlockNode.create(
+        { language },
+        schema.text(code || '\n')
+      )
+      const tr = state.tr.replaceSelectionWith(node)
+      dispatch(tr)
+      view.focus()
+    }
+  })
+
+  nextTick(() => {
+    if (!editorRef.value) return
+    const preElements = editorRef.value.querySelectorAll('pre')
+    const lastPre = preElements[preElements.length - 1]
+    if (lastPre && language) {
+      lastPre.dataset.language = language
+    }
+  })
+}
+
+const focus = () => {
+  if (!editor) return
+
+  editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx)
+    view.focus()
+  })
+}
+
 const getCurrentCodeBlockLanguage = (): string | null => {
   if (!editor) return null
-  
+
   let language: string | null = null
   editor.action((ctx) => {
     const view = ctx.get(editorViewCtx)
     const { state } = view
     const { $from } = state.selection
-    
-    // 向上查找代码块节点
-    state.doc.nodesBetween($from.start(), $from.end(), (node) => {
+
+    for (let i = $from.depth; i >= 0; i--) {
+      const node = $from.node(i)
       if (node.type.name === 'code_block') {
         language = node.attrs.language || null
-        return false
+        break
       }
-      return true
-    })
+    }
   })
-  
+
   return language
 }
 
-// 支持的编程语言列表
-const supportedLanguages = [
-  { value: '', label: '纯文本' },
-  { value: 'javascript', label: 'JavaScript' },
-  { value: 'typescript', label: 'TypeScript' },
-  { value: 'python', label: 'Python' },
-  { value: 'java', label: 'Java' },
-  { value: 'go', label: 'Go' },
-  { value: 'rust', label: 'Rust' },
-  { value: 'cpp', label: 'C++' },
-  { value: 'c', label: 'C' },
-  { value: 'csharp', label: 'C#' },
-  { value: 'php', label: 'PHP' },
-  { value: 'ruby', label: 'Ruby' },
-  { value: 'swift', label: 'Swift' },
-  { value: 'kotlin', label: 'Kotlin' },
-  { value: 'sql', label: 'SQL' },
-  { value: 'html', label: 'HTML' },
-  { value: 'css', label: 'CSS' },
-  { value: 'scss', label: 'SCSS' },
-  { value: 'json', label: 'JSON' },
-  { value: 'yaml', label: 'YAML' },
-  { value: 'xml', label: 'XML' },
-  { value: 'markdown', label: 'Markdown' },
-  { value: 'bash', label: 'Bash' },
-  { value: 'powershell', label: 'PowerShell' },
-  { value: 'dockerfile', label: 'Dockerfile' },
-  { value: 'vim', label: 'Vim' },
-  { value: 'lua', label: 'Lua' },
-  { value: 'perl', label: 'Perl' },
-  { value: 'r', label: 'R' },
-  { value: 'matlab', label: 'MATLAB' },
-  { value: 'scala', label: 'Scala' },
-  { value: 'groovy', label: 'Groovy' },
-  { value: 'dart', label: 'Dart' },
-  { value: 'elixir', label: 'Elixir' },
-  { value: 'erlang', label: 'Erlang' },
-  { value: 'haskell', label: 'Haskell' },
-  { value: 'clojure', label: 'Clojure' },
-  { value: 'fsharp', label: 'F#' },
-  { value: 'ocaml', label: 'OCaml' },
-  { value: 'reason', label: 'Reason' },
-  { value: 'purescript', label: 'PureScript' },
-  { value: 'elm', label: 'Elm' },
-  { value: 'coffeescript', label: 'CoffeeScript' },
-  { value: 'livescript', label: 'LiveScript' },
-  { value: 'julia', label: 'Julia' },
-  { value: 'crystal', label: 'Crystal' },
-  { value: 'nim', label: 'Nim' },
-  { value: 'zig', label: 'Zig' },
-  { value: 'v', label: 'V' },
-  { value: 'odin', label: 'Odin' },
-  { value: 'hare', label: 'Hare' },
-  { value: 'gleam', label: 'Gleam' }
-]
+const setCodeBlockLanguage = (language: string) => {
+  if (!editor) return
 
-// 暴露编辑器实例和方法给父组件
+  editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx)
+    const { state, dispatch } = view
+    const { $from } = state.selection
+
+    let codeBlockDepth = -1
+    for (let i = $from.depth; i >= 0; i--) {
+      const node = $from.node(i)
+      if (node.type.name === 'code_block') {
+        codeBlockDepth = i
+        break
+      }
+    }
+
+    if (codeBlockDepth >= 0) {
+      const codeBlockPos = $from.start(codeBlockDepth) - 1
+      const node = $from.node(codeBlockDepth)
+      
+      // 创建新节点并替换，强制重新渲染
+      const newNode = node.type.create(
+        { ...node.attrs, language },
+        node.content
+      )
+      
+      const tr = state.tr.replaceWith(codeBlockPos, codeBlockPos + node.nodeSize, newNode)
+      dispatch(tr)
+      
+      console.log('[setCodeBlockLanguage] replaced node with language:', language, 'at pos:', codeBlockPos)
+    }
+  })
+}
+
+const setCodeBlockLanguageByDOM = (element: HTMLElement, language: string) => {
+  if (!editor || !element) return
+
+  // 直接更新 DOM 的 data-language 属性，立即生效
+  element.setAttribute('data-language', language)
+
+  // 使用 editor.action 获取 view，确保上下文正确
+  editor.action((ctx) => {
+    try {
+      const view = ctx.get(editorViewCtx)
+      const { state, dispatch } = view
+
+      // 先尝试通过 DOM 元素获取位置
+      let pos = view.posAtDOM(element, 0)
+      console.log('[setCodeBlockLanguageByDOM] pos from DOM:', pos, 'element:', element.tagName)
+      
+      // 检查通过 DOM 获取的位置是否正确
+      let nodeAtPos = pos >= 0 && pos < state.doc.content.size ? state.doc.nodeAt(pos) : null
+      
+      // 如果 posAtDOM 失败或位置不正确，尝试通过 selection 找到代码块
+      if (!nodeAtPos || nodeAtPos.type.name !== 'code_block') {
+        const { $from } = state.selection
+        let codeBlockDepth = -1
+        for (let i = $from.depth; i >= 0; i--) {
+          const node = $from.node(i)
+          if (node.type.name === 'code_block') {
+            codeBlockDepth = i
+            break
+          }
+        }
+        
+        if (codeBlockDepth >= 0) {
+          pos = $from.start(codeBlockDepth) - 1
+          nodeAtPos = state.doc.nodeAt(pos)
+          console.log('[setCodeBlockLanguageByDOM] using selection pos:', pos, 'node:', nodeAtPos?.type?.name)
+        }
+      }
+      
+      if (pos >= 0 && pos < state.doc.content.size && nodeAtPos) {
+        console.log('[setCodeBlockLanguageByDOM] final node:', nodeAtPos.type.name, 'attrs:', nodeAtPos.attrs)
+        
+        if (nodeAtPos.type.name === 'code_block') {
+          // 使用 setNodeMarkup 更新节点属性，这会强制视图重新渲染
+          const tr = state.tr.setNodeMarkup(pos, undefined, {
+            ...nodeAtPos.attrs,
+            language
+          })
+          dispatch(tr)
+          console.log('[setCodeBlockLanguageByDOM] dispatched transaction, new language:', language)
+
+          // 强制触发一次空事务，让 Prism 插件重新计算 decorations
+          setTimeout(() => {
+            const refreshTr = view.state.tr.insertText(' ', 0).delete(0, 1)
+            view.dispatch(refreshTr)
+          }, 0)
+        } else {
+          console.log('[setCodeBlockLanguageByDOM] node is not code_block:', nodeAtPos.type.name)
+        }
+      } else {
+        console.log('[setCodeBlockLanguageByDOM] pos out of range or no node:', pos, 'doc size:', state.doc.content.size)
+      }
+    } catch (e) {
+      console.error('[setCodeBlockLanguageByDOM] error:', e)
+    }
+  })
+}
+
 defineExpose({
-  editor: () => editor,
   execCommand,
-  getEditor: () => editor,
   getSelectedText,
   insertText,
   insertImage,
-  setCodeBlockLanguage,
+  insertLink,
+  insertCodeBlock,
+  focus,
   getCurrentCodeBlockLanguage,
-  supportedLanguages
+  setCodeBlockLanguage,
+  setCodeBlockLanguageByDOM
 })
 
-// ProseMirror commands (简化版)
-const toggleMark = (markType: any) => {
-  return (state: any, dispatch: any) => {
-    const { from, to } = state.selection
-    const hasMark = state.doc.rangeHasMark(from, to, markType)
-    
-    if (dispatch) {
-      const tr = state.tr
-      if (hasMark) {
-        tr.removeMark(from, to, markType)
-      } else {
-        tr.addMark(from, to, markType.create())
-      }
-      dispatch(tr)
-    }
-    return true
-  }
-}
+let lastEnterTime = 0
+const setupDoubleEnterExit = () => {
+  if (!editorRef.value) return
 
-const wrapIn = (nodeType: any, attrs?: any) => {
-  return (state: any, dispatch: any) => {
-    const { from, to } = state.selection
-    const tr = state.tr.wrap(state.selection.$from.blockRange(), [{ type: nodeType, attrs }])
-    if (tr && dispatch) {
-      dispatch(tr)
-      return true
-    }
-    return false
-  }
-}
-
-// 包装为列表 - 支持光标所在行创建/移除列表，支持列表类型互换，支持多行选中
-const wrapInList = (listType: any) => {
-  return (state: any, dispatch: any) => {
-    const { $from, $to } = state.selection
-    const paragraphType = state.schema.nodes.paragraph
-    const listItemType = state.schema.nodes.list_item
-    const bulletListType = state.schema.nodes.bullet_list
-    const orderedListType = state.schema.nodes.ordered_list
-
-    if (!listItemType || !paragraphType) {
-      console.error('Required node types not found in schema')
-      return false
+  editorRef.value.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') {
+      lastEnterTime = 0
+      return
     }
 
-    // 检查是否有选区（多行选中）
-    const hasSelection = $from.pos !== $to.pos
+    const selection = window.getSelection()
+    if (!selection) return
 
-    // 如果有选区，处理多行
-    if (hasSelection) {
-      return wrapMultipleLinesInList(state, dispatch, listType, $from, $to, paragraphType, listItemType, bulletListType, orderedListType)
-    }
+    const node = selection.anchorNode
+    if (!node) return
 
-    // 单行处理（光标模式）
-    return wrapSingleLineInList(state, dispatch, listType, $from, paragraphType, listItemType, bulletListType, orderedListType)
-  }
-}
+    let parent = node.parentElement
+    while (parent && parent !== editorRef.value) {
+      if (parent.tagName === 'PRE') {
+        const currentTime = Date.now()
+        if (currentTime - lastEnterTime < 500) {
+          event.preventDefault()
+          event.stopPropagation()
 
-// 单行列表处理
-const wrapSingleLineInList = (state: any, dispatch: any, listType: any, $from: any, paragraphType: any, listItemType: any, bulletListType: any, orderedListType: any) => {
-  const currentNode = $from.parent
-  const currentDepth = $from.depth
-  const currentPos = $from.before(currentDepth)
+          editor?.action((ctx) => {
+            const view = ctx.get(editorViewCtx)
+            const { state } = view
+            const { $from } = state.selection
 
-  // 检查当前是否在列表中
-  const parentList = currentDepth > 1 ? $from.node(currentDepth - 1) : null
-  const grandParentList = currentDepth > 2 ? $from.node(currentDepth - 2) : null
+            let depth = $from.depth
+            while (depth >= 0) {
+              const node = $from.node(depth)
+              if (node.type.name === 'code_block') {
+                const codeBlockPos = $from.before(depth)
 
-  // 如果在同类型列表中，解除列表
-  if (parentList && parentList.type === listType) {
-    return removeListItem(state, dispatch, currentPos, currentDepth, currentNode)
-  }
+                const paragraphNode = state.schema.nodes.paragraph
+                if (paragraphNode) {
+                  const paragraph = paragraphNode.create()
+                  const tr = state.tr.insert(codeBlockPos + node.nodeSize, paragraph)
 
-  // 如果在另一种列表中，转换为当前类型
-  if (parentList && (parentList.type === bulletListType || parentList.type === orderedListType)) {
-    return convertListType(state, dispatch, parentList, listType, currentDepth - 1)
-  }
+                  const newPos = codeBlockPos + node.nodeSize + 1
+                  const resolvedPos = tr.doc.resolve(newPos)
+                  tr.setSelection(TextSelection.near(resolvedPos))
 
-  // 如果grandParent是列表（处理嵌套情况）
-  if (grandParentList && (grandParentList.type === bulletListType || grandParentList.type === orderedListType)) {
-    if (grandParentList.type === listType) {
-      return removeListItem(state, dispatch, $from.before(currentDepth - 1), currentDepth - 1, parentList)
-    } else {
-      return convertListType(state, dispatch, grandParentList, listType, currentDepth - 2)
-    }
-  }
+                  view.dispatch(tr)
+                  view.focus()
+                }
+                break
+              }
+              depth--
+            }
+          })
 
-  if (!dispatch) return true
-
-  // 不在列表中，创建新的列表项
-  const lineText = currentNode.textContent || ''
-  const paragraph = paragraphType.create(null, lineText ? state.schema.text(lineText) : null)
-  const listItem = listItemType.create(null, paragraph)
-  const listNode = listType.create(null, listItem)
-
-  const tr = state.tr.replaceWith(currentPos, $from.after(currentDepth), listNode)
-  dispatch(tr.scrollIntoView())
-  return true
-}
-
-// 多行列表处理
-const wrapMultipleLinesInList = (state: any, dispatch: any, listType: any, $from: any, $to: any, paragraphType: any, listItemType: any, bulletListType: any, orderedListType: any) => {
-  // 获取选区范围内的所有段落
-  const range = $from.blockRange($to)
-  if (!range) return false
-
-  // 检查选区是否已经在同类型列表中
-  const parent = $from.node(-1)
-  if (parent && parent.type === listType) {
-    // 解除整个列表
-    return liftListItems(state, dispatch, $from, $to, listItemType, paragraphType)
-  }
-
-  // 检查选区是否在另一种列表中
-  if (parent && (parent.type === bulletListType || parent.type === orderedListType)) {
-    // 转换整个列表类型
-    return convertListTypeForRange(state, dispatch, parent, listType, $from, $to)
-  }
-
-  if (!dispatch) return true
-
-  // 将选中的段落转换为列表项
-  const listItems: any[] = []
-  const startPos = range.start
-  const endPos = range.end
-
-  // 遍历选区内的所有段落
-  state.doc.nodesBetween(startPos, endPos, (node: any, pos: number) => {
-    if (node.type === paragraphType) {
-      const item = listItemType.create(null, node.copy(node.content))
-      listItems.push(item)
-    }
-  })
-
-  if (listItems.length === 0) return false
-
-  // 创建列表节点
-  const listNode = listType.create(null, listItems)
-
-  // 替换选区内容为列表
-  const tr = state.tr.replaceWith(startPos, endPos, listNode)
-  dispatch(tr.scrollIntoView())
-  return true
-}
-
-// 移除列表项，转换为普通段落
-const removeListItem = (state: any, dispatch: any, pos: number, depth: number, node: any) => {
-  if (!dispatch) return true
-
-  const paragraphType = state.schema.nodes.paragraph
-  if (!paragraphType) return false
-
-  // 获取list_item的内容（通常是paragraph）
-  let paragraphContent = null
-  node.forEach((child: any) => {
-    if (child.type.name === 'paragraph') {
-      paragraphContent = child.content
-    }
-  })
-
-  // 创建新的paragraph
-  const newParagraph = paragraphType.create(null, paragraphContent)
-
-  // 替换list_item为paragraph
-  const tr = state.tr.replaceWith(pos, pos + node.nodeSize, newParagraph)
-  dispatch(tr.scrollIntoView())
-  return true
-}
-
-// 转换列表类型（无序<->有序）- 用于单行
-const convertListType = (state: any, dispatch: any, oldList: any, newListType: any, listDepth: number) => {
-  if (!dispatch) return true
-
-  const { $from } = state.selection
-  const listItemType = state.schema.nodes.list_item
-  if (!listItemType) return false
-
-  // 找到列表的起始位置 - 使用更可靠的方法
-  let listStart = $from.start(listDepth) - 1
-  let listEnd = $from.end(listDepth)
-
-  // 获取旧列表的所有list_item
-  const listItems: any[] = []
-  oldList.forEach((child: any) => {
-    if (child.type === listItemType) {
-      listItems.push(child)
-    }
-  })
-
-  if (listItems.length === 0) return false
-
-  // 创建新类型的列表节点
-  const newList = newListType.create(null, listItems)
-
-  // 替换旧列表
-  const tr = state.tr.replaceWith(listStart, listEnd, newList)
-  dispatch(tr.scrollIntoView())
-  return true
-}
-
-// 转换列表类型 - 用于多行选区
-const convertListTypeForRange = (state: any, dispatch: any, oldList: any, newListType: any, $from: any, $to: any) => {
-  if (!dispatch) return true
-
-  const listItemType = state.schema.nodes.list_item
-  if (!listItemType) return false
-
-  // 获取选区范围
-  const range = $from.blockRange($to)
-  if (!range) return false
-
-  // 获取旧列表的所有list_item
-  const listItems: any[] = []
-  oldList.forEach((child: any) => {
-    if (child.type === listItemType) {
-      listItems.push(child)
-    }
-  })
-
-  if (listItems.length === 0) return false
-
-  // 创建新类型的列表节点
-  const newList = newListType.create(null, listItems)
-
-  // 替换旧列表 - 使用range的范围
-  const tr = state.tr.replaceWith(range.start, range.end, newList)
-  dispatch(tr.scrollIntoView())
-  return true
-}
-
-// 解除多行列表项
-const liftListItems = (state: any, dispatch: any, $from: any, $to: any, listItemType: any, paragraphType: any) => {
-  if (!dispatch) return true
-
-  const range = $from.blockRange($to)
-  if (!range) return false
-
-  // 获取列表节点
-  const listNode = $from.node(-1)
-  const paragraphs: any[] = []
-
-  // 遍历列表中的所有list_item，提取内容
-  listNode.forEach((child: any) => {
-    if (child.type === listItemType) {
-      child.forEach((content: any) => {
-        if (content.type === paragraphType) {
-          paragraphs.push(paragraphType.create(null, content.content))
-        } else {
-          paragraphs.push(content.copy(content.content))
+          lastEnterTime = 0
+          return
         }
-      })
-    }
-  })
-
-  if (paragraphs.length === 0) return false
-
-  // 替换整个列表为段落
-  const tr = state.tr.replaceWith(range.start, range.end, paragraphs)
-  dispatch(tr.scrollIntoView())
-  return true
-}
-
-// 从列表中提升（解除列表）- 用于选区操作
-const liftListItem = (itemType: any) => {
-  return (state: any, dispatch: any) => {
-    const { $from, $to } = state.selection
-    const range = $from.blockRange($to, (node: any) => node.childCount && node.firstChild?.type === itemType)
-    if (!range) return false
-    if (!dispatch) return true
-
-    // 获取列表项内容并替换
-    const listNode = $from.node(-1)
-    const listItemNodes: any[] = []
-
-    listNode.forEach((child: any) => {
-      if (child.type === itemType) {
-        child.forEach((content: any) => {
-          listItemNodes.push(content)
-        })
+        lastEnterTime = currentTime
+        break
       }
-    })
-
-    const paragraphType = state.schema.nodes.paragraph
-    if (listItemNodes.length > 0 && paragraphType) {
-      const newNodes = listItemNodes.map(content => paragraphType.create(null, content.content))
-      const start = $from.start(range.depth - 1)
-      const end = $to.end(range.depth - 1)
-      const tr = state.tr.replaceWith(start, end, newNodes)
-      dispatch(tr.scrollIntoView())
-      return true
+      parent = parent.parentElement
     }
-
-    return false
-  }
+  }, true)
 }
-
-// 查找包裹方式 - 使用ProseMirror的findWrapping逻辑
-const findWrapping = (range: any, nodeType: any, attrs: any = null, innerType: any = null) => {
-  const parent = range.parent
-  const around = parent.contentMatchAt(range.startIndex).findWrapping(nodeType, attrs)
-  if (!around) return null
-
-  // 如果提供了innerType（如list_item），需要将其添加到wrapping中
-  if (innerType) {
-    // around是一个NodeType数组，我们需要构造包含innerType的wrapping
-    // 格式应该是 [{type: nodeType, attrs}, {type: innerType}]
-    return [
-      { type: nodeType, attrs },
-      { type: innerType }
-    ]
-  }
-
-  return around
-}
-
-// 代码块包装函数
-const wrapInCodeBlock = (state: any, dispatch: any, language?: string) => {
-  const { $from, $to } = state.selection
-  const range = $from.blockRange($to)
-  if (!range) return false
-  
-  // 获取选中的文本内容
-  const selectedText = state.doc.textBetween($from.pos, $to.pos)
-  
-  // 创建代码块节点
-  const codeBlockType = state.schema.nodes.code_block
-  if (!codeBlockType) return false
-  
-  // 创建代码块节点，带语言属性
-  const attrs = language ? { language } : {}
-  const codeBlock = codeBlockType.create(attrs, state.schema.text(selectedText || ' '))
-  
-  if (dispatch) {
-    // 替换选中内容为代码块
-    const tr = state.tr.replaceRangeWith(range.start, range.end, codeBlock)
-    dispatch(tr)
-    return true
-  }
-  return false
-}
-
-// 自定义代码块视图 - 添加 data-language 属性，处理键盘事件
-const codeBlockView = $view(codeBlockSchema.node, () => {
-  return (node, view, getPos) => {
-    const dom = document.createElement('pre')
-    const language = node.attrs.language as string | undefined
-
-    if (language) {
-      dom.setAttribute('data-language', language)
-    }
-
-    const code = document.createElement('code')
-    dom.appendChild(code)
-
-    return {
-      dom,
-      contentDOM: code,
-      update: (updatedNode) => {
-        if (updatedNode.type.name !== 'code_block') return false
-
-        const newLanguage = updatedNode.attrs.language as string | undefined
-        if (newLanguage) {
-          dom.setAttribute('data-language', newLanguage)
-        } else {
-          dom.removeAttribute('data-language')
-        }
-
-        return true
-      }
-    }
-  }
-})
 
 onMounted(async () => {
   if (!editorRef.value) return
 
-  // 应用主题
-  watchTheme(containerRef.value)
+  try {
+    watchTheme(containerRef.value)
 
-  editor = await Editor.make()
-    .config((ctx) => {
-      ctx.set(rootCtx, editorRef.value!)
-      ctx.set(defaultValueCtx, props.modelValue || '')
+    editor = await Editor.make()
+      .config((ctx) => {
+        ctx.set(rootCtx, editorRef.value!)
+        ctx.set(defaultValueCtx, props.modelValue || '')
 
-      const listener = ctx.get(listenerCtx)
-      listener.markdownUpdated((ctx, markdown, prevMarkdown) => {
-        if (markdown !== prevMarkdown) {
-          emit('update:modelValue', markdown)
-        }
+        // 配置 prism 语言
+        // 使用 lib/all.js 已经注册了所有语言，无需额外配置
+        ctx.set(prismConfig.key, {
+          configureRefractor: () => refractor
+        })
+
+        const listener = ctx.get(listenerCtx)
+        listener.markdownUpdated((ctx, markdown, prevMarkdown) => {
+          if (markdown !== prevMarkdown) {
+            emit('update:modelValue', markdown)
+          }
+        })
       })
-    })
-    // 不使用nord主题，使用自定义CSS
-    .use(commonmark)
-    .use(gfm)
-    .use(listener)
-    .use(history)
-    .use(codeBlockView)
-    .create()
+      .use(commonmark)
+      .use(gfm)
+      .use(listener)
+      .use(history)
+      .use(prism)
+      .create()
+
+    // 强制触发一次文档更新，确保 prism 高亮生效
+    // 这是因为 @milkdown/plugin-prism 在 apply 中使用了错误的 refractor 实例
+    // 通过触发一次空事务，强制重新计算 decorations
+    setTimeout(() => {
+      if (editor) {
+        const view = editor.ctx.get(editorViewCtx)
+        const tr = view.state.tr.insertText(' ', 0).delete(0, 1)
+        view.dispatch(tr)
+      }
+    }, 100)
+
+    setupDoubleEnterExit()
+  } catch (e) {
+    console.error('[MilkdownEditor] mounted error:', e)
+  }
 })
 
 onUnmounted(() => {
-  editor?.destroy()
-})
-
-// 监听外部值变化
-watch(() => props.modelValue, (newValue) => {
-  // 这里可以处理外部值同步到编辑器
-  // Milkdown有内部状态管理，需要谨慎处理
+  if (editor) {
+    editor.destroy()
+    editor = null
+  }
 })
 </script>
 
@@ -676,18 +656,141 @@ watch(() => props.modelValue, (newValue) => {
 .editor-container {
   width: 100%;
   height: 100%;
-  min-height: 400px;
+  outline: none;
 }
 
-/* Milkdown 编辑器基础样式 */
-:deep(.milkdown) {
-  height: 100%;
-  padding: 16px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-}
-
-:deep(.editor) {
+.editor-container :deep(.ProseMirror) {
+  outline: none;
   min-height: 100%;
+}
+
+.editor-container :deep(.ProseMirror p) {
+  margin: 0.5em 0;
+}
+
+.editor-container :deep(.ProseMirror h1) {
+  margin: 0.67em 0;
+  font-size: 2em;
+  font-weight: bold;
+}
+
+.editor-container :deep(.ProseMirror h2) {
+  margin: 0.75em 0;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.editor-container :deep(.ProseMirror h3) {
+  margin: 0.83em 0;
+  font-size: 1.17em;
+  font-weight: bold;
+}
+
+.editor-container :deep(.ProseMirror ul) {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.editor-container :deep(.ProseMirror ol) {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.editor-container :deep(.ProseMirror blockquote) {
+  border-left: 3px solid var(--border-color, #ddd);
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: var(--text-secondary, #666);
+}
+
+.editor-container :deep(.ProseMirror pre) {
+  background: var(--code-bg, #f8f9fa);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  padding: 1em;
+  padding-top: 2.5em;
+  overflow-x: auto;
+  margin: 0.5em 0;
+  position: relative;
+}
+
+.editor-container :deep(.ProseMirror pre code) {
+  background: none;
+  padding: 40px 16px 16px 16px;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 0.9em;
+  line-height: 1.6;
+  color: var(--text-primary, #24292f);
+  display: block;
+}
+
+.editor-container :deep(.ProseMirror code) {
+  background: var(--inline-code-bg, rgba(175, 184, 193, 0.2));
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.9em;
+}
+
+.editor-container :deep(.ProseMirror a) {
+  color: var(--link-color, #0969da);
+  text-decoration: none;
+}
+
+.editor-container :deep(.ProseMirror a:hover) {
+  text-decoration: underline;
+}
+
+.editor-container :deep(.ProseMirror img) {
+  max-width: 100%;
+  height: auto;
+}
+
+.editor-container :deep(.ProseMirror table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5em 0;
+}
+
+.editor-container :deep(.ProseMirror th),
+.editor-container :deep(.ProseMirror td) {
+  border: 1px solid var(--border-color, #ddd);
+  padding: 0.5em;
+  text-align: left;
+}
+
+.editor-container :deep(.ProseMirror th) {
+  background: var(--header-bg, #f5f5f5);
+  font-weight: bold;
+}
+
+.editor-container :deep(.ProseMirror hr) {
+  border: none;
+  border-top: 2px solid var(--border-color, #ddd);
+  margin: 1em 0;
+}
+
+.editor-container :deep(.ProseMirror-selectednode) {
+  outline: 2px solid var(--selection-color, #8cf);
+}
+
+@media (prefers-color-scheme: dark) {
+  .editor-container :deep(.ProseMirror pre) {
+    background: var(--code-bg-dark, #1e1e1e);
+    border-color: var(--border-color-dark, #30363d);
+  }
+
+  .editor-container :deep(.ProseMirror code) {
+    background: var(--inline-code-bg-dark, rgba(110, 118, 129, 0.4));
+    color: var(--text-primary-dark, #c9d1d9);
+  }
+}
+
+/* 启用 Milkdown 自带的代码块语言标识 - 覆盖隐藏样式 */
+.editor-container :deep(.milkdown pre::before) {
+  opacity: 1 !important;
+  inset: auto !important;
 }
 </style>

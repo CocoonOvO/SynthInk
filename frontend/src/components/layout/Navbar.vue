@@ -14,14 +14,14 @@
           <path d="M6 18c-1-3 0-6 3-7 2-1 4 0 4 2 0 2-3 4-6 5-1 0-1 0-1 0z" fill="currentColor" opacity="0.85"/>
         </svg>
       </div>
-      <span class="nav-logo-text">SynthSpark</span>
+      <span class="nav-logo-text">{{ cw.logo }}</span>
     </router-link>
 
     <!-- 导航链接 -->
     <ul class="nav-links">
-      <li><router-link to="/">首页</router-link></li>
-      <li><router-link to="/posts">文章</router-link></li>
-      <li><router-link to="/about">关于</router-link></li>
+      <li v-for="item in cw.navItems" :key="item.path">
+        <router-link :to="item.path">{{ item.label }}</router-link>
+      </li>
     </ul>
 
     <!-- 右侧操作区 -->
@@ -129,13 +129,25 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useThemeStore } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
+import copywriting from '@/config/copywriting.json'
+import type { Theme } from '@/stores/theme'
+
+// 扩展HTMLElement类型以支持_clickOutside
+declare global {
+  interface HTMLElement {
+    _clickOutside?: (event: Event) => void
+  }
+}
 
 // 主题store
 const themeStore = useThemeStore()
-const currentTheme = ref(themeStore.currentTheme)
+const currentTheme = ref<Theme>(themeStore.currentTheme)
 
 // 认证store
 const authStore = useAuthStore()
+
+// 文案配置
+const cw = copywriting.navbar
 
 // 滚动状态
 const isScrolled = ref(false)
@@ -175,8 +187,8 @@ const closeThemePanel = () => {
 
 // 设置主题
 const setTheme = (themeId: string) => {
-  themeStore.setTheme(themeId)
-  currentTheme.value = themeId
+  themeStore.setTheme(themeId as Theme)
+  currentTheme.value = themeId as Theme
   isThemePanelOpen.value = false
 }
 
@@ -196,7 +208,9 @@ const vClickOutside = {
     document.addEventListener('click', el._clickOutside)
   },
   unmounted(el: HTMLElement) {
-    document.removeEventListener('click', el._clickOutside)
+    if (el._clickOutside) {
+      document.removeEventListener('click', el._clickOutside)
+    }
   }
 }
 

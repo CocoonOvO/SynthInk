@@ -24,6 +24,7 @@ const SearchResultsView = () => import('@/views/search/SearchResultsView.vue')
 const NotFoundView = () => import('@/views/error/NotFoundView.vue')
 const ApiTestView = () => import('@/views/test/ApiTestView.vue')
 const AboutView = () => import('@/views/about/AboutView.vue')
+const CodeBlockView = () => import('@/views/demo/CodeBlockView.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -78,6 +79,12 @@ const routes: RouteRecordRaw[] = [
         name: 'About',
         component: AboutView,
         meta: { title: '关于我们' }
+      },
+      {
+        path: '/demo/code-block',
+        name: 'CodeBlockDemo',
+        component: CodeBlockView,
+        meta: { title: '代码块Demo' }
       }
     ]
   },

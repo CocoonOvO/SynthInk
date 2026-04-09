@@ -4,8 +4,10 @@
  * 虽然不想写，但还是要写好
  */
 
-// API 基础地址
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002'
+// API 基础地址 - 使用相对路径，通过反向代理访问后端
+// 开发环境：vite.config.ts 的 proxy 会代理 /api 到后端
+// 生产环境：nginx 需要配置反向代理 /api -> 后端服务
+const API_BASE_URL = ''
 
 // 请求配置接口
 interface RequestConfig extends RequestInit {

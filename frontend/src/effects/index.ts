@@ -63,6 +63,15 @@ export {
   type ParticleType
 } from './particles'
 
+// 导入函数用于本地使用
+import { autoInitTypewriter } from './typewriter'
+import { autoInitCountUp } from './countUp'
+import { autoInitTextScramble } from './textScramble'
+import { autoInitFloating } from './floating'
+import { autoInitMouseGlow } from './mouseGlow'
+import { autoInitTiltCard } from './tiltCard'
+import { autoInitParticles } from './particles'
+
 /**
  * 自动初始化所有动效
  * 在 main.ts 中调用，会自动检测并初始化带 data-* 属性的元素

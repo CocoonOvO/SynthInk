@@ -165,10 +165,11 @@ export class TextScramble {
     this.observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && !entry.target.dataset.scrambled) {
-            entry.target.dataset.scrambled = 'true'
+          const target = entry.target as HTMLElement
+          if (entry.isIntersecting && !target.dataset.scrambled) {
+            target.dataset.scrambled = 'true'
             setTimeout(() => {
-              this.scramble(entry.target as HTMLElement, config)
+              this.scramble(target, config)
             }, config.delay)
           }
         })

@@ -1,11 +1,28 @@
 """
 应用入口文件
 """
+from pathlib import Path
+from fastapi.responses import PlainTextResponse
 from .app import app
 from .routers import api_router
 
 # 注册API路由
 app.include_router(api_router)
+
+
+# SKILL.md 静态文件服务
+@app.get("/skill.md", response_class=PlainTextResponse)
+async def get_skill_md():
+    """
+    获取Agent操作指南 (SKILL.md)
+
+    为Agent提供SynthInk系统的API操作指南
+    """
+    skill_path = Path(__file__).parent.parent.parent / "SKILL.md"
+    if skill_path.exists():
+        content = skill_path.read_text(encoding="utf-8")
+        return PlainTextResponse(content)
+    return PlainTextResponse("SKILL.md not found", status_code=404)
 
 # TODO: 注册其他路由或中间件
 # - 静态文件服务

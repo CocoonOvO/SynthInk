@@ -4,35 +4,43 @@
  */
 import { client } from './client'
 
-// 用户类型
-export interface User {
-  id: number
-  username: string
-  email: string
-  display_name?: string  // 后端字段名
-  full_name?: string     // 兼容旧代码
-  avatar?: string  // 后端返回avatar_url，映射为avatar
-  bio?: string
-  is_active: boolean
-  is_superuser: boolean
-  user_type: 'user' | 'admin'
-  created_at: string
-  updated_at?: string
-}
+// API 基础地址 - 使用相对路径，通过反向代理访问后端
+const API_BASE_URL = ''
 
-// 后端原始用户类型
-interface BackendUser {
-  id: number
+// 用户类型 - 与后端 User 模型保持一致
+export interface User {
+  id: string
   username: string
-  email: string
-  display_name?: string  // 后端实际字段名
+  email: string | null
+  display_name?: string
   avatar_url?: string
   bio?: string
+  user_type: 'user' | 'agent'
   is_active: boolean
   is_superuser: boolean
-  user_type: 'user' | 'admin'
   created_at: string
   updated_at?: string
+  agent_model?: string
+  agent_provider?: string
+  agent_config?: Record<string, any>
+}
+
+// 后端原始用户类型（API响应）
+interface BackendUser {
+  id: string
+  username: string
+  email: string | null
+  display_name?: string
+  avatar_url?: string
+  bio?: string
+  user_type: 'user' | 'agent'
+  is_active: boolean
+  is_superuser: boolean
+  created_at: string
+  updated_at?: string
+  agent_model?: string
+  agent_provider?: string
+  agent_config?: Record<string, any>
 }
 
 // 登录请求
@@ -83,13 +91,10 @@ export interface UpdateUserRequest {
 
 /**
  * 转换后端用户数据为前端格式
+ * 现在前后端类型一致，直接返回即可
  */
 function transformUser(backendUser: BackendUser): User {
-  return {
-    ...backendUser,
-    full_name: backendUser.display_name,  // 兼容旧代码
-    avatar_url: backendUser.avatar_url
-  }
+  return backendUser as User
 }
 
 /**
@@ -106,7 +111,7 @@ export const authApi = {
     formData.append('username', data.username)
     formData.append('password', data.password)
 
-    const response = await fetch('http://localhost:8002/api/auth/token', {
+    const response = await fetch(`${API_BASE_URL}/api/auth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'

@@ -36,7 +36,14 @@
           </div>
           <!-- 文章标签 -->
           <div v-if="article.tags && article.tags.length" class="article-tags-inline">
-            <span v-for="tag in article.tags" :key="tag" class="article-tag-small">{{ tag }}</span>
+            <span
+              v-for="tag in article.tags"
+              :key="tag.id || tag"
+              class="article-tag-small clickable"
+              @click="goToTag(tag.name || tag)"
+            >
+              {{ tag.name || tag }}
+            </span>
           </div>
         </div>
       </div>
@@ -44,8 +51,12 @@
 
     <!-- 文章元信息区 - 放在背景下方 -->
     <div class="article-meta-section">
-      <span class="category-tag">{{ article.category }}</span>
-      <span v-if="article.group" class="group-tag">{{ article.group }}</span>
+      <span
+        class="category-tag clickable"
+        @click="goToGroup(article.groupId)"
+      >
+        {{ article.category }}
+      </span>
     </div>
 
     <!-- 目录侧边栏 - 固定定位 -->
@@ -185,6 +196,13 @@ import { useAuthStore } from '@/stores'
 import MarkdownRenderer from '@/components/markdown/MarkdownRenderer.vue'
 import type { Post } from '@/api'
 
+// 扩展HTMLElement类型以支持_clickOutside
+declare global {
+  interface HTMLElement {
+    _clickOutside?: (event: Event) => void
+  }
+}
+
 // ╭────────────────────────────────────────────────────────────╮
 // │  路由和状态 - 又是熟悉的味道
 // ╰────────────────────────────────────────────────────────────╯
@@ -202,6 +220,8 @@ const article = ref<any>({
   title: '',
   category: '',
   group: '',
+  groupId: '',  // 分组ID，用于跳转
+  tags: [],     // 标签数组，包含id和name
   authorType: 'user',
   author: '',
   authorAvatar: '',
@@ -251,6 +271,8 @@ const loadArticle = async () => {
       title: postRes.title,
       category: postRes.group_name || '未分类',
       group: postRes.group_name || '',
+      groupId: postRes.group_id || '',  // 保存分组ID用于跳转
+      tags: postRes.tags || [],  // 保存标签数组
       authorType: postRes.author_type || 'user',
       author: postRes.author_name || '未知作者',
       authorUsername: postRes.author_username,  // 用户名用于跳转用户主页
@@ -308,7 +330,8 @@ const getRandomGradient = () => {
     ['#fdcb6e', '#e17055'],
     ['#74b9ff', '#0984e3']
   ]
-  const [c1, c2] = colors[Math.floor(Math.random() * colors.length)]
+  const colorPair = colors[Math.floor(Math.random() * colors.length)]
+  const [c1, c2] = colorPair ?? ['#ff6b6b', '#feca57']
   return `linear-gradient(135deg, ${c1}, ${c2})`
 }
 
@@ -376,7 +399,16 @@ const isFollowing = ref(false)
 
 // 评论相关
 const newComment = ref('')
-const comments = ref([
+interface CommentItem {
+  id: number
+  author: string
+  authorAvatar: string
+  avatarUrl?: string
+  avatarGradient: string
+  time: string
+  text: string
+}
+const comments = ref<CommentItem[]>([
   {
     id: 1,
     author: 'Bob',
@@ -496,6 +528,32 @@ const goToUserProfile = (username: string | undefined) => {
   }
 }
 
+// 跳转到分组
+const goToGroup = (groupId: string | undefined) => {
+  if (groupId) {
+    // 有分组时，跳转到对应分组筛选
+    router.push({
+      path: '/posts',
+      query: { group: groupId }
+    })
+  } else {
+    // 未分组时，跳转到文章列表（不筛选，显示全部）
+    router.push({
+      path: '/posts'
+    })
+  }
+}
+
+// 跳转到标签
+const goToTag = (tagName: string | undefined) => {
+  if (tagName) {
+    router.push({
+      path: '/posts',
+      query: { tag: tagName }
+    })
+  }
+}
+
 // 提交评论
 const submitComment = async () => {
   if (!newComment.value.trim()) {
@@ -518,15 +576,14 @@ const submitComment = async () => {
 
     // 获取当前用户名（已登录用用户名，未登录用匿名）
     const currentUserName = authStore.isLoggedIn 
-      ? (authStore.user?.full_name || authStore.user?.username || '我')
+      ? (authStore.user?.display_name || authStore.user?.username || '我')
       : (comment.author_name || '匿名用户')
 
     // 添加到评论列表
     comments.value.unshift({
       id: comment.id,
       author: currentUserName,
-      authorAvatar: currentUserName[0],
-      avatarUrl: authStore.user?.avatar_url,
+      authorAvatar: currentUserName[0] || '?',
       avatarGradient: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
       time: '刚刚',
       text: comment.content
@@ -559,7 +616,9 @@ const vClickOutside = {
     document.addEventListener('click', el._clickOutside)
   },
   unmounted(el: HTMLElement) {
-    document.removeEventListener('click', el._clickOutside)
+    if (el._clickOutside) {
+      document.removeEventListener('click', el._clickOutside)
+    }
   }
 }
 
@@ -581,7 +640,7 @@ onUnmounted(() => {
    │  文章头部 - 老大的需求总是这么具体
    ╰────────────────────────────────────────────────────────────╯ */
 .article-header {
-  padding: 40px 0 30px;
+  padding: 16px 0 12px;
   max-width: 720px;
   margin: 0 auto;
   text-align: left;
@@ -589,12 +648,11 @@ onUnmounted(() => {
   background-size: cover;
   background-position: center;
   border-radius: 12px;
-  margin-bottom: 32px;
 }
 
 /* 有封面时的样式 - 原方案：黑色渐变遮罩 */
 .article-header.has-cover {
-  min-height: 320px;
+  min-height: 200px;
   display: flex;
   align-items: flex-end;
   padding: 0;
@@ -622,7 +680,7 @@ onUnmounted(() => {
 }
 
 .article-header.has-cover .article-header-content {
-  padding: 40px 32px 32px;
+  padding: 16px 20px 16px;
   background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--bg-primary) 60%, transparent) 100%);
 }
 
@@ -699,9 +757,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
-  padding: 12px 0;
-  margin: 0 auto 16px;
+  gap: 8px;
+  padding: 4px 0;
+  margin: 0 auto;
   max-width: 720px;
   flex-wrap: wrap;
 }
@@ -724,6 +782,17 @@ onUnmounted(() => {
   letter-spacing: 0.05em;
 }
 
+.category-tag.clickable {
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.category-tag.clickable:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--bg-primary);
+}
+
 .group-tag {
   padding: 6px 14px;
   background: var(--accent-primary);
@@ -732,6 +801,16 @@ onUnmounted(() => {
   font-size: 13px;
   color: var(--bg-primary);
   font-weight: 500;
+}
+
+.group-tag.clickable {
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.group-tag.clickable:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
 }
 
 .ai-badge {
@@ -832,10 +911,18 @@ onUnmounted(() => {
   transition: var(--transition-fast);
 }
 
+.article-tag-small.clickable {
+  cursor: pointer;
+}
+
 .article-tag-small:hover {
   background: var(--accent-primary);
   border-color: var(--accent-primary);
   color: var(--bg-primary);
+}
+
+.article-tag-small.clickable:hover {
+  transform: translateY(-1px);
 }
 
 /* ╭────────────────────────────────────────────────────────────╮

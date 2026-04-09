@@ -3,6 +3,7 @@
  * 接入 SynthSpark 主题变量
  */
 
+@import 'prosemirror-view/style/prosemirror.css';
 @import './base.css';
 @import './effects.css';
 @import './code-highlight.css';

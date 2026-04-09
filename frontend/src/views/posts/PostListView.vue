@@ -176,7 +176,8 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { postsApi, tagsApi, groupsApi } from '@/api'
-import type { Post, Tag, Group } from '@/types'
+import type { Post, Tag } from '@/types'
+import type { Group } from '@/api/posts'
 
 // 路由
 const router = useRouter()
@@ -204,10 +205,10 @@ const isLoading = ref(false)
 const loadError = ref('')
 
 // 存储原始搜索结果，用于前端筛选
-const searchResults = ref<Post[]>([])
+const searchResults = ref<any[]>([])
 
 // 存储原始文章列表（用于AI筛选时恢复数据）
-const rawArticles = ref<Post[]>([])
+const rawArticles = ref<any[]>([])
 const rawTotal = ref(0)
 
 // 从API加载数据
@@ -227,9 +228,9 @@ const loadData = async () => {
       
       // 如果从URL读取的是分组名称，现在转换为ID
       if (selectedGroup.value) {
-        const groupByName = groups.value.find(g => g.name === selectedGroup.value)
+        const groupByName = groups.value.find((g: Group) => g.name === selectedGroup.value)
         if (groupByName) {
-          selectedGroup.value = groupByName.id
+          selectedGroup.value = String(groupByName.id)
         }
       }
     }
@@ -340,7 +341,7 @@ const applyFilters = () => {
   if (selectedGroup.value) {
     // 注意：搜索结果中只有group_name，没有group_id
     // 需要通过group_name找到对应的group_id
-    const selectedGroupData = groups.value.find(g => g.id === selectedGroup.value)
+    const selectedGroupData = groups.value.find((g: Group) => g.id === selectedGroup.value)
     if (selectedGroupData) {
       filtered = filtered.filter(post => post.group_name === selectedGroupData.name)
     }
@@ -469,12 +470,13 @@ const toggleTag = (tagId: number) => {
 
 // 获取分组名称
 const getGroupName = (groupId: string) => {
-  const group = groups.value.find(g => g.id === groupId)
+  const group = groups.value.find((g: Group) => g.id === groupId)
   return group?.name || groupId
 }
 
 // 获取标签名称
-const getTagName = (tagId: number) => {
+const getTagName = (tagId: number | undefined) => {
+  if (tagId === undefined) return ''
   const tag = tags.value.find(t => t.id === tagId)
   return tag?.name || String(tagId)
 }
@@ -611,7 +613,8 @@ const gradients = [
   'linear-gradient(135deg, #dfe6e9, #b2bec3)'
 ]
 const getCoverGradient = (index: number): string => {
-  return gradients[index % gradients.length]
+  const gradientIndex = index % gradients.length
+  return gradients[gradientIndex] ?? gradients[0]!
 }
 
 // ╭────────────────────────────────────────────────────────────╮

@@ -8,20 +8,28 @@
 
 // ╭── 用户相关类型 ──╮
 
+/** 用户类型 */
+export type UserType = 'user' | 'agent'
+
 /** 用户角色 */
 export type UserRole = 'user' | 'admin' | 'superadmin'
 
-/** 用户信息 */
+/** 用户信息 - 与后端 User 模型保持一致 */
 export interface User {
-  id: number
+  id: string
   username: string
-  email: string
-  avatar?: string
+  email: string | null
+  display_name?: string
+  avatar_url?: string
   bio?: string
-  role: UserRole
+  user_type: UserType
   is_active: boolean
+  is_superuser: boolean
   created_at: string
-  updated_at: string
+  updated_at?: string
+  agent_model?: string
+  agent_provider?: string
+  agent_config?: Record<string, any>
 }
 
 /** 用户统计 */
@@ -49,29 +57,47 @@ export interface Category {
 export interface Tag {
   id: number
   name: string
-  slug: string
+  slug?: string
   color?: string
+  description?: string
+  post_count?: number
+}
+
+/** 分组信息 */
+export interface Group {
+  id: string | number
+  name: string
+  slug?: string
+  description?: string
+  post_count?: number
 }
 
 /** 文章信息 */
 export interface Post {
-  id: number
+  id: number | string
   title: string
-  content: string
+  content?: string
   summary?: string
-  slug: string
-  status: PostStatus
-  is_ai_generated: boolean
+  introduction?: string  // 文章简介
+  slug?: string  // 改为可选
+  status?: PostStatus
+  is_ai_generated?: boolean
   author_type?: 'user' | 'agent'  // 作者类型：user-用户，agent-AI
+  author_id?: string
+  author_name?: string
+  author_username?: string
+  author_avatar?: string
+  group_id?: string
+  group_name?: string
   view_count: number
-  like_count: number
-  comment_count: number
+  like_count?: number
+  comment_count?: number
   cover_image?: string  // 封面图URL
   author?: User
   category?: Category
-  tags?: Tag[]
+  tags?: Tag[] | string[]  // 支持Tag对象数组或字符串数组
   created_at: string
-  updated_at: string
+  updated_at?: string
   published_at?: string
 }
 

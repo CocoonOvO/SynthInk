@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, EmailStr, ConfigDict
 class UserBase(BaseModel):
     """用户基础模型"""
     username: str = Field(..., min_length=3, max_length=50)
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None  # BUG-039修复: 使用str代替EmailStr，避免null值验证失败
     display_name: Optional[str] = Field(None, max_length=100)
     avatar_url: Optional[str] = None
     bio: Optional[str] = Field(None, max_length=500)

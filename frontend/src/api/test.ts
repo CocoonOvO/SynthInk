@@ -58,7 +58,7 @@ export async function runTests() {
   await test('获取分组列表', () => groupsApi.getList({ limit: 5 }))
   
   // 5. 测试评论列表
-  await test('获取评论列表', () => commentsApi.getList({ limit: 5 }))
+  await test('获取评论列表', () => commentsApi.getList({ post_id: '1', limit: 5 }))
   
   // 6. 测试点赞状态（使用文章ID 1）
   await test('获取点赞状态', () => likesApi.getStatus(1))
@@ -81,7 +81,7 @@ export async function runTests() {
   return results
 }
 
-// 如果直接运行此文件
-if (import.meta.url === `file://${process.cwd()}/src/api/test.ts`) {
-  runTests()
-}
+// 如果直接运行此文件（注释掉，因为在浏览器环境中无法使用process.cwd）
+// if (import.meta.url === `file://${process.cwd()}/src/api/test.ts`) {
+//   runTests()
+// }

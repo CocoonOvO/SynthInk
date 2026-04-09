@@ -646,20 +646,36 @@ class PostgresAdapter(BaseAdapter):
     async def add_post_tag(self, post_id: str, tag_id: str) -> dict[str, Any]:
         """为文章添加标签"""
         try:
-            await self._execute(
-                f"INSERT INTO {self.schema}.post_tags (post_id, tag_id) VALUES ($1, $2)",
-                post_id, tag_id
-            )
+            async with self.pool.acquire() as conn:
+                async with conn.transaction():
+                    # 添加关联
+                    await conn.execute(
+                        f"INSERT INTO {self.schema}.post_tags (post_id, tag_id) VALUES ($1, $2)",
+                        post_id, tag_id
+                    )
+                    # 更新标签使用计数
+                    await conn.execute(
+                        f"UPDATE {self.schema}.tags SET post_count = post_count + 1 WHERE id = $1",
+                        tag_id
+                    )
             return {"success": True}
         except asyncpg.UniqueViolationError:
             return {"success": False, "error": "Tag already added to post"}
-    
+
     async def remove_post_tag(self, post_id: str, tag_id: str) -> dict[str, Any]:
         """移除文章的标签"""
-        await self._execute(
-            f"DELETE FROM {self.schema}.post_tags WHERE post_id = $1 AND tag_id = $2",
-            post_id, tag_id
-        )
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                # 移除关联
+                await conn.execute(
+                    f"DELETE FROM {self.schema}.post_tags WHERE post_id = $1 AND tag_id = $2",
+                    post_id, tag_id
+                )
+                # 更新标签使用计数
+                await conn.execute(
+                    f"UPDATE {self.schema}.tags SET post_count = post_count - 1 WHERE id = $1",
+                    tag_id
+                )
         return {"success": True}
     
     async def increment_view_count(self, post_id: str) -> dict[str, Any]:

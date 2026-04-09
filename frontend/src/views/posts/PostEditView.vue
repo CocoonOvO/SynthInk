@@ -142,6 +142,49 @@
               <button class="toolbar-btn" title="代码" @click="formatText('formatBlock', 'PRE')">
                 <svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
               </button>
+              <!-- 代码块语言选择器 -->
+              <select
+                class="code-language-select"
+                :class="{ 'in-code-block': isInCodeBlock }"
+                :value="currentCodeBlockLanguage || ''"
+                @change="handleLanguageChange(($event.target as HTMLSelectElement).value)"
+                title="选择代码语言"
+              >
+                <option value="">纯文本</option>
+                <option value="javascript">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+                <option value="cpp">C++</option>
+                <option value="c">C</option>
+                <option value="csharp">C#</option>
+                <option value="php">PHP</option>
+                <option value="ruby">Ruby</option>
+                <option value="swift">Swift</option>
+                <option value="kotlin">Kotlin</option>
+                <option value="sql">SQL</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="json">JSON</option>
+                <option value="yaml">YAML</option>
+                <option value="xml">XML</option>
+                <option value="markdown">Markdown</option>
+                <option value="bash">Bash</option>
+                <option value="powershell">PowerShell</option>
+                <option value="dockerfile">Dockerfile</option>
+                <option value="lua">Lua</option>
+                <option value="perl">Perl</option>
+                <option value="r">R</option>
+                <option value="scala">Scala</option>
+                <option value="dart">Dart</option>
+                <option value="elixir">Elixir</option>
+                <option value="haskell">Haskell</option>
+                <option value="clojure">Clojure</option>
+                <option value="julia">Julia</option>
+                <option value="vim">Vim</option>
+              </select>
               <div class="toolbar-divider"></div>
               <button class="toolbar-btn" title="无序列表" @click="formatText('insertUnorderedList')">
                 <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4zM4 4h2v2H4zm0 5h2v2H4zm0 5h2v2H4z"/></svg>
@@ -327,7 +370,16 @@ const draftPosts = computed(() => {
 })
 
 // 当前文章
-const currentPost = reactive<Partial<Post> & { content?: string; tags?: string[]; cover_image?: string }>({
+const currentPost = reactive<{
+  id?: string | number
+  title: string
+  content: string
+  tags: string[]
+  status?: 'draft' | 'published' | 'archived'
+  cover_image?: string
+  group_id?: string
+  slug?: string
+}>({
   id: '',
   title: '',
   content: '# 开始写作...\n\n在这里输入你的文章内容',
@@ -364,6 +416,67 @@ const toolbarRef = ref<HTMLElement | null>(null)
 // Milkdown编辑器引用
 const milkdownEditorRef = ref<InstanceType<typeof MilkdownEditor> | null>(null)
 
+// 当前代码块语言（null表示不在代码块中）
+const currentCodeBlockLanguage = ref<string | null>(null)
+// 用户选择的代码块语言（用于创建新代码块）
+const selectedCodeBlockLanguage = ref<string>('')
+// 是否在代码块中
+const isInCodeBlock = ref(false)
+// 当前点击的代码块DOM元素
+const lastClickedCodeBlock = ref<HTMLElement | null>(null)
+
+// 监听编辑器选择变化，更新代码块语言状态
+const updateCodeBlockLanguage = () => {
+  if (!milkdownEditorRef.value) {
+    currentCodeBlockLanguage.value = null
+    isInCodeBlock.value = false
+    return
+  }
+  const lang = milkdownEditorRef.value.getCurrentCodeBlockLanguage?.()
+  currentCodeBlockLanguage.value = lang
+  isInCodeBlock.value = lang !== null
+}
+
+// 设置代码块语言
+const setCodeBlockLanguage = (language: string) => {
+  if (!milkdownEditorRef.value?.setCodeBlockLanguage) return
+  milkdownEditorRef.value.setCodeBlockLanguage(language)
+  currentCodeBlockLanguage.value = language || null
+}
+
+// 处理语言选择变化
+const handleLanguageChange = (language: string) => {
+  // 总是更新当前选中的语言
+  currentCodeBlockLanguage.value = language || null
+  // 同时更新用户选择的语言（用于创建新代码块）
+  selectedCodeBlockLanguage.value = language || ''
+  console.log('Language changed to:', language, 'currentCodeBlockLanguage:', currentCodeBlockLanguage.value, 'selectedCodeBlockLanguage:', selectedCodeBlockLanguage.value)
+  
+  // 如果有记录的代码块DOM元素，使用它来设置语言
+  if (lastClickedCodeBlock.value && milkdownEditorRef.value?.setCodeBlockLanguageByDOM) {
+    milkdownEditorRef.value.setCodeBlockLanguageByDOM(lastClickedCodeBlock.value, language)
+  } else if (milkdownEditorRef.value?.setCodeBlockLanguage) {
+    // 否则使用默认方法（基于当前 selection）
+    milkdownEditorRef.value.setCodeBlockLanguage(language)
+  }
+}
+
+// 处理编辑器点击事件 - 使用setTimeout确保在selection更新后执行
+const handleEditorClick = (e: MouseEvent) => {
+  // 如果点击的是编辑器区域，延迟更新代码块语言状态
+  const target = e.target as HTMLElement
+  // 优先查找 pre 元素（代码块容器），如果没有再查找 code 元素
+  const codeBlock = target.closest('pre') as HTMLElement
+  if (codeBlock) {
+    // 记录点击的代码块DOM元素（必须是 pre 元素）
+    lastClickedCodeBlock.value = codeBlock
+  }
+  // 只在点击编辑器内容区域时更新语言状态，不包括工具栏按钮
+  if (target.closest('.milkdown-content-editor, .ProseMirror')) {
+    setTimeout(() => updateCodeBlockLanguage(), 0)
+  }
+}
+
 // Tab状态 - 'published' | 'draft'
 const activeTab = ref<'published' | 'draft'>('published')
 
@@ -390,12 +503,15 @@ const filteredTags = computed(() => {
 let currentContextPost: Post | null = null
 let saveTimeout: number | null = null
 let autoSaveInterval: number | null = null
+let codeBlockCheckInterval: number | null = null
 
 // ╭────────────────────────────────────────────────────────────╮
 // │  初始化 - 加载数据
 // ╰────────────────────────────────────────────────────────────╯
 onMounted(async () => {
   document.addEventListener('click', closeContextMenu)
+  // 监听点击事件，确保点击编辑器时更新代码块语言状态
+  document.addEventListener('click', handleEditorClick)
 
   // 加载分组列表
   await loadGroups()
@@ -421,7 +537,7 @@ onMounted(async () => {
     // 默认加载当前分组的文章列表
     await loadPosts(currentGroup.value.id)
     // 选择第一篇文章（如果有）
-    if (posts.value.length > 0) {
+    if (posts.value.length > 0 && posts.value[0]) {
       selectPost(posts.value[0])
     }
     // 注意：不再自动创建新文章，避免空分组显示无意义文章
@@ -443,6 +559,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('click', closeContextMenu)
+  document.removeEventListener('click', handleEditorClick)
   // 移除滚动监听
   const editorArea = document.querySelector('.editor-area')
   if (editorArea) {
@@ -453,6 +570,9 @@ onUnmounted(() => {
   }
   if (autoSaveInterval) {
     clearInterval(autoSaveInterval)
+  }
+  if (codeBlockCheckInterval) {
+    clearInterval(codeBlockCheckInterval)
   }
 })
 
@@ -467,7 +587,7 @@ const loadGroups = async () => {
     if (response && Array.isArray(response)) {
       groups.value = response
       if (groups.value.length > 0 && !currentGroup.value.id) {
-        currentGroup.value = groups.value[0]
+        currentGroup.value = groups.value[0]!
       }
     }
   } catch (error) {
@@ -506,7 +626,14 @@ const loadPost = async (postId: string) => {
     const post = await postsApi.getById(postId)
     if (post) {
       Object.assign(currentPost, post)
-      currentPost.tags = post.tags || []
+      // 转换tags为字符串数组
+      currentPost.tags = Array.isArray(post.tags) 
+        ? post.tags.map(t => typeof t === 'string' ? t : t.name) 
+        : []
+      // 修复双重转义的code fences
+      if (currentPost.content) {
+        currentPost.content = currentPost.content.replace(/(?:\\`){3}/g, '```')
+      }
       // 确保content有值（使用Markdown格式）
       if (!currentPost.content) {
         currentPost.content = '# 开始写作...\n\n在这里输入你的文章内容'
@@ -514,13 +641,13 @@ const loadPost = async (postId: string) => {
       originalPost = JSON.stringify({
         title: post.title,
         content: currentPost.content,
-        tags: post.tags,
+        tags: currentPost.tags,
         cover_image: currentPost.cover_image,
         status: currentPost.status
       })
       // 更新当前分组
       if (post.group_id) {
-        const group = groups.value.find(g => g.id === post.group_id)
+        const group = groups.value.find(g => String(g.id) === String(post.group_id))
         if (group) {
           currentGroup.value = group
         }
@@ -532,7 +659,7 @@ const loadPost = async (postId: string) => {
         activeTab.value = 'published'
       }
       // 加载该分组的文章列表
-      await loadPosts(post.group_id || '')
+      await loadPosts(String(post.group_id || ''))
     }
   } catch (error) {
     console.error('加载文章失败:', error)
@@ -578,6 +705,8 @@ const onTitleInput = () => {
 const onContentInput = (content: string) => {
   currentPost.content = content
   debounceAutoSave()
+  // 更新代码块语言状态
+  updateCodeBlockLanguage()
 }
 
 // 防抖自动保存
@@ -599,7 +728,7 @@ const doAutoSave = async () => {
   isSaving.value = true
   try {
     await postsApi.update(currentPost.id as string, {
-      title: currentPost.title,
+      title: currentPost.title || '',
       content: currentPost.content,
       tags: currentPost.tags
     })
@@ -611,7 +740,7 @@ const doAutoSave = async () => {
     // 同步更新左侧栏文章列表中的标题
     const post = posts.value.find(p => p.id === currentPost.id)
     if (post) {
-      post.title = currentPost.title
+      post.title = currentPost.title || ''
     }
     saveStatus.value = '已自动保存 ' + new Date().toLocaleTimeString()
     saveError.value = false
@@ -636,7 +765,7 @@ const saveDraft = async () => {
   saveStatus.value = '保存中...'
   try {
     await postsApi.update(currentPost.id as string, {
-      title: currentPost.title,
+      title: currentPost.title || '',
       content: currentPost.content,
       status: 'draft',
       tags: currentPost.tags
@@ -645,7 +774,7 @@ const saveDraft = async () => {
     // 更新文章列表中的标题和状态
     const post = posts.value.find(p => p.id === currentPost.id)
     if (post) {
-      post.title = currentPost.title
+      post.title = currentPost.title || ''
       post.status = 'draft'
     }
     // 切换到草稿Tab
@@ -677,7 +806,7 @@ const publish = async () => {
       const newPost = await postsApi.create({
         title: currentPost.title,
         content: currentPost.content || '',
-        group_id: currentGroup.value.id,
+        group_id: String(currentGroup.value.id),
         status: 'published',
         tags: currentPost.tags,
         cover_image: currentPost.cover_image
@@ -691,7 +820,7 @@ const publish = async () => {
       originalPost = JSON.stringify({
         title: newPost.title,
         content: currentPost.content,
-        tags: newPost.tags,
+        tags: currentPost.tags,
         cover_image: currentPost.cover_image,
         status: 'published'
       })
@@ -708,7 +837,7 @@ const publish = async () => {
       // 更新文章列表中的标题和状态
       const post = posts.value.find(p => p.id === currentPost.id)
       if (post) {
-        post.title = currentPost.title
+        post.title = currentPost.title || ''
         post.status = 'published'
       }
     }
@@ -763,7 +892,7 @@ const selectGroup = async (group: Group) => {
   // 加载该分组的文章
   await loadPosts(group.id)
   // 选择第一篇文章（如果有）
-  if (posts.value.length > 0) {
+  if (posts.value.length > 0 && posts.value[0]) {
     selectPost(posts.value[0])
   }
   // 注意：不再自动创建新文章，避免空分组显示无意义文章
@@ -783,7 +912,7 @@ const selectGroupBySlug = async (groupSlug: string) => {
   } else {
     console.warn('未找到分组:', groupSlug)
     // 如果找不到分组，使用第一个分组
-    if (groups.value.length > 0) {
+    if (groups.value.length > 0 && groups.value[0]) {
       await selectGroup(groups.value[0])
     }
   }
@@ -974,7 +1103,7 @@ const confirmMovePost = async (targetGroup: Group) => {
     }
     // 如果移动的是当前文章，切换到其他文章
     if (currentPost.id === currentContextPost.id) {
-      if (posts.value.length > 0) {
+      if (posts.value.length > 0 && posts.value[0]) {
         selectPost(posts.value[0])
       } else {
         await createNewPost()
@@ -992,14 +1121,18 @@ const duplicatePost = async () => {
   if (currentContextPost) {
     try {
       // 先加载原文完整内容
-      const originalPost = await postsApi.getById(String(currentContextPost.id))
+      const originalPostData = await postsApi.getById(String(currentContextPost.id))
+      // 转换tags为字符串数组
+      const tagsArray = Array.isArray(originalPostData.tags) 
+        ? originalPostData.tags.map(t => typeof t === 'string' ? t : t.name) 
+        : []
       const newPost = await postsApi.create({
         title: `${currentContextPost.title} (复制)`,
-        content: originalPost.content || '',
-        group_id: currentGroup.value.id,
+        content: originalPostData.content || '',
+        group_id: String(currentGroup.value.id),
         status: 'draft',
-        tags: originalPost.tags || [],
-        cover_image: originalPost.cover_image || ''
+        tags: tagsArray,
+        cover_image: originalPostData.cover_image || ''
       })
       posts.value.unshift(newPost)
       selectPost(newPost)
@@ -1022,7 +1155,7 @@ const deletePost = async () => {
       }
       // 如果删除的是当前文章，切换到其他文章
       if (currentPost.id === currentContextPost.id) {
-        if (posts.value.length > 0) {
+        if (posts.value.length > 0 && posts.value[0]) {
           selectPost(posts.value[0])
         } else {
           await createNewPost()
@@ -1061,7 +1194,16 @@ const formatText = (command: string, value?: string) => {
       } else if (value === 'BLOCKQUOTE') {
         milkdownEditorRef.value.execCommand('WrapInBlockquote')
       } else if (value === 'PRE') {
-        milkdownEditorRef.value.execCommand('WrapInCodeBlock')
+        // 传递用户选择的语言（用于创建新代码块）
+        const lang = selectedCodeBlockLanguage.value || ''
+        console.log('Creating code block with language:', lang, 'selectedCodeBlockLanguage:', selectedCodeBlockLanguage.value)
+        console.log('milkdownEditorRef:', milkdownEditorRef.value)
+        if (milkdownEditorRef.value) {
+          console.log('Calling execCommand with WrapInCodeBlock')
+          milkdownEditorRef.value.execCommand('WrapInCodeBlock', lang)
+        } else {
+          console.log('milkdownEditorRef is null!')
+        }
       }
       break
     case 'insertUnorderedList':
@@ -1265,7 +1407,7 @@ const formatDate = (dateStr?: string) => {
 
 // 点击外部指令
 const vClickOutside = {
-  beforeMount(el: HTMLElement, binding: any) {
+  beforeMount(el: HTMLElement & { _clickOutside?: (event: Event) => void }, binding: any) {
     el._clickOutside = (event: Event) => {
       if (!(el === event.target || el.contains(event.target as Node))) {
         binding.value()
@@ -1273,8 +1415,10 @@ const vClickOutside = {
     }
     document.addEventListener('click', el._clickOutside)
   },
-  unmounted(el: HTMLElement) {
-    document.removeEventListener('click', el._clickOutside)
+  unmounted(el: HTMLElement & { _clickOutside?: (event: Event) => void }) {
+    if (el._clickOutside) {
+      document.removeEventListener('click', el._clickOutside)
+    }
   }
 }
 
@@ -2009,6 +2153,40 @@ const handleEditorScroll = () => {
   height: 20px;
   background: var(--border-subtle);
   margin: 0 8px;
+}
+
+/* 代码块语言选择器 */
+.code-language-select {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.code-language-select:hover {
+  border-color: var(--border-medium);
+  background: var(--bg-secondary);
+}
+
+.code-language-select:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--accent-primary-alpha, rgba(59, 130, 246, 0.2));
+}
+
+.code-language-select option {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.code-language-select.in-code-block {
+  border-color: var(--accent-primary);
+  background: var(--bg-secondary);
 }
 
 .content-editor {

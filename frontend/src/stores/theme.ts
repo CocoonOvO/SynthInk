@@ -46,14 +46,14 @@ const legacyThemeMap: Record<string, Theme> = {
 
 export const useThemeStore = defineStore('theme', () => {
   // 当前主题
-  const currentTheme = ref<Theme>('deep-space')
+  const currentTheme = ref<Theme>('exia')
 
   // 是否已初始化
   const isInitialized = ref(false)
 
   // 获取存储的主题（兼容旧主题）
   const getStoredTheme = (): Theme => {
-    if (typeof window === 'undefined') return 'deep-space'
+    if (typeof window === 'undefined') return 'exia'
     const stored = localStorage.getItem(THEME_STORAGE_KEY)
     // 兼容旧主题映射
     if (stored && legacyThemeMap[stored]) {
@@ -65,7 +65,7 @@ export const useThemeStore = defineStore('theme', () => {
       'sakura', 'bamboo', 'twins', 'mygo-light',
       'strawberry-cream', 'mint-choco', 'orange-soda'
     ]
-    return validThemes.includes(stored as Theme) ? (stored as Theme) : 'deep-space'
+    return validThemes.includes(stored as Theme) ? (stored as Theme) : 'exia'
   }
 
   // 设置主题
@@ -97,7 +97,10 @@ export const useThemeStore = defineStore('theme', () => {
     const themes: Theme[] = ['deep-space', 'cyberpunk', 'sakura', 'mygo-light']
     const currentIndex = themes.indexOf(currentTheme.value)
     const nextIndex = (currentIndex + 1) % themes.length
-    setTheme(themes[nextIndex])
+    const nextTheme = themes[nextIndex]
+    if (nextTheme) {
+      setTheme(nextTheme)
+    }
   }
 
   // 获取主题名称

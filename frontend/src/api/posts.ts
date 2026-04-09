@@ -13,17 +13,20 @@ export interface Post {
   introduction?: string  // 后端用的字段名
   cover_image?: string  // 封面图URL
   slug?: string  // URL友好标识
-  author_id?: number
+  author_id?: string
   author_name?: string
-  group_id?: number
+  author_avatar?: string  // 作者头像
+  author_type?: 'user' | 'agent'  // 作者类型
+  author_username?: string  // 作者用户名
+  group_id?: string  // 改为string类型，UUID
   group_name?: string
-  status: 'draft' | 'published' | 'archived'
+  status?: 'draft' | 'published' | 'archived'
   view_count: number
   like_count?: number
   created_at: string
   updated_at?: string
   published_at?: string
-  tags?: Tag[]
+  tags?: string[] | Tag[]  // 支持字符串数组或Tag对象数组
 }
 
 // 标签类型
@@ -41,6 +44,7 @@ export interface Group {
   slug?: string  // URL友好标识
   description?: string
   post_count?: number
+  icon?: string  // 分组图标
 }
 
 // 文章列表查询参数
@@ -49,9 +53,10 @@ export interface PostListParams {
   limit?: number
   group_id?: string  // 改为string类型，UUID
   tag_id?: number
-  author_id?: number
+  author_id?: string  // 改为string类型，与User.id一致
   status?: 'draft' | 'published' | 'archived'
   search?: string
+  [key: string]: string | number | boolean | undefined  // 添加索引签名
 }
 
 // 文章列表响应（后端返回 {items: [...], total: N} 格式）
@@ -65,6 +70,8 @@ export interface CreatePostRequest {
   title: string
   content: string
   summary?: string
+  introduction?: string
+  cover_image?: string
   group_id?: string  // 改为string类型，UUID
   tags?: string[]  // 后端使用标签名字符串数组
   status?: 'draft' | 'published'
@@ -75,6 +82,8 @@ export interface UpdatePostRequest {
   title?: string
   content?: string
   summary?: string
+  introduction?: string
+  cover_image?: string
   group_id?: string  // 改为string类型，UUID
   tags?: string[]  // 后端使用标签名字符串数组
   status?: 'draft' | 'published' | 'archived'

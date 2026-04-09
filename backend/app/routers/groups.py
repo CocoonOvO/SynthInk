@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from ..db_manager import db_manager
 from ..models.group import Group, GroupCreate
 from ..models.user import User
-from .auth import get_current_active_user, get_current_active_superuser
+from .auth import get_current_active_user
 
 router = APIRouter()
 
@@ -120,12 +120,12 @@ async def get_group(
 async def update_group(
     group_id: str,
     group_update: GroupCreate,
-    current_user: Annotated[User, Depends(get_current_active_superuser)]
+    current_user: Annotated[User, Depends(get_current_active_user)]
 ) -> Group:
     """
     更新分组信息
-    
-    - 管理员权限
+
+    - 需要登录
     """
     # 检查分组是否存在
     existing_result = await db_manager.db.get("groups", group_id)
@@ -170,13 +170,13 @@ async def update_group(
 @router.delete("/{group_id}", summary="删除分组")
 async def delete_group(
     group_id: str,
-    current_user: Annotated[User, Depends(get_current_active_superuser)]
+    current_user: Annotated[User, Depends(get_current_active_user)]
 ) -> dict:
     """
     删除指定分组
-    
-    - 管理员权限
-    - 删除后该分组下的文章将变为无分组状态
+
+    - 需要登录
+    - 分组被使用时无法删除
     """
     # 检查分组是否存在
     existing_result = await db_manager.db.get("groups", group_id)
@@ -185,43 +185,37 @@ async def delete_group(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="分组不存在"
         )
-    
-    # 将该分组下的文章设为无分组
-    posts_result = await db_manager.db.find(
-        "posts",
-        filters={"group_id": group_id},
-        limit=10000
-    )
-    
-    if posts_result.get("success"):
-        for post in posts_result["data"]:
-            await db_manager.db.update(
-                "posts",
-                post["id"],
-                {"group_id": None, "updated_at": datetime.utcnow()}
-            )
-    
+
+    existing_group = existing_result["data"]
+
+    # 检查分组是否被使用
+    if existing_group.get("post_count", 0) > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="分组正在被使用，无法删除"
+        )
+
     # 删除分组
     result = await db_manager.db.delete("groups", group_id)
-    
+
     if not result.get("success"):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="删除分组失败"
         )
-    
+
     return {"success": True, "message": "分组已删除"}
 
 
 @router.post("/reorder", summary="重新排序分组")
 async def reorder_groups(
     group_orders: dict,
-    current_user: Annotated[User, Depends(get_current_active_superuser)]
+    current_user: Annotated[User, Depends(get_current_active_user)]
 ) -> List[Group]:
     """
     批量更新分组排序
-    
-    - 管理员权限
+
+    - 需要登录
     - 接收分组ID和排序值的映射，例如：{"group_id_1": 0, "group_id_2": 1}
     """
     if not group_orders or not isinstance(group_orders, dict):

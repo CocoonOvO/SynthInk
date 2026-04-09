@@ -116,7 +116,7 @@ async function runAllTests() {
   await test('获取分组列表', () => groupsApi.getList({ limit: 5 }))
 
   // 5. 测试评论列表（需要传post_id）
-  await test('获取评论列表', () => commentsApi.getList({ post_id: 1, limit: 5 }))
+  await test('获取评论列表', () => commentsApi.getList({ post_id: '1', limit: 5 }))
 
   // 6. 测试点赞状态
   await test('获取点赞状态', () => likesApi.getStatus(1))
