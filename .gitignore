@@ -79,3 +79,11 @@ build/
 
 # Local development
 *.local
+
+# Temporary test files (not in tests/ directory)
+test_*.py
+check_*.py
+seed_test_data*.py
+integration_test_and_seed.py
+create_test_posts.py
+temp/
