@@ -95,3 +95,23 @@ mcp/check_*.py
 # SQL temp files
 *_test.sql
 check_*.sql
+
+# Test results
+test-results/
+frontend/test-results/
+
+# Test result JSON files
+*test-result*.json
+*test-api*.json
+*test-search*.json
+*test-slug*.json
+*test-t*.json
+
+# Temp files
+toolbar_test.png
+t_data.py
+reset_seo_tables.py
+
+# Demo files
+frontend-demos/
+query/
