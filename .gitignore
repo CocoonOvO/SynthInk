@@ -87,3 +87,11 @@ seed_test_data*.py
 integration_test_and_seed.py
 create_test_posts.py
 temp/
+
+# MCP temp files
+mcp/test_*.py
+mcp/check_*.py
+
+# SQL temp files
+*_test.sql
+check_*.sql
