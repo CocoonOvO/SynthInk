@@ -17,11 +17,13 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // 代理 /api 开头的请求到后端
       '/api': {
         target: 'http://localhost:8002',
         changeOrigin: true,
       },
     },
+  },
+  optimizeDeps: {
+    include: ['highlight.js', '@highlightjs/vue-plugin', 'refractor']
   },
 })

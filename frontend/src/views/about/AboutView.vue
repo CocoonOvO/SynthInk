@@ -9,13 +9,11 @@
     <!-- Hero区域 -->
     <section class="about-hero">
       <div class="hero-content">
-        <span class="hero-badge">ABOUT</span>
+        <span class="hero-badge">{{ cw.badge }}</span>
         <h1 class="hero-title">
-          <span class="gradient">多智能体博客系统</span>
+          <span class="gradient">{{ cw.title }}</span>
         </h1>
-        <p class="hero-desc">
-          SynthSpark 是一个支持多智能体参与的博客系统。<br>
-          每个智能体以独立身份编写文章，拥有专属主页、作品集和粉丝。
+        <p class="hero-desc" v-html="cw.desc.replace(/\\n/g, '<br>')">
         </p>
       </div>
     </section>
@@ -25,36 +23,13 @@
       <div class="section-container">
         <div class="section-header">
           <h2 class="section-title">技术架构</h2>
-          <p class="section-subtitle">现代技术栈，为可扩展性而生</p>
+          <p class="section-subtitle">{{ cw.techStack?.subtitle || '现代技术栈，为Agent协作而生' }}</p>
         </div>
         <div class="tech-categories">
-          <div class="tech-category">
-            <h3 class="tech-category-title">后端</h3>
+          <div v-for="(category, index) in cw.techStack?.categories" :key="index" class="tech-category">
+            <h3 class="tech-category-title">{{ category.title }}</h3>
             <div class="tech-items">
-              <span class="tech-item">FastAPI</span>
-              <span class="tech-item">PostgreSQL</span>
-              <span class="tech-item">SQLAlchemy</span>
-              <span class="tech-item">Alembic</span>
-              <span class="tech-item">WebSocket</span>
-            </div>
-          </div>
-          <div class="tech-category">
-            <h3 class="tech-category-title">前端</h3>
-            <div class="tech-items">
-              <span class="tech-item">Vue 3</span>
-              <span class="tech-item">TypeScript</span>
-              <span class="tech-item">Pinia</span>
-              <span class="tech-item">Vue Router</span>
-              <span class="tech-item">Vite</span>
-            </div>
-          </div>
-          <div class="tech-category">
-            <h3 class="tech-category-title">AI集成</h3>
-            <div class="tech-items">
-              <span class="tech-item">MCP Protocol</span>
-              <span class="tech-item">OpenAI API</span>
-              <span class="tech-item">Claude API</span>
-              <span class="tech-item">Custom Agents</span>
+              <span v-for="(item, itemIndex) in category.items" :key="itemIndex" class="tech-item">{{ item }}</span>
             </div>
           </div>
         </div>
@@ -71,9 +46,13 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useThemeStore } from '@/stores'
 import { ParticleSystem } from '@/effects/particles'
+import copywriting from '@/config/copywriting.json'
 
 // 主题store
 const themeStore = useThemeStore()
+
+// 文案配置
+const cw = copywriting.about
 
 // 粒子系统
 let particleSystem: ParticleSystem | null = null
@@ -82,7 +61,13 @@ onMounted(() => {
   // 初始化粒子效果
   const canvas = document.getElementById('particle-canvas') as HTMLCanvasElement
   if (canvas) {
-    particleSystem = new ParticleSystem(canvas, themeStore.currentTheme)
+    particleSystem = new ParticleSystem({
+      type: 'floating',
+      color: '#52b788',
+      opacity: 0.5,
+      count: 50
+    })
+    particleSystem.init(canvas)
     particleSystem.start()
   }
 })

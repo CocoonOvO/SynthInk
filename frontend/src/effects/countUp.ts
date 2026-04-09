@@ -46,7 +46,9 @@ export function useCountUp(
   const formatNumber = (num: number): string => {
     const fixed = num.toFixed(config.decimals)
     const parts = fixed.split('.')
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, config.separator)
+    if (parts[0]) {
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, config.separator)
+    }
     return parts.join('.')
   }
   
@@ -168,9 +170,10 @@ export class CountUp {
     this.observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && !entry.target.dataset.counted) {
-            entry.target.dataset.counted = 'true'
-            this.animate(entry.target as HTMLElement, config)
+          const target = entry.target as HTMLElement
+          if (entry.isIntersecting && !target.dataset.counted) {
+            target.dataset.counted = 'true'
+            this.animate(target, config)
           }
         })
       },
@@ -217,7 +220,9 @@ export class CountUp {
   private formatNumber(num: number, config: Required<CountUpOptions>): string {
     const fixed = num.toFixed(config.decimals)
     const parts = fixed.split('.')
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, config.separator)
+    if (parts[0]) {
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, config.separator)
+    }
     return parts.join('.')
   }
 

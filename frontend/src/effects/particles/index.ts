@@ -537,7 +537,7 @@ export function useParticles(options: ParticleOptions = {}) {
           ctx.value!.font = `${p.size * 3}px Arial`
           ctx.value!.textAlign = 'center'
           ctx.value!.textBaseline = 'middle'
-          ctx.value!.fillText(notes[p.noteType || 0], 0, 0)
+          ctx.value!.fillText(notes[p.noteType || 0] ?? '♪', 0, 0)
           break
         
         case 'spotlight':
@@ -1089,7 +1089,7 @@ export class ParticleSystem {
           this.ctx!.font = `${p.size * 3}px Arial`
           this.ctx!.textAlign = 'center'
           this.ctx!.textBaseline = 'middle'
-          this.ctx!.fillText(notes[p.noteType || 0], 0, 0)
+          this.ctx!.fillText(notes[p.noteType || 0] ?? '♪', 0, 0)
           break
         
         case 'spotlight':
@@ -1173,7 +1173,7 @@ export function autoInitParticles(container: HTMLElement = document.body): void 
   const particleColor = style.getPropertyValue('--particle-color').trim() || '#52b788'
   const particleOpacity = parseFloat(style.getPropertyValue('--particle-opacity')) || 0.5
 
-  if (particleType && particleType !== 'none') {
+  if (particleType) {
     const particleSystem = new ParticleSystem({
       type: particleType,
       color: particleColor,

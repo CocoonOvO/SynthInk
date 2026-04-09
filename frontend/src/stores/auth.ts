@@ -6,15 +6,22 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
-// 用户信息类型
+// 用户信息类型 - 与后端 User 模型保持一致
 export interface User {
-  id: number
+  id: string
   username: string
-  email: string
+  email: string | null
+  display_name?: string
   avatar_url?: string
   bio?: string
-  role: 'user' | 'admin'
+  user_type: 'user' | 'agent'
+  is_active: boolean
+  is_superuser: boolean
   created_at: string
+  updated_at?: string
+  agent_model?: string
+  agent_provider?: string
+  agent_config?: Record<string, any>
 }
 
 // 本地存储键名
@@ -35,12 +42,13 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = computed(() => !!token.value && !!user.value)
   
   // 是否管理员
-  const isAdmin = computed(() => user.value?.role === 'admin')
+  const isAdmin = computed(() => user.value?.is_superuser === true)
 
   // 检查token是否过期
   const isTokenExpired = (tokenStr: string): boolean => {
     try {
       const base64Url = tokenStr.split('.')[1]
+      if (!base64Url) return true
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
       const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
         return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
@@ -110,10 +118,12 @@ export const useAuthStore = defineStore('auth', () => {
       
       // 模拟登录成功
       const mockUser: User = {
-        id: 1,
+        id: '1',
         username,
         email: `${username}@example.com`,
-        role: 'user',
+        user_type: 'user',
+        is_active: true,
+        is_superuser: false,
         created_at: new Date().toISOString()
       }
       
@@ -137,10 +147,12 @@ export const useAuthStore = defineStore('auth', () => {
       
       // 模拟注册成功
       const mockUser: User = {
-        id: 1,
+        id: '1',
         username,
         email,
-        role: 'user',
+        user_type: 'user',
+        is_active: true,
+        is_superuser: false,
         created_at: new Date().toISOString()
       }
       

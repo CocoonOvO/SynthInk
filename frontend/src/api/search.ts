@@ -19,10 +19,14 @@ export interface SearchResultItem {
   created_at?: string
   author_name?: string
   author_id?: string
+  author_username?: string  // 作者用户名
+  author_avatar?: string    // 作者头像
+  author_type?: 'user' | 'agent'  // 作者类型
   tags?: string[]
   group_name?: string
   group_id?: string
   view_count?: number
+  like_count?: number       // 点赞数
   post_count?: number
   is_active?: boolean
   status?: string
@@ -52,6 +56,7 @@ export interface SearchParams {
   type?: 'all' | 'posts' | 'tags' | 'users' | 'groups' | 'comments'
   limit?: number
   offset?: number
+  [key: string]: string | number | boolean | undefined  // 添加索引签名
 }
 
 /**

@@ -7,8 +7,8 @@ import { client } from './client'
 // 评论类型
 export interface Comment {
   id: number
-  post_id: number
-  author_id: number
+  post_id: number | string  // 支持string类型
+  author_id: number | string
   author_name?: string
   author_avatar?: string
   content: string
@@ -21,9 +21,10 @@ export interface Comment {
 
 // 评论列表查询参数
 export interface CommentListParams {
-  post_id: number  // 后端要求必须传post_id
+  post_id: string  // 改为string类型
   skip?: number
   limit?: number
+  [key: string]: string | number | boolean | undefined  // 添加索引签名
 }
 
 // 评论列表响应
@@ -34,7 +35,7 @@ export interface CommentListResponse {
 
 // 创建评论请求
 export interface CreateCommentRequest {
-  post_id: number
+  post_id: number | string  // 支持string类型
   content: string
   parent_id?: number
   reply_to?: string

@@ -4,6 +4,111 @@
  */
 
 /* ╭──────────────────────────────────────────────────────────╮
+   │  GitHub Dark 主题基础样式 (来自 highlight.js)
+   ╰──────────────────────────────────────────────────────────╯ */
+pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1em;
+}
+
+code.hljs {
+  padding: 3px 5px;
+}
+
+.hljs {
+  color: #c9d1d9;
+  background: #0d1117;
+}
+
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta .hljs-keyword,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ {
+  color: #ff7b72;
+}
+
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+  color: #d2a8ff;
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-variable,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id {
+  color: #79c0ff;
+}
+
+.hljs-regexp,
+.hljs-string,
+.hljs-meta .hljs-string {
+  color: #a5d6ff;
+}
+
+.hljs-built_in,
+.hljs-symbol {
+  color: #ffa657;
+}
+
+.hljs-comment,
+.hljs-code,
+.hljs-formula {
+  color: #8b949e;
+}
+
+.hljs-name,
+.hljs-quote,
+.hljs-selector-tag,
+.hljs-selector-pseudo {
+  color: #7ee787;
+}
+
+.hljs-subst {
+  color: #c9d1d9;
+}
+
+.hljs-section {
+  color: #1f6feb;
+  font-weight: bold;
+}
+
+.hljs-bullet {
+  color: #f2cc60;
+}
+
+.hljs-emphasis {
+  color: #c9d1d9;
+  font-style: italic;
+}
+
+.hljs-strong {
+  color: #c9d1d9;
+  font-weight: bold;
+}
+
+.hljs-addition {
+  color: #aff5b4;
+  background-color: #033a16;
+}
+
+.hljs-deletion {
+  color: #ffdcd7;
+  background-color: #67060c;
+}
+
+/* ╭──────────────────────────────────────────────────────────╮
    │  代码块容器样式
    ╰──────────────────────────────────────────────────────────╯ */
 .milkdown pre {
@@ -21,7 +126,7 @@
   content: attr(data-language);
   display: block;
   padding: 8px 16px;
-  background: color-mix(in srgb, var(--bg-elevated) 80%, var(--accent-primary) 5%);
+  background: var(--bg-elevated);
   border-bottom: 1px solid var(--code-border);
   color: var(--text-secondary);
   font-size: 12px;
@@ -41,13 +146,45 @@
 /* 代码内容区域 */
 .milkdown pre code {
   display: block;
-  padding: 16px;
+  padding: 16px !important;
+  padding-top: 16px !important;
   color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: 0.9em;
   line-height: 1.7;
   overflow-x: auto;
   background: transparent !important;
+}
+
+/* 双code元素方案样式 */
+.milkdown pre {
+  position: relative;
+}
+
+/* 高亮显示的code元素 */
+.milkdown pre code.code-highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 编辑用的code元素（透明但可交互） */
+.milkdown pre code.code-content {
+  position: relative;
+  z-index: 2;
+  color: transparent;
+  caret-color: var(--text-primary);
+  background: transparent !important;
+}
+
+/* 确保选中和光标可见 */
+.milkdown pre code.code-content::selection {
+  background: var(--accent-primary);
+  color: transparent;
 }
 
 /* 代码块复制按钮 */

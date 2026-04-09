@@ -161,13 +161,13 @@ const loadUserData = async () => {
     // 获取用户信息
     const userData = await authApi.getUserByUsername(username.value)
 
-    // 更新用户数据（优先使用 display_name，兼容 full_name）
-    const displayName = userData.display_name || userData.full_name
+    // 更新用户数据（优先使用 display_name）
+    const displayName = userData.display_name
     user.id = userData.id
     user.name = displayName || userData.username
     user.handle = userData.username
-    user.avatar = userData.username[0].toUpperCase()
-    user.avatarUrl = userData.avatar_url || userData.avatar || ''  // 兼容两种字段名
+    user.avatar = userData.username?.[0]?.toUpperCase() || 'U'
+    user.avatarUrl = userData.avatar_url || ''
     user.bio = userData.bio || ''
 
     // 加载用户的公开文章

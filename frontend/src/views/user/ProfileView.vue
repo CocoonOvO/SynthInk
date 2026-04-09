@@ -313,12 +313,12 @@ const loadUserInfo = async (skipAuthStoreUpdate = false, skipAvatarPreviewUpdate
     // 获取当前用户信息
     const userData = await authApi.getMe()
 
-    // 更新用户数据（优先使用 display_name，兼容 full_name）
-    const displayName = userData.display_name || userData.full_name
+    // 更新用户数据（优先使用 display_name）
+    const displayName = userData.display_name
     user.id = userData.id
     user.name = displayName || userData.username
     user.handle = userData.username
-    user.avatar = userData.username[0].toUpperCase()
+    user.avatar = userData.username?.[0]?.toUpperCase() || 'U'
     user.avatarUrl = userData.avatar_url || ''
     user.bio = userData.bio || '暂无简介'
 
@@ -338,7 +338,6 @@ const loadUserInfo = async (skipAuthStoreUpdate = false, skipAvatarPreviewUpdate
     if (!skipAuthStoreUpdate && authStore.user) {
       authStore.updateUser({
         display_name: userData.display_name,
-        full_name: userData.full_name,
         bio: userData.bio,
         email: userData.email,
         avatar_url: userData.avatar_url || undefined
@@ -588,7 +587,7 @@ const saveSettings = async () => {
       display_name: settings.nickname,
       bio: settings.bio,
       email: settings.email,
-      avatar_url: settings.avatar || null
+      avatar_url: settings.avatar || undefined
     })
 
     // 立即更新页面顶部的用户信息（不等待后端刷新）
@@ -600,7 +599,6 @@ const saveSettings = async () => {
     if (authStore.user) {
       authStore.updateUser({
         display_name: settings.nickname,
-        full_name: settings.nickname,
         bio: settings.bio,
         email: settings.email,
         avatar_url: settings.avatar || undefined

@@ -1,55 +1,68 @@
 /**
  * Milkdown 主题适配
  * 接入项目主题系统，提供代码高亮类名和主题变量
+ * 使用 Prism 主题根据系统主题自动切换
  */
-import { computed, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 
-// 代码高亮主题映射
-const hljsThemeMap: Record<string, string> = {
-  // 科幻系 - 霓虹暗色
-  scifi: 'hljs-scifi',
-  // 自然系 - 柔和亮色
-  nature: 'hljs-nature',
-  // 治愈系 - 温暖色调
-  healing: 'hljs-healing'
-}
+const DARK_THEME = 'prism-tomorrow'
+const LIGHT_THEME = 'prism'
+let themeLink: HTMLLinkElement | null = null
 
 export function useMilkdownTheme() {
   const themeStore = useThemeStore()
+  const isDark = ref(window.matchMedia('(prefers-color-scheme: dark)').matches)
+  let onThemeChangeCallback: (() => void) | null = null
 
-  // 当前代码高亮类名
-  const hljsClass = computed(() => {
-    return hljsThemeMap[themeStore.themeCategory] || 'hljs-scifi'
-  })
+  const loadTheme = (dark: boolean) => {
+    const themeName = dark ? DARK_THEME : LIGHT_THEME
+    const themePath = `${themeName}.css`
+
+    if (themeLink) {
+      themeLink.remove()
+      themeLink = null
+    }
+
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = `/node_modules/prismjs/themes/${themePath}`
+    link.onload = () => {
+      // 主题加载后的回调
+      if (onThemeChangeCallback) {
+        onThemeChangeCallback()
+      }
+    }
+    link.onerror = () => console.error('加载主题失败:', themePath)
+
+    document.head.appendChild(link)
+    themeLink = link
+  }
 
   // 应用到编辑器容器
   const applyTheme = (container: HTMLElement | null) => {
     if (!container) return
-    
-    // 移除旧类名
-    Object.values(hljsThemeMap).forEach(cls => {
-      container.classList.remove(cls)
-    })
-    
-    // 添加新类名
-    container.classList.add(hljsClass.value)
-    
-    // 设置主题属性
     container.setAttribute('data-theme-category', themeStore.themeCategory)
   }
 
   // 监听主题变化
-  const watchTheme = (container: HTMLElement | null) => {
-    watch(() => themeStore.currentTheme, () => {
-      applyTheme(container)
-    }, { immediate: true })
+  const watchTheme = (container: HTMLElement | null, onHighlight?: () => void) => {
+    onThemeChangeCallback = onHighlight || null
+    loadTheme(isDark.value)
+    applyTheme(container)
+
+    // 监听系统主题变化
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    mediaQuery.addEventListener('change', (e) => {
+      isDark.value = e.matches
+      loadTheme(isDark.value)
+    })
   }
 
   return {
-    hljsClass,
-    themeCategory: computed(() => themeStore.themeCategory),
-    currentTheme: computed(() => themeStore.currentTheme),
+    isDark,
+    themeCategory: themeStore.themeCategory,
+    currentTheme: themeStore.currentTheme,
     applyTheme,
     watchTheme
   }

@@ -60,7 +60,8 @@
   transition: all 0.3s ease;
 }
 
-.milkdown pre::before {
+/* 使用 ::after 伪元素实现发光边框，避免与 ::before 的语言标识冲突 */
+.milkdown pre::after {
   content: '';
   position: absolute;
   inset: -1px;
@@ -80,9 +81,11 @@
   opacity: 0;
   transition: opacity 0.3s ease;
   animation: gradient-shift 3s ease infinite;
+  pointer-events: none;
+  z-index: 0;
 }
 
-.milkdown pre:hover::before {
+.milkdown pre:hover::after {
   opacity: 1;
 }
 
@@ -98,25 +101,6 @@
   50% {
     background-position: 100% 50%;
   }
-}
-
-/* 代码块语言标签 */
-.milkdown pre[data-language]::after {
-  content: attr(data-language);
-  position: absolute;
-  top: 0.5em;
-  right: 0.5em;
-  font-size: 0.75em;
-  color: var(--text-tertiary);
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.milkdown pre:hover[data-language]::after {
-  opacity: 1;
 }
 
 /* ╭──────────────────────────────────────────────────────────╮

@@ -100,6 +100,38 @@ def _sanitize_user_data(user_data: dict) -> dict:
     return user_data
 
 
+@router.get("/", response_model=List[User], summary="获取用户列表")
+async def list_users(
+    current_user: Annotated[User, Depends(get_current_active_superuser)],
+    skip: int = 0,
+    limit: int = 100
+) -> List[User]:
+    """
+    获取用户列表（管理员权限）
+    
+    - 支持分页
+    - 仅管理员可访问
+    
+    BUG-039修复: 将列表路由放在动态路由之前，避免路径匹配冲突
+    """
+    result = await db_manager.db.find(
+        "users",
+        limit=limit,
+        offset=skip,
+        sort_by="created_at",
+        sort_desc=True
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="获取用户列表失败"
+        )
+    
+    users_data = result.get("data", [])
+    return [User(**user_data) for user_data in users_data]
+
+
 @router.get("/by-username/{username}", response_model=User, summary="通过用户名获取用户信息")
 async def read_user_by_username(
     username: str,
@@ -148,36 +180,6 @@ async def read_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="用户不存在"
         )
-
-
-@router.get("/", response_model=List[User], summary="获取用户列表")
-async def list_users(
-    current_user: Annotated[User, Depends(get_current_active_superuser)],
-    skip: int = 0,
-    limit: int = 100
-) -> List[User]:
-    """
-    获取用户列表（管理员权限）
-    
-    - 支持分页
-    - 仅管理员可访问
-    """
-    result = await db_manager.db.find(
-        "users",
-        limit=limit,
-        offset=skip,
-        sort_by="created_at",
-        sort_desc=True
-    )
-    
-    if not result.get("success"):
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="获取用户列表失败"
-        )
-    
-    users_data = result.get("data", [])
-    return [User(**user_data) for user_data in users_data]
 
 
 @router.delete("/{user_id}", summary="删除用户")

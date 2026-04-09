@@ -454,7 +454,7 @@ async def create_post(
                 filters={"name": tag_name},
                 limit=1
             )
-            
+
             if tag_result.get("data") and len(tag_result["data"]) > 0:
                 tag_id = tag_result["data"][0]["id"]
             else:
@@ -463,12 +463,21 @@ async def create_post(
                 await db_manager.db.insert("tags", {
                     "id": tag_id,
                     "name": tag_name,
+                    "post_count": 0,
                     "created_at": datetime.utcnow()
                 })
-            
+
             # 添加文章-标签关联
             await db_manager.db.add_post_tag(post_data["id"], tag_id)
-    
+
+    # 更新分组使用计数
+    if post_data.get("group_id"):
+        await db_manager.db.update(
+            "groups",
+            post_data["group_id"],
+            {"post_count": await db_manager.db.count("posts", filters={"group_id": post_data["group_id"]})}
+        )
+
     # 返回创建的文章
     created_post = await get_post_with_details(post_data["id"])
     return created_post
@@ -583,7 +592,73 @@ async def update_post(
             
             # 添加文章-标签关联
             await db_manager.db.add_post_tag(post_id, tag_id)
-    
+
+    # 处理分组变更
+    old_group_id = post_data.get("group_id")
+    new_group_id = update_data.get("group_id")
+    if new_group_id is not None and new_group_id != old_group_id:
+        # 旧分组计数减1
+        if old_group_id:
+            await db_manager.db.update(
+                "groups",
+                old_group_id,
+                {"post_count": await db_manager.db.count("posts", filters={"group_id": old_group_id})}
+            )
+        # 新分组计数加1
+        if new_group_id:
+            await db_manager.db.update(
+                "groups",
+                new_group_id,
+                {"post_count": await db_manager.db.count("posts", filters={"group_id": new_group_id})}
+            )
+
+    # 返回更新后的文章
+    updated_post = await get_post_with_details(post_id)
+    return updated_post
+
+
+@router.post("/{post_id}/unpublish", response_model=Post, summary="下架文章")
+async def unpublish_post(
+    post_id: str,
+    current_user: Annotated[User, Depends(get_current_active_user)]
+) -> Post:
+    """
+    将文章状态改为草稿（下架）
+
+    - 作者或管理员可以操作
+    - 文章将从前端列表中隐藏
+    """
+    # 获取文章
+    result = await db_manager.db.get("posts", post_id)
+    if not result.get("success"):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="文章不存在"
+        )
+
+    post_data = result["data"]
+
+    # 检查权限
+    if post_data["author_id"] != current_user.id and not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="权限不足，只能下架自己的文章"
+        )
+
+    # 更新状态为草稿
+    update_data = {
+        "status": "draft",
+        "updated_at": datetime.utcnow()
+    }
+
+    update_result = await db_manager.db.update("posts", post_id, update_data)
+
+    if not update_result.get("success"):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="下架文章失败"
+        )
+
     # 返回更新后的文章
     updated_post = await get_post_with_details(post_id)
     return updated_post
@@ -615,16 +690,27 @@ async def delete_post(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="权限不足，只能删除自己的文章"
         )
-    
-    # 删除文章（关联的标签关联会自动删除）
+
+    # 记录分组ID用于后续更新计数
+    group_id = post_data.get("group_id")
+
+    # 删除文章（关联的标签关联会自动删除，标签计数会自动更新）
     delete_result = await db_manager.db.delete("posts", post_id)
-    
+
     if not delete_result.get("success"):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="删除文章失败"
         )
-    
+
+    # 更新分组使用计数
+    if group_id:
+        await db_manager.db.update(
+            "groups",
+            group_id,
+            {"post_count": await db_manager.db.count("posts", filters={"group_id": group_id})}
+        )
+
     return {"success": True, "message": "文章已删除"}
 
 
