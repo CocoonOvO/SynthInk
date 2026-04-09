@@ -115,3 +115,20 @@ reset_seo_tables.py
 # Demo files
 frontend-demos/
 query/
+design-system/
+
+# Fix scripts
+fix_*.py
+
+# Frontend test/demo files
+frontend/src/views/test/
+frontend/src/views/demo/
+frontend/src/components/demo/
+frontend/src/api/test.ts
+
+# Playwright report
+frontend/playwright-report/
+
+# Root package.json (if accidentally created)
+/package.json
+/package-lock.json
