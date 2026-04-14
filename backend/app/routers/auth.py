@@ -27,7 +27,17 @@ oauth2_scheme_optional = OAuth2PasswordBearer(
 )
 
 # 创建限流器
-limiter = Limiter(key_func=get_remote_address)
+import time as time_module
+
+def get_exempt_key(request: Request) -> str:
+    """根据配置对特定IP不限流，每个请求返回唯一key"""
+    settings = get_settings()
+    client_ip = request.client.host if request.client else ""
+    if client_ip in settings.RATE_LIMIT_EXEMPT_IPS:
+        return f"exempt-{client_ip}-{time_module.time()}"
+    return get_remote_address(request)
+
+limiter = Limiter(key_func=get_exempt_key)
 
 # 获取限流配置
 settings = get_settings()
