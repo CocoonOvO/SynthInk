@@ -85,7 +85,22 @@ UPLOAD_DIR=/path/to/uploads
 UPLOAD_DIR = "/path/to/uploads"
 ```
 
-### 3.3 站点文案 (`frontend/src/config/copywriting.json`)
+### 3.3 前端环境变量 (`frontend/.env`)
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `VITE_API_URL` | `http://localhost:8001` | API代理目标地址 |
+
+**配置示例**:
+```bash
+# 复制示例文件
+cp frontend/.env.example frontend/.env
+
+# 修改API地址（如果后端端口不同）
+echo "VITE_API_URL=http://localhost:8002" >> frontend/.env
+```
+
+### 3.4 站点文案 (`frontend/src/config/copywriting.json`)
 
 | 配置键 | 说明 |
 |--------|------|
