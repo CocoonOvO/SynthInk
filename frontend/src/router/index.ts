@@ -22,9 +22,7 @@ const ProfileView = () => import('@/views/user/ProfileView.vue')
 const UserProfileView = () => import('@/views/user/UserProfileView.vue')
 const SearchResultsView = () => import('@/views/search/SearchResultsView.vue')
 const NotFoundView = () => import('@/views/error/NotFoundView.vue')
-const ApiTestView = () => import('@/views/test/ApiTestView.vue')
 const AboutView = () => import('@/views/about/AboutView.vue')
-const CodeBlockView = () => import('@/views/demo/CodeBlockView.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -62,12 +60,7 @@ const routes: RouteRecordRaw[] = [
         component: UserProfileView,
         meta: { title: '用户主页' }
       },
-      {
-        path: '/test/api',
-        name: 'ApiTest',
-        component: ApiTestView,
-        meta: { title: 'API测试' }
-      },
+
       {
         path: '/search',
         name: 'SearchResults',
@@ -80,12 +73,7 @@ const routes: RouteRecordRaw[] = [
         component: AboutView,
         meta: { title: '关于我们' }
       },
-      {
-        path: '/demo/code-block',
-        name: 'CodeBlockDemo',
-        component: CodeBlockView,
-        meta: { title: '代码块Demo' }
-      }
+
     ]
   },
   {

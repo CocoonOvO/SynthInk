@@ -17,15 +17,100 @@
       <span class="nav-logo-text">{{ cw.logo }}</span>
     </router-link>
 
-    <!-- 导航链接 -->
-    <ul class="nav-links">
+    <!-- 移动端汉堡菜单按钮 -->
+    <button 
+      class="mobile-menu-toggle"
+      :class="{ active: isMobileMenuOpen }"
+      @click="toggleMobileMenu"
+      aria-label="切换菜单"
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <!-- 桌面端导航链接 -->
+    <ul class="nav-links desktop-only">
       <li v-for="item in cw.navItems" :key="item.path">
         <router-link :to="item.path">{{ item.label }}</router-link>
       </li>
     </ul>
 
-    <!-- 右侧操作区 -->
-    <div class="nav-actions">
+    <!-- 移动端菜单 - 包含导航链接和操作按钮 -->
+    <div class="mobile-menu" :class="{ open: isMobileMenuOpen }">
+      <!-- 移动端导航链接 - 统一为按钮样式 -->
+      <div class="mobile-nav-links">
+        <router-link 
+          v-for="item in cw.navItems" 
+          :key="item.path"
+          :to="item.path" 
+          class="mobile-nav-btn"
+          @click="closeMobileMenu"
+        >
+          <!-- 首页图标 -->
+          <svg v-if="item.path === '/'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <!-- 文章图标 -->
+          <svg v-else-if="item.path === '/posts'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <!-- 关于图标 -->
+          <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>{{ item.label }}</span>
+        </router-link>
+      </div>
+      
+      <!-- 移动端操作区 -->
+      <div class="mobile-actions">
+        <!-- 写作按钮 - 只有登录后才显示 -->
+        <router-link v-if="authStore.isLoggedIn" to="/write" class="mobile-action-btn" @click="closeMobileMenu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          <span>开始创作</span>
+        </router-link>
+
+        <!-- 主题选择器 -->
+        <button class="mobile-action-btn" @click.stop="toggleThemePanel">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          <span>切换主题</span>
+        </button>
+
+        <!-- 登录/用户入口 -->
+        <router-link v-if="!authStore.isLoggedIn" to="/login" class="mobile-action-btn mobile-login" @click="closeMobileMenu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+            <polyline points="10 17 15 12 10 7"/>
+            <line x1="15" y1="12" x2="3" y2="12"/>
+          </svg>
+          <span>登录</span>
+        </router-link>
+        <router-link v-else to="/profile" class="mobile-action-btn" @click="closeMobileMenu">
+          <span class="user-avatar-small">
+            <img v-if="authStore.user?.avatar_url" :src="authStore.user.avatar_url" alt="头像">
+            <span v-else>{{ authStore.user?.username?.[0]?.toUpperCase() || 'U' }}</span>
+          </span>
+          <span>{{ authStore.user?.username || '用户' }}</span>
+        </router-link>
+      </div>
+    </div>
+
+    <!-- 桌面端右侧操作区 -->
+    <div class="nav-actions desktop-only">
       <!-- 写作按钮 - 只有登录后才显示 -->
       <router-link v-if="authStore.isLoggedIn" to="/write" class="nav-write-btn" title="开始创作">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -155,6 +240,26 @@ const isScrolled = ref(false)
 // 主题面板状态
 const isThemePanelOpen = ref(false)
 
+// 移动端菜单状态
+const isMobileMenuOpen = ref(false)
+
+// 切换移动端菜单
+const toggleMobileMenu = () => {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value
+}
+
+// 关闭移动端菜单
+const closeMobileMenu = () => {
+  isMobileMenuOpen.value = false
+}
+
+// 处理窗口大小变化
+const handleResize = () => {
+  if (window.innerWidth > 768) {
+    isMobileMenuOpen.value = false
+  }
+}
+
 // 主题列表 - 10个核心主题
 const scifiThemes = [
   { id: 'deep-space', name: '深空', icon: '🌙' },
@@ -216,6 +321,7 @@ const vClickOutside = {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
+  window.addEventListener('resize', handleResize)
   handleScroll()
   // 初始化认证状态
   authStore.initAuth()
@@ -223,6 +329,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -292,5 +399,213 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
+}
+
+/* 桌面端/移动端显示控制 */
+.desktop-only {
+  display: flex;
+}
+
+.mobile-menu {
+  display: none;
+}
+
+/* 移动端汉堡菜单按钮 */
+.mobile-menu-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  gap: 5px;
+  z-index: 1001;
+  margin-left: auto;
+}
+
+.mobile-menu-toggle span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--text-primary);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
+.mobile-menu-toggle.active span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.mobile-menu-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile-menu-toggle.active span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* 响应式样式 - 移动端 */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 4%;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  /* 移动端菜单 */
+  .mobile-menu {
+    display: block;
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    background: var(--bg-elevated);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-subtle);
+    transform: translateY(-150%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 999;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
+  }
+
+  .mobile-menu.open {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* 移动端导航链接 - 列表样式 */
+  .mobile-nav-links {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+  }
+
+  .mobile-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 5%;
+    color: var(--text-primary);
+    font-size: 16px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .mobile-nav-btn:last-child {
+    border-bottom: none;
+  }
+
+  .mobile-nav-btn:hover {
+    background: var(--bg-secondary);
+  }
+
+  .mobile-nav-btn svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  /* 移动端操作区 - 列表样式 */
+  .mobile-actions {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    border-top: 8px solid var(--bg-secondary);
+  }
+
+  .mobile-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 5%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    font-size: 16px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    width: 100%;
+    text-align: left;
+  }
+
+  .mobile-action-btn:last-child {
+    border-bottom: none;
+  }
+
+  .mobile-action-btn:hover {
+    background: var(--bg-secondary);
+  }
+
+  .mobile-action-btn svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  .mobile-login {
+    color: var(--accent-primary);
+    font-weight: 500;
+  }
+
+  .user-avatar-small {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--bg-primary);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .user-avatar-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* 移动端主题面板调整 */
+  .theme-panel {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+}
+
+/* 小屏幕手机额外优化 */
+@media (max-width: 375px) {
+  .nav-logo-text {
+    font-size: 16px;
+  }
 }
 </style>
