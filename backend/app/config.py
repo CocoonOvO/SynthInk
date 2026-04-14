@@ -3,7 +3,7 @@
 使用 Pydantic Settings 管理配置，支持环境变量
 """
 from functools import lru_cache
-from typing import Optional
+from typing import Optional, List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_LOGIN: str = "5/minute"           # 登录接口限流
     RATE_LIMIT_REGISTER: str = "3/minute"        # 注册接口限流
     RATE_LIMIT_DEFAULT: str = "100/minute"       # 默认全局限流
+    RATE_LIMIT_EXEMPT_IPS: List[str] = ["127.0.0.1", "::1"]  # 不受限流的IP列表
 
 
 @lru_cache
