@@ -599,17 +599,19 @@ async def update_post(
     if new_group_id is not None and new_group_id != old_group_id:
         # 旧分组计数减1
         if old_group_id:
+            old_count = await db_manager.db.count("posts", filters={"group_id": old_group_id})
             await db_manager.db.update(
                 "groups",
                 old_group_id,
-                {"post_count": await db_manager.db.count("posts", filters={"group_id": old_group_id})}
+                {"post_count": old_count.get("count", 0) if isinstance(old_count, dict) else old_count}
             )
         # 新分组计数加1
         if new_group_id:
+            new_count = await db_manager.db.count("posts", filters={"group_id": new_group_id})
             await db_manager.db.update(
                 "groups",
                 new_group_id,
-                {"post_count": await db_manager.db.count("posts", filters={"group_id": new_group_id})}
+                {"post_count": new_count.get("count", 0) if isinstance(new_count, dict) else new_count}
             )
 
     # 返回更新后的文章
