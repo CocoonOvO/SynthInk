@@ -45,7 +45,7 @@
     <main class="profile-content">
       <div class="content-tabs">
         <button
-          v-for="tab in tabs"
+          v-for="tab in displayTabs"
           :key="tab.id"
           class="tab-btn"
           :class="{ active: currentTab === tab.id }"
@@ -222,6 +222,69 @@
 
         <button class="save-settings-btn" @click="saveSettings">保存设置</button>
       </div>
+
+      <!-- 外链管理面板（仅超管可见） -->
+      <div v-if="currentTab === 'links' && authStore.isAdmin" class="settings-panel">
+        <div class="settings-section">
+          <h3 class="settings-title">外链列表</h3>
+          <div v-if="linkLoading" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>加载中...</p>
+          </div>
+          <div v-else-if="links.length === 0" class="link-empty">还没有外链，在下方添加第一条吧</div>
+          <div v-else class="link-list">
+            <div v-for="link in links" :key="link.id" class="link-item">
+              <img v-if="link.cover_image" :src="link.cover_image" class="link-item-cover" alt="配图">
+              <span v-else class="link-item-cover link-item-cover-placeholder">🔗</span>
+              <div class="link-item-info">
+                <div class="link-item-name">{{ link.name }}</div>
+                <div class="link-item-url">{{ link.url }}</div>
+              </div>
+              <div class="link-item-actions">
+                <button class="avatar-btn" @click="editLink(link)">编辑</button>
+                <button class="avatar-btn avatar-btn-danger" @click="removeLink(link)">删除</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-title">{{ editingLink ? '编辑外链' : '新增外链' }}</h3>
+          <div class="form-group">
+            <label class="form-label">名称</label>
+            <input v-model="linkForm.name" type="text" class="form-input" placeholder="外链名称">
+          </div>
+          <div class="form-group">
+            <label class="form-label">URL</label>
+            <input v-model="linkForm.url" type="text" class="form-input" placeholder="https://example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">配图</label>
+            <div class="avatar-upload">
+              <div class="avatar-preview">
+                <img v-if="linkForm.cover_image" :src="linkForm.cover_image" class="avatar-img" alt="配图">
+                <span v-else class="avatar-placeholder">图</span>
+              </div>
+              <div class="avatar-actions">
+                <input
+                  ref="linkCoverInput"
+                  type="file"
+                  accept="image/*"
+                  style="display: none"
+                  @change="handleLinkCoverChange"
+                >
+                <button class="avatar-btn" @click="triggerLinkCoverUpload">上传配图</button>
+                <button v-if="linkForm.cover_image" class="avatar-btn avatar-btn-danger" @click="linkForm.cover_image = ''">移除</button>
+                <p class="avatar-hint">不传配图则使用渐变底色</p>
+              </div>
+            </div>
+          </div>
+          <div class="link-form-actions">
+            <button class="save-settings-btn" @click="saveLink">{{ editingLink ? '保存修改' : '添加外链' }}</button>
+            <button v-if="editingLink" class="avatar-btn" @click="cancelEditLink">取消编辑</button>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- Footer -->
@@ -265,7 +328,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { authApi, postsApi, groupsApi, uploadApi } from '@/api'
+import { authApi, postsApi, groupsApi, uploadApi, linksApi } from '@/api'
+import type { ExternalLink } from '@/api'
 import { useAuthStore } from '@/stores'
 
 // ╭────────────────────────────────────────────────────────────╮
@@ -278,9 +342,15 @@ const authStore = useAuthStore()
 const tabs = [
   { id: 'articles', name: '文章' },
   { id: 'drafts', name: '草稿' },
-  { id: 'settings', name: '设置' }
+  { id: 'settings', name: '设置' },
+  { id: 'links', name: '外链管理' }
 ]
 const currentTab = ref('articles')
+
+// 非超管不显示外链管理 tab
+const displayTabs = computed(() =>
+  authStore.isAdmin ? tabs : tabs.filter((t) => t.id !== 'links')
+)
 
 // 加载状态
 const isLoading = ref(true)
@@ -447,14 +517,7 @@ const groups = ref([
 ])
 const selectedGroup = ref('all')
 
-// 标签筛选
-const tags = [
-  { id: 'vue', name: 'Vue' },
-  { id: 'react', name: 'React' },
-  { id: 'css', name: 'CSS' },
-  { id: 'ai-writing', name: 'AI写作' },
-  { id: 'ui', name: 'UI设计' }
-]
+// 标签筛选（已改用后端分组数据，此处只保留选中状态）
 const selectedTags = ref<string[]>([])
 
 // 文章列表 - 初始为空，从后端加载
@@ -655,10 +718,140 @@ const changePassword = async () => {
 }
 
 // ╭────────────────────────────────────────────────────────────╮
+// │  外链管理（仅超管） - 增删改外链，数据存业务库
+// ╰────────────────────────────────────────────────────────────╯
+// 外链列表
+const links = ref<ExternalLink[]>([])
+const linkLoading = ref(false)
+const editingLink = ref<ExternalLink | null>(null)
+const linkCoverInput = ref<HTMLInputElement | null>(null)
+
+// 新增/编辑表单
+const linkForm = reactive({
+  name: '',
+  url: '',
+  cover_image: ''
+})
+
+// 加载外链列表
+const loadLinks = async () => {
+  linkLoading.value = true
+  try {
+    links.value = await linksApi.getList()
+  } catch (error: any) {
+    console.error('加载外链失败:', error)
+    alert(error.message || '加载外链失败')
+  } finally {
+    linkLoading.value = false
+  }
+}
+
+// 重置表单
+const resetLinkForm = () => {
+  editingLink.value = null
+  linkForm.name = ''
+  linkForm.url = ''
+  linkForm.cover_image = ''
+}
+
+// 进入编辑模式
+const editLink = (link: ExternalLink) => {
+  editingLink.value = link
+  linkForm.name = link.name
+  linkForm.url = link.url
+  linkForm.cover_image = link.cover_image || ''
+}
+
+// 取消编辑
+const cancelEditLink = () => {
+  resetLinkForm()
+}
+
+// 触发配图上传
+const triggerLinkCoverUpload = () => {
+  linkCoverInput.value?.click()
+}
+
+// 配图上传处理
+const handleLinkCoverChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  try {
+    const response = await uploadApi.uploadImage(file)
+    linkForm.cover_image = response.url
+  } catch (error: any) {
+    console.error('上传配图失败:', error)
+    alert(error.message || '上传配图失败')
+  } finally {
+    // 清空input，允许重复选择同一文件
+    if (linkCoverInput.value) {
+      linkCoverInput.value.value = ''
+    }
+  }
+}
+
+// 保存外链（新增或更新）
+const saveLink = async () => {
+  // 校验
+  if (!linkForm.name.trim()) {
+    alert('请填写外链名称')
+    return
+  }
+  if (!linkForm.url.trim()) {
+    alert('请填写外链URL')
+    return
+  }
+
+  try {
+    const payload = {
+      name: linkForm.name.trim(),
+      url: linkForm.url.trim(),
+      cover_image: linkForm.cover_image || undefined
+    }
+    if (editingLink.value) {
+      await linksApi.update(editingLink.value.id, payload)
+      alert('外链更新成功')
+    } else {
+      await linksApi.create(payload)
+      alert('外链添加成功')
+    }
+    resetLinkForm()
+    await loadLinks()
+  } catch (error: any) {
+    console.error('保存外链失败:', error)
+    alert(error.message || '保存外链失败，请检查URL格式')
+  }
+}
+
+// 删除外链
+const removeLink = async (link: ExternalLink) => {
+  if (!window.confirm(`确定删除外链「${link.name}」吗？`)) return
+
+  try {
+    await linksApi.delete(link.id)
+    alert('外链已删除')
+    // 如果正在编辑被删除的外链，重置表单
+    if (editingLink.value?.id === link.id) {
+      resetLinkForm()
+    }
+    await loadLinks()
+  } catch (error: any) {
+    console.error('删除外链失败:', error)
+    alert(error.message || '删除外链失败')
+  }
+}
+
+// ╭────────────────────────────────────────────────────────────╮
 // │  生命周期 - 加载用户数据
 // ╰────────────────────────────────────────────────────────────╯
 onMounted(() => {
   loadUserInfo()
+  // 超管进入时预加载外链列表
+  if (authStore.isAdmin) {
+    loadLinks()
+  }
 })
 </script>
 
@@ -1592,5 +1785,78 @@ onMounted(() => {
   .article-cover {
     height: 120px;
   }
+}
+
+/* ═══════════════ 外链管理（超管tab） ═══════════════ */
+.link-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-tertiary);
+  border: 1px dashed var(--border-subtle);
+  border-radius: 12px;
+}
+
+.link-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+.link-item-cover {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.link-item-cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: var(--bg-secondary);
+}
+
+.link-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.link-item-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.link-item-url {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-item-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.link-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
 }
 </style>

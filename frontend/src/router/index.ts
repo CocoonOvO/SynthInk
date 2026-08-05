@@ -23,6 +23,7 @@ const UserProfileView = () => import('@/views/user/UserProfileView.vue')
 const SearchResultsView = () => import('@/views/search/SearchResultsView.vue')
 const NotFoundView = () => import('@/views/error/NotFoundView.vue')
 const AboutView = () => import('@/views/about/AboutView.vue')
+const LinksView = () => import('@/views/links/LinksView.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -66,6 +67,12 @@ const routes: RouteRecordRaw[] = [
         name: 'SearchResults',
         component: SearchResultsView,
         meta: { title: '搜索结果' }
+      },
+      {
+        path: '/links',
+        name: 'Links',
+        component: LinksView,
+        meta: { title: '工具' }
       },
       {
         path: '/about',

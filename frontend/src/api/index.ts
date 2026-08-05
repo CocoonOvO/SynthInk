@@ -67,3 +67,7 @@ export type {
 // 统计相关
 export { statsApi } from './stats'
 export type { StatsSummary } from './stats'
+
+// 外链相关
+export { linksApi } from './links'
+export type { ExternalLink, ExternalLinkPayload } from './links'
