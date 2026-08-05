@@ -30,9 +30,10 @@ class SQLiteBizAdapter(BaseAdapter):
     TABLE_TAGS = "tags"
     TABLE_GROUPS = "groups"
     TABLE_POST_TAGS = "post_tags"
+    TABLE_EXTERNAL_LINKS = "external_links"
     
     # 所有表名列表
-    ALL_TABLES = [TABLE_USERS, TABLE_POSTS, TABLE_TAGS, TABLE_GROUPS, TABLE_POST_TAGS]
+    ALL_TABLES = [TABLE_USERS, TABLE_POSTS, TABLE_TAGS, TABLE_GROUPS, TABLE_POST_TAGS, TABLE_EXTERNAL_LINKS]
     
     def __init__(self, dsn: str = "sqlite+aiosqlite:///:memory:"):
         """
@@ -189,6 +190,19 @@ class SQLiteBizAdapter(BaseAdapter):
                     PRIMARY KEY (post_id, tag_id),
                     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
                     FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+                )
+            """)
+        
+        elif name == self.TABLE_EXTERNAL_LINKS:
+            await self._execute("""
+                CREATE TABLE IF NOT EXISTS external_links (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    url TEXT NOT NULL,
+                    cover_image TEXT,
+                    sort_order INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
         

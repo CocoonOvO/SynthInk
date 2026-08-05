@@ -52,6 +52,9 @@ logs/
 # Agent Memo (contains sensitive info)
 agent_memo.md
 
+# 服务挂载实现目录（用户自定义服务，不入库）
+backend/app/services/impl/
+
 # Agent Project Management (contains internal coordination)
 agent_project.md
 
@@ -80,13 +83,13 @@ build/
 # Local development
 *.local
 
-# Temporary test files (not in tests/ directory)
-test_*.py
-check_*.py
-seed_test_data*.py
-integration_test_and_seed.py
-create_test_posts.py
-temp/
+# Temporary test files (not in tests/ directory, 仅项目根目录)
+/test_*.py
+/check_*.py
+/seed_test_data*.py
+/integration_test_and_seed.py
+/create_test_posts.py
+/temp/
 
 # MCP temp files
 mcp/test_*.py

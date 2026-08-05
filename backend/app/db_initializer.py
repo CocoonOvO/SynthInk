@@ -17,7 +17,7 @@ from .adapter.postgres_adapter import PostgresAdapter
 
 
 # 必需的表列表
-REQUIRED_TABLES = ["users", "posts", "tags", "groups", "post_tags"]
+REQUIRED_TABLES = ["users", "posts", "tags", "groups", "post_tags", "external_links"]
 
 
 class DatabaseInitializer:

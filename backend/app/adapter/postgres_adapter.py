@@ -33,9 +33,10 @@ class PostgresAdapter(BaseAdapter):
     TABLE_GROUPS = "groups"
     TABLE_POST_TAGS = "post_tags"
     TABLE_COMMENTS = "comments"
+    TABLE_EXTERNAL_LINKS = "external_links"
     
     # 所有表名列表
-    ALL_TABLES = [TABLE_USERS, TABLE_POSTS, TABLE_TAGS, TABLE_GROUPS, TABLE_POST_TAGS, TABLE_COMMENTS]
+    ALL_TABLES = [TABLE_USERS, TABLE_POSTS, TABLE_TAGS, TABLE_GROUPS, TABLE_POST_TAGS, TABLE_COMMENTS, TABLE_EXTERNAL_LINKS]
     
     def __init__(self, dsn: str, schema: str = "public"):
         """
@@ -79,6 +80,7 @@ class PostgresAdapter(BaseAdapter):
         'users', 'posts', 'tags', 'groups', 'post_tags', 'comments', 'likes',
         'seo_configs', 'seo_templates', 'seo_analyses', 'seo_reports',
         'metadata', 'redirects'  # SEO模块相关表
+        , 'external_links'  # 外链表（工具页面）
     }
     
     def _get_table_name(self, table: str) -> str:
@@ -321,6 +323,19 @@ class PostgresAdapter(BaseAdapter):
                     content TEXT NOT NULL,
                     parent_id UUID REFERENCES {self.schema}.comments(id) ON DELETE CASCADE,
                     is_deleted BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+        
+        elif name == self.TABLE_EXTERNAL_LINKS:
+            await self._execute(f"""
+                CREATE TABLE IF NOT EXISTS {full_table_name} (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    name VARCHAR(100) NOT NULL,
+                    url TEXT NOT NULL,
+                    cover_image TEXT,
+                    sort_order INTEGER DEFAULT 0,
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 )
