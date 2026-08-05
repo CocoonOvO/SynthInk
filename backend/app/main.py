@@ -9,6 +9,11 @@ from .routers import api_router
 # 注册API路由
 app.include_router(api_router)
 
+# 注册服务挂载框架（扫描 gitignored 的 services/impl/ 目录并挂载用户自定义服务）
+from .services.registry import register_services
+
+register_services(app)
+
 
 # SKILL.md 静态文件服务
 @app.get("/skill.md", response_class=PlainTextResponse)
