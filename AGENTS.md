@@ -16,9 +16,11 @@
 
 | 服务 | 端口 | 命令 |
 |------|------|------|
-| 后端 | 8002 | `cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload` |
+| 后端 | 8002 | `cd backend && uv sync --all-groups && uv run python -m uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload` |
 | 前端 | 5173 | `cd frontend && npm run dev` |
-| MCP | 8005 (SSE `/sse`) | `cd mcp && python server_optimized.py --api-url http://localhost:8002 --host 127.0.0.1 --port 8005` |
+| MCP | 8005 (SSE `/sse`) | `cd mcp && uv sync && uv run python server_optimized.py --api-url http://localhost:8002 --host 127.0.0.1 --port 8005` |
+
+Python 依赖用 **uv 管理**（`backend/pyproject.toml`、`mcp/pyproject.toml`），增删依赖改 pyproject 后 `uv sync`；`requirements*.txt` 是 `uv export` 生成物，勿手改。
 
 ## 环境变量陷阱（易踩坑）
 
@@ -28,7 +30,7 @@
 
 ## 测试
 
-- **后端**：`cd backend && pytest`（`asyncio_mode=auto`）。`tests/conftest.py` 硬编码连接 `postgresql+asyncpg://postgres:heat1423@localhost:5432/synthink_test`，**需本地 PostgreSQL 已启动且存在 `synthink_test` 库**；无 PG 时部分用例会 skip/fail。单文件：`pytest tests/test_posts.py`。
+- **后端**：`cd backend && uv run pytest`（`asyncio_mode=auto`）。`tests/conftest.py` 硬编码连接 `postgresql+asyncpg://postgres:heat1423@localhost:5432/synthink_test`，**需本地 PostgreSQL 已启动且存在 `synthink_test` 库**；无 PG 时部分用例会 skip/fail。单文件：`uv run pytest tests/test_posts.py`。
 - **前端**：单测 `npm run test:unit`（vitest）。
 - **E2E**：Playwright（`frontend/playwright.config.ts`，`testDir: ./e2e`）。README 写的 `npm run test:e2e` **在 package.json 中不存在**，改用 `npx playwright test`；要求系统已装 Chrome（`channel: 'chrome'`）且 dev server 在 5173 运行。
 - 提交前检查顺序：前端 `npm run lint`（oxlint + eslint，均带 `--fix`）→ `npm run type-check`（`npm run build` 已包含 type-check）。
@@ -46,6 +48,8 @@
 - 配置库为 `backend/config.db`（SQLite），**删除后重启即重置配置**。
 - 日志仅控制台输出，无持久化文件。
 - 后端路由统一挂载在 `/api` 前缀下（见 `backend/app/routers/__init__.py`）。
+- 外链（「工具」页 `/links`）存业务库 `external_links` 表，公开读、仅超管可写。
+- **服务挂载**：框架在 `backend/app/services/`（入库），用户自研服务放 `backend/app/services/impl/`（**gitignored，不入库**），契约与规范见 `backend/app/services/README.md`。
 
 ## MCP 注意
 

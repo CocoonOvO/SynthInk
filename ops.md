@@ -17,18 +17,24 @@
 ### 1.2 启动
 
 ```bash
+# 依赖安装（uv 管理，首次或依赖变更后执行）
+cd ${PROJECT_ROOT}/backend && uv sync --all-groups
+cd ${PROJECT_ROOT}/mcp && uv sync
+
 # 后端
 cd ${PROJECT_ROOT}/backend
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
+uv run python -m uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
 
 # MCP
 cd ${PROJECT_ROOT}/mcp
-python server_optimized.py --api-url http://localhost:8002 --host 127.0.0.1 --port 8005
+uv run python server_optimized.py --api-url http://localhost:8002 --host 127.0.0.1 --port 8005
 
 # 前端
 cd ${PROJECT_ROOT}/frontend
 npm run dev
 ```
+
+> 说明：`requirements.txt` / `requirements-dev.txt` 由 `uv export` 生成（兼容旧文档），日常增删依赖请修改 `pyproject.toml` 后 `uv sync` 并重新 export。
 
 ### 1.3 故障排查
 
@@ -183,6 +189,28 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = '${SCHEMA}
 
 ---
 
+## 6.5 外链（工具页面）
+
+- 页面：`/links`（导航「工具」），卡片网格展示外链（名称+配图），点击新窗口打开
+- 接口：`GET /api/links`（公开）/ `POST|PUT|DELETE /api/links`（仅超管 `is_superuser`）
+- 数据：业务库 `external_links` 表（sqlite/postgres 两方言均有定义），启动自动建表
+- 管理入口：Profile 设置页「外链管理」tab（仅超管可见），支持名称/URL/配图（上传或填URL）
+- 默认无外链，需超管自行添加
+
+---
+
+## 6.6 服务挂载框架
+
+- 用途：挂载部署者自研的 FastAPI 服务（小工具/小游戏等），前缀 `/api/services/{name}`
+- 框架代码：`backend/app/services/`（registry.py + examples/ + README.md），**全部入库**
+- 服务实现：`backend/app/services/impl/`，**已被 gitignore**，部署者自行编写，不入库
+- 契约：模块级变量 `name`（唯一ID，小写字母/数字/短横线）、`title`、`router`（APIRouter），可选 `static_dir`（UI目录，支持 API+UI 共存）
+- 启动时自动发现：空目录正常返回、非法模块跳过并输出 `[服务挂载]` 中文警告日志
+- 规范文档：`backend/app/services/README.md`；模板：`backend/app/services/examples/hello_service.py`
+- 新增/修改服务后重启后端生效；服务 URL 可由外链页配置展示
+
+---
+
 ## 7. 日志与文件
 
 ### 7.1 日志
@@ -286,4 +314,4 @@ server {
 
 ---
 
-*最后更新: 2026-04-02*
+*最后更新: 2026-08-06*
