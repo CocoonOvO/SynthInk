@@ -5,7 +5,7 @@
  * 鼠标悬停时卡片产生3D倾斜效果，带反光
  */
 
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 
 // 3D倾斜配置接口
 export interface TiltCardOptions {
@@ -259,7 +259,7 @@ export class TiltCard {
    */
   private handleMouseEnter(
     el: HTMLElement,
-    config: Required<TiltCardOptions>
+    _config: Required<TiltCardOptions>
   ): void {
     el.style.transition = 'none'
   }

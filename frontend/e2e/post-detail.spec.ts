@@ -280,10 +280,6 @@ test.describe('UI-003 文章详情页交互测试', () => {
     const mobilePanel = page.locator('.toc-mobile-panel')
     await expect(mobilePanel).toBeAttached()
     
-    // 检查面板是否显示（通过检查class）
-    const panelClass = await mobilePanel.getAttribute('class')
-    const isVisible = panelClass?.includes('active') || panelClass?.includes('show')
-    
     // 检查目录项是否存在（如果有的话）
     const mobileTocLinks = mobilePanel.locator('.toc-link')
     const count = await mobileTocLinks.count()

@@ -109,7 +109,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // 登录（模拟）
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (username: string, _password: string): Promise<boolean> => {
     isLoading.value = true
     
     try {
@@ -138,7 +138,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // 注册（模拟）
-  const register = async (username: string, email: string, password: string): Promise<boolean> => {
+  const register = async (username: string, email: string, _password: string): Promise<boolean> => {
     isLoading.value = true
     
     try {

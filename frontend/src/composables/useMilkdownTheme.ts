@@ -3,7 +3,7 @@
  * 接入项目主题系统，提供代码高亮类名和主题变量
  * 使用 Prism 主题根据系统主题自动切换
  */
-import { ref, watch, nextTick } from 'vue'
+import { ref } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 
 const DARK_THEME = 'prism-tomorrow'

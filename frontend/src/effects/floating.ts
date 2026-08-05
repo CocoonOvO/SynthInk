@@ -5,7 +5,7 @@
  * 在页面背景生成缓慢浮动的装饰元素
  */
 
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 // 浮动元素配置接口
 export interface FloatingOptions {
@@ -50,13 +50,11 @@ export function useFloating(options: FloatingOptions = {}) {
   const elements = ref<FloatingElement[]>([])
   const isRunning = ref(false)
   let rafId: number | null = null
-  let container: HTMLElement | null = null
 
   /**
    * 创建浮动元素
    */
-  const createElements = (parentContainer: HTMLElement) => {
-    container = parentContainer
+  const createElements = (_parentContainer: HTMLElement) => {
 
     // 检测减少动画偏好
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {

@@ -15,7 +15,7 @@
  * - spotlight: 舞台聚光灯，径向渐变
  */
 
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 // 粒子类型
 export type ParticleType = 

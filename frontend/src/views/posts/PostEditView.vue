@@ -503,7 +503,7 @@ const filteredTags = computed(() => {
 let currentContextPost: Post | null = null
 let saveTimeout: number | null = null
 let autoSaveInterval: number | null = null
-let codeBlockCheckInterval: number | null = null
+const codeBlockCheckInterval: number | null = null
 
 // ╭────────────────────────────────────────────────────────────╮
 // │  初始化 - 加载数据
