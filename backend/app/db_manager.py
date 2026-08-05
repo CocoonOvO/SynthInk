@@ -293,7 +293,10 @@ class DatabaseManager:
             self._biz_adapter = None
 
         if self._config_adapter:
-            await self._config_adapter.disconnect()
+            # 防御：部分适配器（如测试中的 ConfigDBManager）可能没有 disconnect
+            disconnect = getattr(self._config_adapter, "disconnect", None)
+            if disconnect:
+                await disconnect()
             self._config_adapter = None
 
     # ========== 状态检查（抽象化） ==========
