@@ -44,7 +44,18 @@ npm run dev
 | 配置库损坏 | 删除 `config.db` 后重启重新配置 |
 | 权限不足 (403) | Token是否过期、用户角色 |
 | MCP连接失败 | MCP服务状态、客户端配置 |
-| 前端API请求失败 | Vite代理配置、后端端口 |
+| 前端API请求失败 | Vite代理配置、后端端口（前端 `.env` 需 `VITE_API_URL=http://localhost:8002`） |
+| `init-wizard` 报错 | 2026-08-06 已修复 pydantic `schema` 序列化 bug，如仍异常检查 `backend.log` |
+| 业务库缺表 | 超管登录后调 `POST /api/admin/database/init` 补建（PG 的 init_schema 为硬编码表列表） |
+
+### 1.4 已知测试问题（既有，未修）
+
+| 问题 | 说明 |
+|------|------|
+| `test_register_api` / `test_integration` 失败 | 注册接口已改为需超管权限，这些用例仍按公开注册断言（陈旧） |
+| `test_likes` 失败 | `likes` 表未加入两个适配器的 `ALL_TABLES`/`init_schema`，全新库不会自动建表 |
+| `test_seo` 失败 | SEOMiddleware 与新版 starlette 不兼容 |
+| `test_smoke` 失败 | 活服务测试，需 8002 后端运行且按 `agent_memo.md` 配置超管账号 |
 
 ---
 
