@@ -30,7 +30,7 @@ Python 依赖用 **uv 管理**（`backend/pyproject.toml`、`mcp/pyproject.toml`
 
 ## 测试
 
-- **后端**：`cd backend && uv run pytest`（`asyncio_mode=auto`）。测试数据库连接串**不硬编码**，由环境变量 `TEST_DATABASE_URL` 提供（如 `TEST_DATABASE_URL=postgresql+asyncpg://用户:密码@localhost:5432/synthink_test`，需本地 PostgreSQL 已启动且存在对应库）；**未设置时依赖 DB 的用例自动跳过**。冒烟测试（`tests/test_smoke.py`，需 8002 活服务）的超管账号同理：`SMOKE_SUPERUSER_USERNAME` / `SMOKE_SUPERUSER_PASSWORD`。单文件：`uv run pytest tests/test_posts.py`。
+- **后端**：`cd backend && uv run pytest`（`asyncio_mode=auto`）。测试数据库连接串**不硬编码**，由环境变量 `TEST_DATABASE_URL` 提供（如 `TEST_DATABASE_URL=postgresql+asyncpg://用户:密码@localhost:5432/synthink_test`，需本地 PostgreSQL 已启动且存在对应库）；未设置时自动回退读取 `backend/.env`；**都没有时依赖 DB 的用例自动跳过**。冒烟测试（`tests/test_smoke.py`，需 8002 活服务）的超管账号同理：`SMOKE_SUPERUSER_USERNAME` / `SMOKE_SUPERUSER_PASSWORD`。单文件：`uv run pytest tests/test_posts.py`。
 - **前端**：单测 `npm run test:unit`（vitest）。
 - **E2E**：Playwright（`frontend/playwright.config.ts`，`testDir: ./e2e`）。README 写的 `npm run test:e2e` **在 package.json 中不存在**，改用 `npx playwright test`；要求系统已装 Chrome（`channel: 'chrome'`）且 dev server 在 5173 运行。
 - 提交前检查顺序：前端 `npm run lint`（oxlint + eslint，均带 `--fix`）→ `npm run type-check`（`npm run build` 已包含 type-check）。

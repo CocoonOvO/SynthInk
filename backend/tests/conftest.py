@@ -14,7 +14,25 @@ pytest_plugins = ("pytest_asyncio",)
 
 # 设置测试环境变量 - 切换到PostgreSQL
 # 注意：数据库连接串不硬编码，必须由调用方通过 TEST_DATABASE_URL 环境变量提供，
-# 未设置时依赖数据库的用例会自动跳过（避免测试与开发共用一个库时出现凭据泄漏）
+# 未设置时自动回退读取 backend/.env（该文件已 gitignore，可持久化本地测试配置），
+# 两者都没有时依赖数据库的用例会自动跳过
+def _load_dotenv_if_exists():
+    """读取 backend/.env（若存在），仅填充尚未设置的环境变量"""
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv_if_exists()
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL", "").strip()
 if TEST_DATABASE_URL:
     os.environ["DATABASE_URL"] = TEST_DATABASE_URL

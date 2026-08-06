@@ -61,8 +61,12 @@ npm run dev
 
 | 变量 | 用途 |
 |------|------|
-| `TEST_DATABASE_URL` | 测试数据库连接串（如 `postgresql+asyncpg://用户:密码@localhost:5432/synthink_test`），未设置时依赖 DB 的用例自动跳过 |
+| `TEST_DATABASE_URL` | 测试数据库连接串（如 `postgresql+asyncpg://用户:密码@localhost:5432/synthink_test`），未设置时自动回退读取 `backend/.env`，两者都没有则依赖 DB 的用例自动跳过 |
 | `SMOKE_SUPERUSER_USERNAME` / `SMOKE_SUPERUSER_PASSWORD` | 冒烟测试的超管账号（`test_smoke.py`），未设置时相关用例跳过 |
+
+> **本地持久化建议**：
+> - psql 等数据库工具免密连接：写入 `~/.pgpass`（`localhost:5432:库名:用户名:密码`，权限 600）
+> - 测试配置持久化：写入 `backend/.env`（gitignored），conftest 会自动读取
 
 ---
 
