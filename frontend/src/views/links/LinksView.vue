@@ -87,8 +87,9 @@ function getCoverGradient(index: number): string {
   return coverGradients[index % coverGradients.length] ?? 'linear-gradient(135deg, #52b788, #2d6a4f)'
 }
 
-// 提取域名用于展示
+// 提取域名用于展示（站内相对路径直接显示路径本身）
 function getHost(url: string): string {
+  if (url.startsWith('/')) return '站内 · ' + url
   try {
     return new URL(url).host
   } catch {

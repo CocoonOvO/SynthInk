@@ -20,9 +20,18 @@ class ExternalLinkBase(BaseModel):
     @field_validator("url")
     @classmethod
     def validate_url_scheme(cls, v: str) -> str:
-        """只允许 http/https 协议，防止 javascript: 等危险链接"""
+        """URL 校验：
+        - 允许 http:// 或 https:// 绝对链接
+        - 允许单个 / 开头的站内相对路径（如 /api/services/xxx/，用于挂载同域服务）
+        - 拦截 // 协议相对地址与 javascript: 等危险协议
+        """
+        v = v.strip()
+        if v.startswith("/"):
+            if v.startswith("//"):
+                raise ValueError("URL不能以 // 开头（协议相对地址），站内路径请用单个 / 开头")
+            return v
         if not (v.startswith("http://") or v.startswith("https://")):
-            raise ValueError("URL必须以 http:// 或 https:// 开头")
+            raise ValueError("URL必须以 http:// 或 https:// 开头，或以 / 开头使用站内路径")
         return v
 
 

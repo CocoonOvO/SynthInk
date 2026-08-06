@@ -256,7 +256,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">URL</label>
-            <input v-model="linkForm.url" type="text" class="form-input" placeholder="https://example.com">
+            <input v-model="linkForm.url" type="text" class="form-input" placeholder="https://example.com 或站内路径 /api/services/xxx/">
           </div>
           <div class="form-group">
             <label class="form-label">配图</label>

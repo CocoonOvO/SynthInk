@@ -216,6 +216,7 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = '${SCHEMA}
 
 - 页面：`/links`（导航「关联」），卡片网格展示外链（名称+配图），点击新窗口打开
 - 接口：`GET /api/links`（公开）/ `POST|PUT|DELETE /api/links`（仅超管 `is_superuser`）
+- URL 规则：支持 `http://`/`https://` 绝对链接，或 `/` 开头的站内相对路径（如 `/api/services/xxx/` 挂载同域服务）；拒绝 `//`、`javascript:` 等
 - 数据：业务库 `external_links` 表（sqlite/postgres 两方言均有定义），启动自动建表
 - 管理入口：Profile 设置页「外链管理」tab（仅超管可见），支持名称/URL/配图（上传或填URL）
 - 默认无外链，需超管自行添加

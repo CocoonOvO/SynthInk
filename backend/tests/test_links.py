@@ -4,10 +4,44 @@
 测试 /api/links/* 相关接口：
 - 公开列表
 - 增删改需要超管权限
+- URL 校验（绝对链接 / 站内相对路径）
 """
 import pytest
 from httpx import AsyncClient
 from fastapi import status
+from pydantic import ValidationError
+
+from app.models.link import ExternalLinkCreate
+
+
+# ═══════════════ URL 校验（模型层） ═══════════════
+
+@pytest.mark.parametrize("url", [
+    "https://example.com",
+    "http://localhost:8002/api/services/fortune-draw/",
+    "/api/services/fortune-draw/",
+    "/about",
+])
+def test_link_url_valid(url: str):
+    """合法 URL：绝对链接与站内相对路径都应通过"""
+    link = ExternalLinkCreate(name="测试", url=url)
+    assert link.url == url
+
+
+@pytest.mark.parametrize("url", [
+    "javascript:alert(1)",
+    "data:text/html,<script>alert(1)</script>",
+    "file:///etc/passwd",
+    "//evil.com",
+    "evil.com",
+])
+def test_link_url_invalid(url: str):
+    """非法 URL：危险协议、协议相对地址、无协议地址都应被拒绝"""
+    with pytest.raises(ValidationError):
+        ExternalLinkCreate(name="测试", url=url)
+
+
+# ═══════════════ 接口层 ═══════════════
 
 
 @pytest.mark.asyncio
