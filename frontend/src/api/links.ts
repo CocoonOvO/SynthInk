@@ -26,11 +26,13 @@ export interface ExternalLinkPayload {
 // 外链API
 export const linksApi = {
   // 获取外链列表（公开）
+  // 注意：后端 POST/GET 列表路由带尾斜杠（/api/links/），
+  // 不带斜杠会触发 307 重定向，浏览器 fetch 重定向时会丢失 Authorization 头导致 401
   getList: (params?: { skip?: number; limit?: number }): Promise<ExternalLink[]> =>
-    client.get('/api/links', params),
+    client.get('/api/links/', params),
   // 创建外链（仅超管）
   create: (data: ExternalLinkPayload): Promise<ExternalLink> =>
-    client.post('/api/links', data),
+    client.post('/api/links/', data),
   // 更新外链（仅超管）
   update: (id: string, data: ExternalLinkPayload): Promise<ExternalLink> =>
     client.put(`/api/links/${id}`, data),
