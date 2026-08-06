@@ -12,9 +12,12 @@ from httpx import AsyncClient, ASGITransport
 # 设置异步模式
 pytest_plugins = ("pytest_asyncio",)
 
-# 设置测试环境变量 - 切换到PostgreSQL（小墨已修复连接问题）
-# 注意：本地测试需要设置 POSTGRES_DISABLE_SSL=true 环境变量
-os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:heat1423@localhost:5432/synthink_test"
+# 设置测试环境变量 - 切换到PostgreSQL
+# 注意：数据库连接串不硬编码，必须由调用方通过 TEST_DATABASE_URL 环境变量提供，
+# 未设置时依赖数据库的用例会自动跳过（避免测试与开发共用一个库时出现凭据泄漏）
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL", "").strip()
+if TEST_DATABASE_URL:
+    os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["DEBUG_MODE"] = "true"
 os.environ["POSTGRES_DISABLE_SSL"] = "true"
 
@@ -52,6 +55,12 @@ async def config_db_manager(temp_db_path):
 @pytest_asyncio.fixture
 async def client():
     """创建异步HTTP客户端，并初始化数据库连接"""
+    # 未提供测试数据库连接串时跳过依赖数据库的用例
+    if not TEST_DATABASE_URL:
+        pytest.skip(
+            "未设置 TEST_DATABASE_URL 环境变量，示例："
+            "TEST_DATABASE_URL=postgresql+asyncpg://用户:密码@localhost:5432/synthink_test"
+        )
     # 1. 初始化配置库
     await _config_db_manager.initialize()
     # 将配置库适配器同步到db_manager

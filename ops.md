@@ -55,7 +55,14 @@ npm run dev
 | `test_register_api` / `test_integration` 失败 | 注册接口已改为需超管权限，这些用例仍按公开注册断言（陈旧） |
 | `test_likes` 失败 | `likes` 表未加入两个适配器的 `ALL_TABLES`/`init_schema`，全新库不会自动建表 |
 | `test_seo` 失败 | SEOMiddleware 与新版 starlette 不兼容 |
-| `test_smoke` 失败 | 活服务测试，需 8002 后端运行且按 `agent_memo.md` 配置超管账号 |
+| `test_smoke` 失败 | 活服务测试，需 8002 后端运行且设置 `SMOKE_SUPERUSER_USERNAME` / `SMOKE_SUPERUSER_PASSWORD` |
+
+### 1.5 测试环境变量（凭据不硬编码）
+
+| 变量 | 用途 |
+|------|------|
+| `TEST_DATABASE_URL` | 测试数据库连接串（如 `postgresql+asyncpg://用户:密码@localhost:5432/synthink_test`），未设置时依赖 DB 的用例自动跳过 |
+| `SMOKE_SUPERUSER_USERNAME` / `SMOKE_SUPERUSER_PASSWORD` | 冒烟测试的超管账号（`test_smoke.py`），未设置时相关用例跳过 |
 
 ---
 
@@ -72,6 +79,7 @@ npm run dev
 
 - 用户名: `admin`
 - 密码: `123456`（首次登录必须修改）
+- 可在启动时用环境变量覆盖引导账号：`CONFIG_ADMIN_USERNAME` / `CONFIG_ADMIN_PASSWORD`（仅首次初始化 config.db 时生效）
 
 ---
 

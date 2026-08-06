@@ -4,6 +4,7 @@
 """
 from datetime import datetime
 from typing import Optional, Any
+import os
 from pydantic import BaseModel, Field
 from enum import Enum
 
@@ -252,10 +253,12 @@ DEFAULT_SYSTEM_CONFIGS = [
 ]
 
 
-# 默认超管账号
-# 注意：首次启动后必须修改默认密码！
+# 默认超管账号（引导用）
+# - 可用环境变量覆盖：CONFIG_ADMIN_USERNAME / CONFIG_ADMIN_PASSWORD
+# - 未设置时使用下方引导默认值（仅首次初始化 config.db 时创建）
+# - 注意：首次启动后必须修改默认密码！
 DEFAULT_ADMIN = {
-    "username": "admin",
-    "password": "123456",  # 明文密码，会在创建时哈希
+    "username": os.environ.get("CONFIG_ADMIN_USERNAME", "admin"),
+    "password": os.environ.get("CONFIG_ADMIN_PASSWORD", "123456"),  # 明文密码，会在创建时哈希
     "is_default": True     # 标记为默认账号，需要强制修改密码
 }

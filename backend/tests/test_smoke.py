@@ -22,6 +22,7 @@
 import pytest
 import requests
 import uuid
+import os
 from typing import Dict, Any, Optional
 
 # ═══════════════════════════════════════════════════════════
@@ -39,11 +40,14 @@ TEST_USER = {
     "display_name": "冒烟测试用户"
 }
 
-# 超管账号（从agent_memo.md获取）
+# 超管账号：从环境变量读取，不硬编码凭据
+# 未设置时相关用例自动跳过（SMOKE_SUPERUSER_USERNAME / SMOKE_SUPERUSER_PASSWORD）
 SUPERUSER = {
-    "username": "Cocoon",
-    "password": "heat1423"
+    "username": os.environ.get("SMOKE_SUPERUSER_USERNAME", ""),
+    "password": os.environ.get("SMOKE_SUPERUSER_PASSWORD", "")
 }
+
+SUPERUSER_READY = bool(SUPERUSER["username"] and SUPERUSER["password"])
 
 # 存储测试过程中生成的数据
 TEST_DATA = {
@@ -87,6 +91,8 @@ class TestSmokeAuth:
     
     def test_auth_001_superuser_login(self):
         """SMOKE-AUTH-001: 超管登录成功"""
+        if not SUPERUSER_READY:
+            pytest.skip("未设置 SMOKE_SUPERUSER_USERNAME / SMOKE_SUPERUSER_PASSWORD 环境变量")
         response = requests.post(
             api_url("/auth/token"),
             data={
