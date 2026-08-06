@@ -567,7 +567,7 @@ async def create_database_config(
                 "host": config.host,
                 "port": config.port,
                 "database": config.database,
-                "schema": getattr(config, 'schema', 'public')
+                "schema": config.db_schema
             }
         )
         
@@ -695,7 +695,7 @@ async def get_database_config(
         host=config.host,
         port=config.port,
         database=config.database,
-        schema=getattr(config, 'schema', 'public'),
+        schema=config.db_schema,
         username=config.username,
         url=config.url,
         pool_size=config.pool_size,
@@ -1120,7 +1120,7 @@ async def init_database_endpoint(
                 target_id=str(config.id),
                 new_value={
                     "database": config.database,
-                    "schema": getattr(config, 'schema', 'public'),
+                    "schema": config.db_schema,
                     "steps": result.get("steps", [])
                 },
                 ip_address=get_client_ip(request)
@@ -1222,7 +1222,7 @@ async def complete_init_wizard(
                 "db_type": config.db_type.value,
                 "host": config.host,
                 "database": config.database,
-                "schema": getattr(config, 'schema', 'public'),
+                "schema": config.db_schema,
                 "init_steps": init_result.get("steps", [])
             },
             ip_address=get_client_ip(request)

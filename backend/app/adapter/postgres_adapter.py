@@ -608,6 +608,7 @@ class PostgresAdapter(BaseAdapter):
         await self.create_table(self.TABLE_POSTS)
         await self.create_table(self.TABLE_POST_TAGS)
         await self.create_table(self.TABLE_COMMENTS)
+        await self.create_table(self.TABLE_EXTERNAL_LINKS)
     
     # ========== 业务特有方法 ==========
     
