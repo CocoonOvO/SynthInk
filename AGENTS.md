@@ -48,7 +48,7 @@ Python 依赖用 **uv 管理**（`backend/pyproject.toml`、`mcp/pyproject.toml`
 - 配置库为 `backend/config.db`（SQLite），**删除后重启即重置配置**。
 - 日志仅控制台输出，无持久化文件。
 - 后端路由统一挂载在 `/api` 前缀下（见 `backend/app/routers/__init__.py`）。
-- 外链（「工具」页 `/links`）存业务库 `external_links` 表，公开读、仅超管可写。
+- 外链（「关联」页 `/links`）存业务库 `external_links` 表，公开读、仅超管可写。
 - **服务挂载**：框架在 `backend/app/services/`（入库），用户自研服务放 `backend/app/services/impl/`（**gitignored，不入库**），契约与规范见 `backend/app/services/README.md`。
 
 ## MCP 注意

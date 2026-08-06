@@ -1,14 +1,11 @@
 <template>
-  <!-- 工具页面：展示外部链接卡片（自研小工具/小游戏等） -->
+  <!-- 关联页面：展示外部链接卡片（自研小工具/小游戏/友站等） -->
   <div class="links-view">
-    <!-- Hero区域 -->
-    <section class="links-hero">
-      <div class="hero-content">
-        <span class="hero-badge">🧰</span>
-        <h1 class="hero-title"><span class="gradient">工具</span></h1>
-        <p class="hero-desc">我捣鼓的各种小玩意，欢迎来玩</p>
-      </div>
-    </section>
+    <!-- 页面标题区（风格对齐文章列表页） -->
+    <header class="page-header">
+      <h1 class="page-title">关联</h1>
+      <p class="page-subtitle">一些值得一看的外部链接</p>
+    </header>
 
     <!-- 链接网格 -->
     <section class="links-section">
@@ -26,8 +23,7 @@
 
         <!-- 空状态 -->
         <div v-else-if="links.length === 0" class="state-box">
-          <div class="empty-icon">🗂️</div>
-          <p class="state-text">还没有收录任何工具</p>
+          <p class="state-text">还没有收录任何链接</p>
           <p class="state-subtext">等管理员在设置里添加上就会出现在这里</p>
         </div>
 
@@ -64,7 +60,7 @@
 
 <script setup lang="ts">
 /**
- * 工具页面 - 外链卡片网格
+ * 关联页面 - 外链卡片网格
  * 数据来自 /api/links（公开接口），卡片样式对齐文章列表页
  */
 import { ref, onMounted } from 'vue'
@@ -122,43 +118,29 @@ onMounted(loadLinks)
 </script>
 
 <style scoped>
-/* 页面通用布局 */
-.links-view {
-  min-height: 100vh;
+/* 页面标题区 - 对齐文章列表页风格 */
+.page-header {
+  padding: 30px 5% 20px;
+  background: linear-gradient(180deg,
+    var(--glow-primary) 0%,
+    transparent 100%);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-.links-hero {
-  padding: 80px 5% 40px;
-  text-align: center;
-}
-
-.hero-badge {
-  display: inline-block;
-  font-size: 40px;
-  margin-bottom: 12px;
-}
-
-.hero-title {
-  font-size: 2.5rem;
+.page-title {
+  font-size: 2rem;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 }
 
-.gradient {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.hero-desc {
-  font-size: 1.05rem;
+.page-subtitle {
   color: var(--text-secondary);
+  font-size: 1rem;
 }
 
 /* 网格区域 */
 .links-section {
-  padding: 20px 5% 80px;
+  padding: 30px 5% 80px;
 }
 
 .section-container {
@@ -279,11 +261,6 @@ onMounted(loadLinks)
   font-size: 13px;
 }
 
-.empty-icon {
-  font-size: 40px;
-  margin-bottom: 12px;
-}
-
 .btn-primary {
   padding: 10px 24px;
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
@@ -305,10 +282,6 @@ onMounted(loadLinks)
   .links-grid {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 16px;
-  }
-
-  .hero-title {
-    font-size: 2rem;
   }
 }
 </style>

@@ -200,9 +200,9 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = '${SCHEMA}
 
 ---
 
-## 6.5 外链（工具页面）
+## 6.5 外链（关联页面）
 
-- 页面：`/links`（导航「工具」），卡片网格展示外链（名称+配图），点击新窗口打开
+- 页面：`/links`（导航「关联」），卡片网格展示外链（名称+配图），点击新窗口打开
 - 接口：`GET /api/links`（公开）/ `POST|PUT|DELETE /api/links`（仅超管 `is_superuser`）
 - 数据：业务库 `external_links` 表（sqlite/postgres 两方言均有定义），启动自动建表
 - 管理入口：Profile 设置页「外链管理」tab（仅超管可见），支持名称/URL/配图（上传或填URL）

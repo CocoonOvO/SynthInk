@@ -71,7 +71,7 @@
     "navItems": [
       { "label": "首页", "path": "/" },
       { "label": "文章", "path": "/posts" },
-      { "label": "工具", "path": "/links" },
+      { "label": "关联", "path": "/links" },
       { "label": "关于", "path": "/about" }
     ]
   }

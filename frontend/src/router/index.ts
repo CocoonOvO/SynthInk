@@ -72,7 +72,7 @@ const routes: RouteRecordRaw[] = [
         path: '/links',
         name: 'Links',
         component: LinksView,
-        meta: { title: '工具' }
+        meta: { title: '关联' }
       },
       {
         path: '/about',
