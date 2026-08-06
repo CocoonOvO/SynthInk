@@ -156,3 +156,6 @@ backend/init_seo_schema.py
 backend/migrate_*.py
 backend/api_dependency_analysis.md
 backend/API_PLAN.md
+
+# Trae IDE 初始开发配置（不入库）
+.trae/
