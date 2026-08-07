@@ -71,3 +71,6 @@ export type { StatsSummary } from './stats'
 // 外链相关
 export { linksApi } from './links'
 export type { ExternalLink, ExternalLinkPayload } from './links'
+
+// 站点配置相关
+export { siteConfigApi } from './siteConfig'

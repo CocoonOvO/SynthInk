@@ -38,7 +38,7 @@
           <path d="M6 18c-1-3 0-6 3-7 2-1 4 0 4 2 0 2-3 4-6 5-1 0-1 0-1 0z" fill="currentColor" opacity="0.85"/>
         </svg>
       </div>
-      <span class="logo-text">SynthSpark</span>
+      <span class="logo-text">{{ siteName }}</span>
     </router-link>
 
     <!-- 错误内容 -->
@@ -90,6 +90,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { getSiteConfig } from '@/config/siteConfig'
+
+// 站点名（可配置，默认 SynthSpark）
+const siteName = getSiteConfig().site.name
 
 // ╭────────────────────────────────────────────────────────────╮
 // │  路由 - 迷失的页面，需要指引

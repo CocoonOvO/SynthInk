@@ -161,6 +161,23 @@ class ConfigDBManager:
                 )
             """)
             
+            # 站点配置审计表（独立于配置库超管审计）
+            # 站点配置操作方是业务库超管（UUID 主键），无法满足 config_audit_logs 的外键约束，
+            # 故单独建表记录，admin_id 用 TEXT 容纳业务库用户 ID
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS site_config_audit_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    admin_id TEXT NOT NULL,
+                    admin_username TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    old_value TEXT,
+                    new_value TEXT,
+                    ip_address TEXT,
+                    user_agent TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
             # 创建索引
             conn.execute("CREATE INDEX IF NOT EXISTS idx_system_configs_key ON system_configs(key)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_system_configs_category ON system_configs(category)")
@@ -527,6 +544,31 @@ class ConfigDBManager:
                 )
             )
     
+    def get_site_config(self) -> Optional[Dict]:
+        """获取站点配置（未配置返回 None）—— value 是 json 类型
+
+        站点配置以 system_configs 表的 key=site_config 存储，
+        值为整份 JSON 对象（站点名/导航/页脚/首页与关于文案等）。
+        """
+        return self.get_system_config_value('site_config', None)
+
+    def set_site_config(self, config: Dict) -> None:
+        """保存站点配置（system_configs key=site_config, value_type=json）
+
+        保存整份站点配置 JSON，供前端与超管后台交互式编辑使用。
+        """
+        # 构造系统配置项：json 类型，归入 site 分类，可编辑、非敏感
+        site_config = SystemConfig(
+            key='site_config',
+            value=config,
+            value_type='json',
+            description='站点可配置项（站点名/导航/页脚/首页与关于文案）',
+            category='site',
+            is_editable=True,
+            is_secret=False
+        )
+        self.set_system_config(site_config)
+
     def list_system_configs(
         self, category: Optional[str] = None, include_secret: bool = False
     ) -> List[SystemConfig]:
@@ -597,6 +639,61 @@ class ConfigDBManager:
                     ip_address, user_agent
                 )
             )
+
+    # ========== 站点配置审计（业务库超管操作） ==========
+
+    def add_site_config_audit_log(
+        self, admin_id: str, admin_username: str, action: str,
+        old_value: Optional[Dict] = None, new_value: Optional[Dict] = None,
+        ip_address: Optional[str] = None, user_agent: Optional[str] = None
+    ) -> None:
+        """
+        添加站点配置审计日志
+
+        站点配置操作方是业务库超管（UUID 主键），独立于配置库超管的
+        config_audit_logs（其外键指向 config_admins），记入单独的表。
+        """
+        with self._get_conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO site_config_audit_logs 
+                (admin_id, admin_username, action, old_value, new_value, ip_address, user_agent)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    admin_id, admin_username, action,
+                    json.dumps(old_value, ensure_ascii=False) if old_value else None,
+                    json.dumps(new_value, ensure_ascii=False) if new_value else None,
+                    ip_address, user_agent
+                )
+            )
+
+    def get_site_config_audit_logs(
+        self, limit: int = 50, offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        查询站点配置审计日志（按时间倒序）
+        """
+        with self._get_conn() as conn:
+            cursor = conn.execute(
+                """
+                SELECT * FROM site_config_audit_logs
+                ORDER BY id DESC LIMIT ? OFFSET ?
+                """,
+                (limit, offset)
+            )
+            logs = []
+            for row in cursor.fetchall():
+                log = dict(row)
+                # 将 JSON 字符串还原为对象，方便接口直接返回
+                for key in ("old_value", "new_value"):
+                    if log.get(key):
+                        try:
+                            log[key] = json.loads(log[key])
+                        except (ValueError, TypeError):
+                            pass
+                logs.append(log)
+            return logs
     
     def get_audit_logs(
         self, admin_id: Optional[int] = None, limit: int = 50, offset: int = 0

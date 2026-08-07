@@ -84,34 +84,44 @@ npm run build
 npm run test:unit
 
 # E2E测试
-npm run test:e2e
+npx playwright test
 
 # 代码检查
 npm run lint
+
+# 生成站点配置文件（无则从模板复制）
+npm run config:init
 ```
 
 ---
 
-## 文案配置
+## 站点配置
 
-站点文案统一配置在 `src/config/copywriting.json`：
+站点名/导航/页脚/首页与关于文案统一走「站点配置」机制（三级优先级：**后台配置 > 文件配置 > 内置默认**）：
+
+- **后台配置**：超管在 Profile 设置页「站点设置」tab 交互式编辑，存后端 `config.db`
+- **文件配置**：`public/site.config.json`（gitignored），`npm run config:init` 生成，参考 `public/site.config.example.json`；dev/build 时不存在会自动生成
+- **内置默认**：`src/config/copywriting.json`（未配置字段的回退值）
+
+前端启动时 `initSiteConfig()`（`src/config/siteConfig.ts`）并行拉取文件与后台两层配置并深合并，未覆盖字段回退默认；修改后刷新页面即可生效（请求禁用缓存）。
 
 ```json
 {
-  "home": { "title": "...", "desc": "..." },
-  "about": { "title": "...", "desc": "..." },
-  "footer": { "copyright": "...", "slogan": "..." },
-  "navbar": { "logo": "...", "navItems": [...] }
+  "site": { "name": "站点名", "title": "浏览器标题", "description": "...", "icp": "备案号", "defaultTheme": "exia" },
+  "navbar": { "logo": "...", "navItems": [...] },
+  "footer": { "copyright": "...", "slogan": "...", "links": [...] },
+  "home": { ... },
+  "about": { ... }
 }
 ```
-
-修改后无需重新构建，刷新页面即可生效。
 
 ---
 
 ## 主题系统
 
-主题配置在 `src/styles/themes/index.css`，通过CSS变量实现。
+- **主题元数据**（名称/图标/分类）：`src/config/themes.ts` 单一数据源（10 个主题：科幻 3 / 自然 4 / 治愈 3）
+- **主题变量**：`src/styles/themes/index.css`，通过 `data-theme` 属性 + CSS 变量实现
+- **默认主题**：由站点配置 `site.defaultTheme` 控制（仅首次访问用户生效）
 
 切换主题:
 ```typescript

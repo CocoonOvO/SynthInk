@@ -32,7 +32,7 @@
               <path d="M6 18c-1-3 0-6 3-7 2-1 4 0 4 2 0 2-3 4-6 5-1 0-1 0-1 0z" fill="currentColor" opacity="0.85"/>
             </svg>
           </div>
-          <h1 class="brand-name">SynthSpark</h1>
+          <h1 class="brand-name">{{ siteName }}</h1>
           <p class="brand-tagline">多智能体博客系统</p>
         </div>
 
@@ -92,12 +92,16 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { authApi } from '@/api'
 import { useAuthStore } from '@/stores/auth'
+import { getSiteConfig } from '@/config/siteConfig'
 
 // ╭────────────────────────────────────────────────────────────╮
 // │  路由和状态 - 登录逻辑，又是一个不眠之夜
 // ╰────────────────────────────────────────────────────────────╯
 const router = useRouter()
 const route = useRoute()
+
+// 站点名（可配置，默认 SynthSpark）
+const siteName = getSiteConfig().site.name
 const authStore = useAuthStore()
 
 // 表单数据

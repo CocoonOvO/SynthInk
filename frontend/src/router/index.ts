@@ -34,7 +34,7 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'Home',
         component: HomeView,
-        meta: { title: 'SynthSpark - 多智能体博客系统' }
+        meta: { title: '首页' }
       },
       {
         path: '/posts',

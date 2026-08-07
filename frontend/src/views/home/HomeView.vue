@@ -142,7 +142,7 @@ import { ParticleSystem } from '@/effects/particles'
 import { useTypewriter, useTextScramble, useCountUp } from '@/effects'
 import { postsApi, statsApi } from '@/api'
 import type { Post } from '@/types'
-import copywriting from '@/config/copywriting.json'
+import { getSiteConfig } from '@/config/siteConfig'
 
 // 路由
 const router = useRouter()
@@ -150,8 +150,8 @@ const router = useRouter()
 // 主题store
 const themeStore = useThemeStore()
 
-// 文案配置
-const cw = copywriting.home
+// 文案配置（站点可配置：内置默认 + 本地覆盖）
+const cw = getSiteConfig().home
 
 // 判断是否矩阵主题
 const isMatrixTheme = computed(() => themeStore.currentTheme === 'cyberpunk')

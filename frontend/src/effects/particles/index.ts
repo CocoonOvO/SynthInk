@@ -25,10 +25,10 @@ export type ParticleType =
   | 'matrix' 
   | 'sakura' 
   | 'rising'
-  | 'datastream'
+  | 'datastream'   // 数据字符流，黑客帝国风格（switch 中已有实现）
   | 'twinparticle'
   | 'musical'
-  | 'spotlight'
+  | 'spotlight'    // 舞台聚光灯，径向渐变（switch 中已有实现）
   | 'wireframe'
   | 'creamy'
 

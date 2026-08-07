@@ -209,6 +209,55 @@ Authorization: Bearer {superadmin_token}
 
 ---
 
+## 场景7：站点配置管理
+
+站点名、导航栏、页脚（版权/口号/链接组/备案号）、首页与关于页文案统一通过「站点配置」管理。
+数据存储在配置库 `config.db`（`system_configs` 表 key=site_config），**重启后端不丢失**；删除 `config.db` 文件会连同超管账号一起重置。
+
+> 注意：站点配置的读写接口鉴权用的是**业务库超管**（`is_superuser`，与 /api/links 一致），不是配置库超管账号。以下 `{admin_token}` 指业务库超管的 `/api/auth/token` 登录令牌。
+
+### 获取站点配置（公开）
+```
+GET /api/site-config
+```
+未配置时返回 `{}`，前端启动依赖此接口，任何异常都不会返回 500。
+
+### 获取站点配置（超管读取）
+```
+GET /api/admin/site-config
+Authorization: Bearer {admin_token}
+```
+返回当前保存值（未配置返回 `{}`），供管理页编辑加载。
+
+### 保存站点配置（超管）
+```
+PUT /api/admin/site-config
+Authorization: Bearer {admin_token}
+Content-Type: application/json
+
+{
+  "site": { "name": "站点名", "title": "浏览器标题", "description": "描述",
+            "icp": "备案号（可空）", "defaultTheme": "首次访问用户默认主题" },
+  "navbar": { "logo": "导航Logo文字", "navItems": [{"label": "首页", "path": "/"}] },
+  "footer": { "copyright": "版权行（可空）", "slogan": "口号",
+              "links": [{"group": "组名", "items": [{"label": "链接名", "href": "/路径或https://"}]}] },
+  "home": { ...首页文案... },
+  "about": { ...关于页文案... }
+}
+```
+- 约束：body 必须是非空 JSON 对象，序列化后不超过 100KB
+- 配置优先级：**后台配置 > 文件配置（public/site.config.json）> 内置默认**
+- 未配置的字段自动回退内置默认；保存后刷新前端页面生效
+
+### 查询站点配置审计日志（超管）
+```
+GET /api/admin/site-config/audit-logs
+Authorization: Bearer {admin_token}
+```
+返回每次保存操作记录（操作人、时间、变更前后值），记录在独立审计表 `site_config_audit_logs`。
+
+---
+
 ## 完整工作流
 
 ### 系统初始化流程

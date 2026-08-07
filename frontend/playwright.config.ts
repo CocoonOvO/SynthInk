@@ -14,8 +14,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
-    // 使用系统已安装的Chrome
-    channel: 'chrome',
+    // 使用 Playwright 内置 chromium（无需系统 Chrome；如有系统 Chrome 可改回 channel: 'chrome'）
   },
   projects: [
     {

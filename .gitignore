@@ -80,6 +80,9 @@ yarn-error.log*
 dist/
 build/
 
+# 站点可配置（本地/部署实际配置，不入仓库；模板见 frontend/public/site.config.example.json）
+frontend/public/site.config.json
+
 # Local development
 *.local
 
