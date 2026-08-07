@@ -1,6 +1,8 @@
 /**
  * SynthSpark Theme System
  * 精简版主题系统 - 10个核心主题
+ * 主题元数据（名称/图标/分类）单一数据源在 src/config/themes.ts
+ * 本文件仅保留各主题的 CSS 变量定义
  * 
  * 科幻：深空 / 赛博朋克 / 能天使
  * 自然：樱花 / 竹林绿 / 双子 / 星歌
@@ -309,35 +311,6 @@
    ============================================ */
 .theme-selector {
     position: relative;
-}
-
-.theme-select {
-    appearance: none;
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--button-radius);
-    padding: 0.35rem 1.5rem 0.35rem 0.5rem;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: var(--transition-fast);
-    font-family: var(--font-body);
-    min-width: 80px;
-    max-width: 100px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%239090a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.35rem center;
-}
-
-.theme-select:hover {
-    border-color: var(--border-glow);
-    color: var(--text-primary);
-}
-
-.theme-select:focus {
-    outline: none;
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px var(--glow-primary);
 }
 
 /* ============================================

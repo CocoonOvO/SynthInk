@@ -1,33 +1,16 @@
 /**
  * 主题状态管理
  * 精简版主题系统 - 10个核心主题
- * 
- * 科幻：深空 / 赛博朋克 / 能天使
- * 自然：樱花 / 竹林绿 / 双子 / 星歌
- * 治愈：草莓奶油 / 薄荷巧克力 / 香橙气泡
+ * 主题元数据（名称/图标/分类）统一由 src/config/themes.ts 提供
  */
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { THEMES, THEME_CATEGORY_LABELS, type Theme } from '@/config/themes'
+import { getSiteConfig } from '@/config/siteConfig'
 
-// 主题类型 - 10个核心主题
-export type Theme =
-  | 'deep-space'    // 深空（原dark）
-  | 'cyberpunk'     // 赛博朋克
-  | 'exia'          // 能天使
-  | 'sakura'        // 樱花
-  | 'bamboo'        // 竹林绿
-  | 'twins'         // 双子
-  | 'mygo-light'    // 星歌
-  | 'strawberry-cream'  // 草莓奶油
-  | 'mint-choco'    // 薄荷巧克力
-  | 'orange-soda'   // 香橙气泡
-
-// 主题分类
-export const themeCategories = {
-  scifi: ['deep-space', 'cyberpunk', 'exia'] as Theme[],
-  nature: ['sakura', 'bamboo', 'twins', 'mygo-light'] as Theme[],
-  healing: ['strawberry-cream', 'mint-choco', 'orange-soda'] as Theme[]
-}
+// 向后兼容导出（旧代码路径：@/stores/theme）
+export type { Theme } from '@/config/themes'
+export { themeCategories } from '@/config/themes'
 
 // 本地存储键名
 const THEME_STORAGE_KEY = 'synthink-theme'
@@ -65,7 +48,12 @@ export const useThemeStore = defineStore('theme', () => {
       'sakura', 'bamboo', 'twins', 'mygo-light',
       'strawberry-cream', 'mint-choco', 'orange-soda'
     ]
-    return validThemes.includes(stored as Theme) ? (stored as Theme) : 'exia'
+    if (validThemes.includes(stored as Theme)) {
+      return stored as Theme
+    }
+    // 首次访问（无本地存储）时，使用站点配置的默认主题（无效值回退 exia）
+    const configured = getSiteConfig().site.defaultTheme
+    return validThemes.includes(configured as Theme) ? (configured as Theme) : 'exia'
   }
 
   // 设置主题
@@ -103,29 +91,18 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
-  // 获取主题名称
+  // 获取主题名称（由单一数据源 THEMES 查找）
   const themeName = computed(() => {
-    const names: Record<Theme, string> = {
-      'deep-space': '深空',
-      'cyberpunk': '赛博朋克',
-      'exia': '能天使',
-      'sakura': '樱花',
-      'bamboo': '竹林绿',
-      'twins': '双子',
-      'mygo-light': '星歌',
-      'strawberry-cream': '草莓奶油',
-      'mint-choco': '薄荷巧克力',
-      'orange-soda': '香橙气泡'
-    }
-    return names[currentTheme.value] || '深空'
+    return THEMES.find(t => t.id === currentTheme.value)?.name || '深空'
   })
 
-  // 获取主题分类
+  // 获取主题分类（由单一数据源 THEMES 分类判断）
   const themeCategory = computed(() => {
-    if (themeCategories.scifi.includes(currentTheme.value)) return '科幻'
-    if (themeCategories.nature.includes(currentTheme.value)) return '自然'
-    if (themeCategories.healing.includes(currentTheme.value)) return '治愈'
-    return '科幻'
+    const meta = THEMES.find(t => t.id === currentTheme.value)
+    if (meta) {
+      return THEME_CATEGORY_LABELS[meta.category]
+    }
+    return THEME_CATEGORY_LABELS.scifi
   })
 
   return {

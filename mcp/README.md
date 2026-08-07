@@ -8,13 +8,13 @@
 
 | 版本 | 文件 | 工具数量 | 特点 | 推荐场景 |
 |------|------|----------|------|----------|
-| **优化版** | `server_optimized.py` | 35个 | CRUD合并、分类标签、精简设计 | ✅ 推荐使用 |
-| 完整版 | `server.py` | 60个 | 功能完整、接口独立 | 需要全部功能时 |
+| **优化版** | `server_optimized.py` | 28个 | CRUD合并、分类标签、精简设计 | ✅ 推荐使用 |
+| 完整版 | `server.py` | 63个 | 功能完整、接口独立 | 需要全部功能时 |
 
 **优化版特性**:
 1. **CRUD合并**: 使用`action`参数统一管理增删改查（如`post_manage`替代`post_create/get/update/delete`）
 2. **分类标签**: 所有工具都带有`[分类]`前缀（如`[认证]`、`[内容]`）
-3. **精简42%**: 从60个工具减少到35个，保留核心功能
+3. **精简56%**: 从63个工具减少到28个，保留核心功能
 
 ## 简介
 
@@ -29,12 +29,14 @@
 - `auth_refresh` - 刷新访问令牌
 - `auth_get_me` - 获取当前用户信息
 
-### [配置] 系统配置工具 (5个)
+### [配置] 系统配置工具 (7个)
 - `config_database` - 数据库配置管理（action: status/configure/switch/test/init）
 - `config_system` - 系统配置管理（action: list/get/update）
 - `config_init_wizard` - 完成初始化向导
 - `config_get_setup_status` - 获取系统设置状态
 - `config_get_audit_logs` - 获取审计日志
+- `site_config_get` - 获取站点配置（公开：站点名/导航/页脚/文案）
+- `site_config_update` - 保存站点配置（超管，token 必填）
 
 ### [内容] 内容管理工具 (8个)
 - `post_manage` - 文章管理（action: create/get/update/delete/publish/unpublish）
@@ -60,14 +62,14 @@
 - `search_suggest` - 搜索建议
 - `get_stats_summary` - 获取首页统计数据
 
-**总计**: 35个工具接口
+**总计**: 28个工具接口
 
 ---
 
 ## 完整版接口列表 (server.py)
 
 <details>
-<summary>点击展开完整版60个接口</summary>
+<summary>点击展开完整版63个接口</summary>
 
 ### 超管认证接口
 - `admin_login` - 超管登录，获取JWT令牌
@@ -92,6 +94,10 @@
 
 ### 审计日志接口
 - `get_audit_logs` - 获取审计日志
+
+### 站点配置接口
+- `site_config_get` - 获取站点配置（公开：站点名/导航/页脚/文案）
+- `site_config_update` - 保存站点配置（超管，token 必填）
 
 ### 用户认证接口
 - `user_login` - 用户登录
@@ -156,7 +162,7 @@
 - `search_suggest` - 搜索建议
 - `get_stats_summary` - 获取首页统计数据
 
-**总计**: 60个工具接口
+**总计**: 63个工具接口
 
 </details>
 

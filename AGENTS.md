@@ -32,7 +32,7 @@ Python 依赖用 **uv 管理**（`backend/pyproject.toml`、`mcp/pyproject.toml`
 
 - **后端**：`cd backend && uv run pytest`（`asyncio_mode=auto`）。测试数据库连接串**不硬编码**，由环境变量 `TEST_DATABASE_URL` 提供（如 `TEST_DATABASE_URL=postgresql+asyncpg://用户:密码@localhost:5432/synthink_test`，需本地 PostgreSQL 已启动且存在对应库）；未设置时自动回退读取 `backend/.env`；**都没有时依赖 DB 的用例自动跳过**。冒烟测试（`tests/test_smoke.py`，需 8002 活服务）的超管账号同理：`SMOKE_SUPERUSER_USERNAME` / `SMOKE_SUPERUSER_PASSWORD`。单文件：`uv run pytest tests/test_posts.py`。
 - **前端**：单测 `npm run test:unit`（vitest）。
-- **E2E**：Playwright（`frontend/playwright.config.ts`，`testDir: ./e2e`）。README 写的 `npm run test:e2e` **在 package.json 中不存在**，改用 `npx playwright test`；要求系统已装 Chrome（`channel: 'chrome'`）且 dev server 在 5173 运行。
+- **E2E**：Playwright（`frontend/playwright.config.ts`，`testDir: ./e2e`）。README 写的 `npm run test:e2e` **在 package.json 中不存在**，改用 `npx playwright test`；使用 **Playwright 内置 chromium**（无需系统 Chrome），dev server 由配置文件自动拉起（5173）。**依赖版本已锁定** `@playwright/test@1.61.1`（与本机 `~/.cache/ms-playwright` 的 chromium-1228 缓存匹配）；若升级 playwright 版本，需同步更新浏览器缓存（`npx playwright install chromium`）。
 - 提交前检查顺序：前端 `npm run lint`（oxlint + eslint，均带 `--fix`）→ `npm run type-check`（`npm run build` 已包含 type-check）。
 
 ## 约定
@@ -49,9 +49,10 @@ Python 依赖用 **uv 管理**（`backend/pyproject.toml`、`mcp/pyproject.toml`
 - 日志仅控制台输出，无持久化文件。
 - 后端路由统一挂载在 `/api` 前缀下（见 `backend/app/routers/__init__.py`）。
 - 外链（「关联」页 `/links`）存业务库 `external_links` 表，公开读、仅超管可写。
+- **站点配置**：前端启动按「后台配置 > `frontend/public/site.config.json` > 内置默认」三级合并；后台配置存配置库 `system_configs` 表（key=`site_config`），接口 `GET /api/site-config`（公开）与 `GET|PUT /api/admin/site-config`（业务库超管，同外链接口鉴权）；前端管理入口在 Profile 设置页「站点设置」tab；模板 `frontend/public/site.config.example.json`，`npm run config:init` 生成文件配置。
 - **服务挂载**：框架在 `backend/app/services/`（入库），用户自研服务放 `backend/app/services/impl/`（**gitignored，不入库**），契约与规范见 `backend/app/services/README.md`。
 
 ## MCP 注意
 
-- 两个服务端：`server_optimized.py`（35 个工具，CRUD 合并为 `action` 参数，**推荐**）与 `server.py`（60 个工具，功能全）。修改后端接口后须同步更新 MCP 服务。
+- 两个服务端：`server_optimized.py`（28 个工具，CRUD 合并为 `action` 参数，**推荐**）与 `server.py`（63 个工具，功能全）。修改后端接口后须同步更新 MCP 服务。
 - 传输方式 `--transport sse|stdio`（默认 sse）；`server_optimized.py` 默认端口即 8005。

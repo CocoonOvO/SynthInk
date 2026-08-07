@@ -14,6 +14,7 @@ SynthInk MCP Server
 - get_init_status, init_database, complete_init_wizard - 数据库初始化
 - get_system_configs, get_system_config, update_system_config - 系统配置
 - get_audit_logs - 审计日志
+- get_site_config, update_site_config - 站点配置
 
 【用户认证接口】✨ 新增
 - user_login, user_register - 用户登录/注册
@@ -76,6 +77,10 @@ SynthInk MCP Server
   * 统计功能模块: 1个工具 (get_stats_summary)
   * 文章扩展模块: 3个工具 (get_post_by_slug, get_posts_count, post_unpublish)
   * 总计46个工具接口！
+- 2026-08-07: 站点配置版本，新增2个工具 (by 大小姐)
+  * 站点配置模块: 2个工具 (get_site_config, update_site_config)
+  * 站点配置存储与超管编辑接口（config.db system_configs 表）
+  * 总计63个工具接口！
 """
 import os
 
@@ -532,6 +537,39 @@ async def get_audit_logs(token: str, limit: int = 50, offset: int = 0) -> Dict[s
     return await api_request("GET", path, token=token)
 
 
+# ========== 站点配置工具 ==========
+
+@mcp.tool()
+async def get_site_config() -> Dict[str, Any]:
+    """
+    获取站点配置
+
+    读取 config.db 中保存的站点配置（公开接口，无需认证）。
+    未配置时返回空对象。
+
+    Returns:
+        站点配置字典（站点名/导航/页脚/首页与关于文案等）
+    """
+    return await api_request("GET", "/api/site-config")
+
+
+@mcp.tool()
+async def update_site_config(token: str, config: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    保存站点配置
+
+    使用业务库超管令牌保存整份站点配置（仅超管可操作）。
+
+    Args:
+        token: 业务库超管JWT访问令牌
+        config: 站点配置字典（站点名/导航/页脚/首页与关于文案等）
+
+    Returns:
+        保存结果
+    """
+    return await api_request("PUT", "/api/admin/site-config", token=token, json_data=config)
+
+
 # ========== 资源定义 ==========
 
 @mcp.resource("docs://api")
@@ -567,6 +605,10 @@ async def get_api_docs() -> str:
 
 ## 审计日志接口
 - get_audit_logs - 获取审计日志
+
+## 站点配置接口 ✨ 新增
+- get_site_config - 获取站点配置（公开）
+- update_site_config - 保存站点配置（超管）
 
 ## 待实现接口
 - 用户认证接口 (user_login, user_register)
@@ -1974,6 +2016,10 @@ async def get_api_docs() -> str:
 
 ## 审计日志接口
 - get_audit_logs - 获取审计日志
+
+## 站点配置接口 ✨ 新增
+- get_site_config - 获取站点配置（公开）
+- update_site_config - 保存站点配置（超管）
 
 ## 用户认证接口 ✨ 新增
 - user_login - 用户登录

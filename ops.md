@@ -59,6 +59,8 @@ npm run dev
 
 ### 1.5 测试环境变量（凭据不硬编码）
 
+> **E2E 基建说明**：`frontend/package.json` 已锁定 `@playwright/test@1.61.1`（与本机 `~/.cache/ms-playwright` 的 chromium-1228 缓存匹配），`playwright.config.ts` 使用 Playwright 内置 chromium（无需系统 Chrome）。升级 playwright 版本需同步 `npx playwright install chromium`。
+
 | 变量 | 用途 |
 |------|------|
 | `TEST_DATABASE_URL` | 测试数据库连接串（如 `postgresql+asyncpg://用户:密码@localhost:5432/synthink_test`），未设置时自动回退读取 `backend/.env`，两者都没有则依赖 DB 的用例自动跳过 |
@@ -137,6 +139,36 @@ echo "VITE_API_URL=http://localhost:8002" >> frontend/.env
 | `about` | 关于页文案 |
 | `footer` | 页脚文案 |
 | `navbar` | 导航栏文案 |
+
+### 3.5 站点可配置覆盖
+
+站点名、导航、页脚（版权/口号/链接组/备案号）、首页与关于页文案支持两种方式覆盖（**后台配置 > 文件配置 > 内置默认**），适配实际部署场景。
+
+**方式一：后台管理页（推荐）**
+
+- 入口：超管登录后 Profile 设置页「站点设置」tab，交互式编辑站点名/导航/页脚/首页与关于文案，保存后刷新页面生效
+- 接口：`GET /api/site-config`（公开）/ `GET|PUT /api/admin/site-config`（业务库超管，同外链接口鉴权）/ `GET /api/admin/site-config/audit-logs`（超管查操作审计）
+- 存储：配置库 `config.db` 的 `system_configs` 表（category=site、key=site_config）；**持久化**：重启后端/前端、改代码均不丢失，删除 `config.db` 后重置（与超管账号重置行为一致）
+- 审计：每次保存记入独立表 `site_config_audit_logs`（操作人/时间/变更前后值；因操作方是业务库用户 UUID，无法写入配置库超管审计表 `config_audit_logs` 的外键约束，故单独建表）
+- MCP 工具：`site_config_get` / `site_config_update`（见 `mcp/README.md`）
+
+**方式二：配置文件覆盖**
+
+- **配置文件**：`frontend/public/site.config.json`（已加入 `.gitignore`，不入仓库；**deploy 后直接编辑 dist 内同名文件即可**）
+- **配置模板**：`frontend/public/site.config.example.json`（入库；build 自动进 dist，可访问 `/site.config.example.json` 查看示例）
+- **生成命令**：`npm run config:init`（`node scripts/init-site-config.mjs`，无则从模板复制生成，已存在则跳过）；dev 启动与 build 时也会自动生成，无需手动初始化
+
+- **覆盖规则**：支持覆盖 `site` / `navbar` / `footer` / `home` / `about` 任意字段，未配置字段自动回退内置默认（`frontend/src/config/copywriting.json`）；数组整体替换（如 `navItems`、`footer.links`）
+- **生效方式**：修改后刷新页面即可。启动时 `initSiteConfig()` 会 fetch `/site.config.json` 与 `/api/site-config` 并深合并（两级请求均禁用 HTTP 缓存 `cache: 'no-store'`，刷新即取最新；dev 模式 HMR 热更新通过 `import.meta.hot.data` 保留已加载配置，不会闪回默认）；加载失败或 404 时安静回退默认并输出中文 warn 日志，不影响启动
+- **结构速览**：
+
+| 配置段 | 字段 |
+|--------|------|
+| `site` | `name`（站点名）、`title`（浏览器标题）、`description`（描述）、`icp`（备案号，可为空字符串）、`defaultTheme`（首次访问用户的默认主题，已选过主题的用户不受影响） |
+| `navbar` | `logo`、`navItems[]`（`label`/`path`） |
+| `footer` | `copyright`、`slogan`、`links[]`（`group` + `items[]`{`label`/`href`}，可为空数组） |
+| `home` | 首页文案（badge/title/desc/按钮/stats/features/articles） |
+| `about` | 关于页文案（badge/title/desc/techStack） |
 
 ---
 
@@ -338,4 +370,4 @@ server {
 
 ---
 
-*最后更新: 2026-08-06*
+*最后更新: 2026-08-07*

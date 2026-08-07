@@ -163,9 +163,9 @@ test.describe('UI-002 首页交互测试', () => {
    * HOME-007: 导航栏链接
    */
   test('HOME-007: 导航栏链接', async ({ page }) => {
-    // 验证导航链接
+    // 验证导航链接（首页/文章/关联/关于）
     const navLinks = page.locator('.nav-links li a')
-    await expect(navLinks).toHaveCount(3)
+    await expect(navLinks).toHaveCount(4)
     
     // 验证首页链接
     await expect(navLinks.nth(0)).toHaveAttribute('href', '/')
@@ -173,8 +173,11 @@ test.describe('UI-002 首页交互测试', () => {
     // 验证文章链接
     await expect(navLinks.nth(1)).toHaveAttribute('href', '/posts')
     
+    // 验证关联链接
+    await expect(navLinks.nth(2)).toHaveAttribute('href', '/links')
+
     // 验证关于链接
-    await expect(navLinks.nth(2)).toHaveAttribute('href', '/about')
+    await expect(navLinks.nth(3)).toHaveAttribute('href', '/about')
   })
 
   /**

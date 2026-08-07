@@ -285,6 +285,137 @@
           </div>
         </div>
       </div>
+
+      <!-- 站点设置面板（仅超管可见） -->
+      <div v-if="currentTab === 'siteConfig' && authStore.isAdmin" class="settings-panel">
+        <div v-if="siteConfigLoading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>加载中...</p>
+        </div>
+        <template v-else>
+          <!-- 站点信息 -->
+          <div class="settings-section">
+            <h3 class="settings-title">站点信息</h3>
+            <div class="form-group">
+              <label class="form-label">站点名称</label>
+              <input v-model="siteConfigForm.site.name" type="text" class="form-input" placeholder="如 SynthSpark">
+            </div>
+            <div class="form-group">
+              <label class="form-label">浏览器标题</label>
+              <input v-model="siteConfigForm.site.title" type="text" class="form-input" placeholder="显示在浏览器标签页的标题">
+            </div>
+            <div class="form-group">
+              <label class="form-label">站点描述</label>
+              <textarea v-model="siteConfigForm.site.description" class="form-textarea" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">备案号</label>
+              <input v-model="siteConfigForm.site.icp" type="text" class="form-input" placeholder="留空表示不展示">
+            </div>
+            <div class="form-group">
+              <label class="form-label">默认主题</label>
+              <select v-model="siteConfigForm.site.defaultTheme" class="form-input">
+                <option v-for="t in themeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
+              </select>
+              <p class="avatar-hint">仅对首次访问（未选过主题）的用户生效，已选过主题的用户保持自己的选择</p>
+            </div>
+          </div>
+
+          <!-- 首页横幅文案（最常见的需求，放在站点信息之后便于发现） -->
+          <div class="settings-section">
+            <h3 class="settings-title">首页横幅文案</h3>
+            <div class="form-group">
+              <label class="form-label">角标</label>
+              <input v-model="siteConfigForm.home.badge" type="text" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">横幅标题</label>
+              <input v-model="siteConfigForm.home.title" type="text" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">横幅描述</label>
+              <textarea v-model="siteConfigForm.home.desc" class="form-textarea" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">主按钮文字</label>
+              <input v-model="siteConfigForm.home.primaryBtn" type="text" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">次按钮文字</label>
+              <input v-model="siteConfigForm.home.secondaryBtn" type="text" class="form-input">
+            </div>
+          </div>
+
+          <!-- 导航栏 -->
+          <div class="settings-section">
+            <h3 class="settings-title">导航栏</h3>
+            <div class="form-group">
+              <label class="form-label">Logo 文字</label>
+              <input v-model="siteConfigForm.navbar.logo" type="text" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">导航项</label>
+              <div v-for="(item, index) in siteConfigForm.navbar.navItems" :key="index" class="nav-item-row">
+                <input v-model="item.label" type="text" class="form-input" placeholder="名称">
+                <input v-model="item.path" type="text" class="form-input" placeholder="/路径">
+                <button class="avatar-btn avatar-btn-danger" @click="removeNavItem(index)">删除</button>
+              </div>
+              <button class="avatar-btn" @click="addNavItem">添加导航项</button>
+            </div>
+          </div>
+
+          <!-- 页脚 -->
+          <div class="settings-section">
+            <h3 class="settings-title">页脚</h3>
+            <div class="form-group">
+              <label class="form-label">版权文字</label>
+              <input v-model="siteConfigForm.footer.copyright" type="text" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">口号</label>
+              <input v-model="siteConfigForm.footer.slogan" type="text" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">链接组</label>
+              <div v-for="(group, groupIndex) in siteConfigForm.footer.links" :key="groupIndex" class="footer-group">
+                <div class="footer-group-header">
+                  <input v-model="group.group" type="text" class="form-input" placeholder="组名">
+                  <button class="avatar-btn avatar-btn-danger" @click="removeFooterLinkGroup(groupIndex)">删除组</button>
+                </div>
+                <div v-for="(item, itemIndex) in group.items" :key="itemIndex" class="footer-group-item">
+                  <input v-model="item.label" type="text" class="form-input" placeholder="链接名">
+                  <input v-model="item.href" type="text" class="form-input" placeholder="https:// 或 /路径">
+                  <button class="avatar-btn avatar-btn-danger" @click="removeFooterLink(groupIndex, itemIndex)">删除</button>
+                </div>
+                <button class="avatar-btn" @click="addFooterLink(groupIndex)">添加链接</button>
+              </div>
+              <button class="avatar-btn" @click="addFooterLinkGroup">添加链接组</button>
+            </div>
+          </div>
+
+          <!-- 关于页文案（常用字段） -->
+          <div class="settings-section">
+            <h3 class="settings-title">关于页文案（常用）</h3>
+            <div class="form-group">
+              <label class="form-label">角标</label>
+              <input v-model="siteConfigForm.about.badge" type="text" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">标题</label>
+              <input v-model="siteConfigForm.about.title" type="text" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">描述</label>
+              <textarea v-model="siteConfigForm.about.desc" class="form-textarea" rows="3"></textarea>
+            </div>
+          </div>
+
+          <button class="save-settings-btn" :disabled="siteConfigSaving" @click="saveSiteConfig">
+            {{ siteConfigSaving ? '保存中...' : '保存站点配置' }}
+          </button>
+          <p class="site-config-hint">保存后需刷新页面，站点全局配置才会生效</p>
+        </template>
+      </div>
     </main>
 
     <!-- Footer -->
@@ -328,8 +459,11 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { authApi, postsApi, groupsApi, uploadApi, linksApi } from '@/api'
+import { authApi, postsApi, groupsApi, uploadApi, linksApi, siteConfigApi } from '@/api'
 import type { ExternalLink } from '@/api'
+import { getSiteConfig } from '@/config/siteConfig'
+import type { SiteConfig } from '@/config/siteConfig'
+import { THEMES } from '@/config/themes'
 import { useAuthStore } from '@/stores'
 
 // ╭────────────────────────────────────────────────────────────╮
@@ -343,13 +477,14 @@ const tabs = [
   { id: 'articles', name: '文章' },
   { id: 'drafts', name: '草稿' },
   { id: 'settings', name: '设置' },
-  { id: 'links', name: '外链管理' }
+  { id: 'links', name: '外链管理' },
+  { id: 'siteConfig', name: '站点设置' }
 ]
 const currentTab = ref('articles')
 
-// 非超管不显示外链管理 tab
+// 非超管不显示超管专属 tab（外链管理 / 站点设置）
 const displayTabs = computed(() =>
-  authStore.isAdmin ? tabs : tabs.filter((t) => t.id !== 'links')
+  authStore.isAdmin ? tabs : tabs.filter((t) => t.id !== 'links' && t.id !== 'siteConfig')
 )
 
 // 加载状态
@@ -844,13 +979,82 @@ const removeLink = async (link: ExternalLink) => {
 }
 
 // ╭────────────────────────────────────────────────────────────╮
+// │  站点设置（仅超管） - 编辑三级优先级中最高的后台配置
+// ╰────────────────────────────────────────────────────────────╯
+// 默认主题下拉选项（与主题系统单一数据源 THEMES 保持一致）
+const themeOptions = THEMES.map(t => ({ id: t.id, name: t.name }))
+
+// 站点配置表单：reactive 深拷贝当前生效配置（含默认/文件/后台三层合并结果），
+// 不直接引用 getSiteConfig() 返回的对象，避免表单修改污染全局配置
+const siteConfigForm = reactive<SiteConfig>(JSON.parse(JSON.stringify(getSiteConfig())))
+const siteConfigLoading = ref(false)
+const siteConfigSaving = ref(false)
+
+// 加载站点配置作为编辑基底：
+// - 后台有保存值（非空 dict）时以保存值为基底
+// - 后台为空 {}（或加载失败）时用当前生效配置，保证表单有完整默认值
+const loadSiteConfig = async () => {
+  siteConfigLoading.value = true
+  try {
+    const saved = await siteConfigApi.getAdmin()
+    const base = saved && Object.keys(saved).length > 0 ? saved : getSiteConfig()
+    Object.assign(siteConfigForm, JSON.parse(JSON.stringify(base)))
+  } catch (error) {
+    console.error('加载站点配置失败:', error)
+    alert(error instanceof Error ? error.message : '加载站点配置失败')
+  } finally {
+    siteConfigLoading.value = false
+  }
+}
+
+// 保存站点配置：表单为完整 SiteConfig 形状（site/navbar/footer/home/about 全量），
+// home/about 的复杂结构（features/techStack 等）随基底原样保留
+const saveSiteConfig = async () => {
+  siteConfigSaving.value = true
+  try {
+    await siteConfigApi.update(JSON.parse(JSON.stringify(siteConfigForm)))
+    alert('已保存，刷新页面生效')
+  } catch (error) {
+    console.error('保存站点配置失败:', error)
+    alert(error instanceof Error ? error.message : '保存站点配置失败')
+  } finally {
+    siteConfigSaving.value = false
+  }
+}
+
+// 导航项增删
+const addNavItem = () => {
+  siteConfigForm.navbar.navItems.push({ label: '', path: '' })
+}
+const removeNavItem = (index: number) => {
+  siteConfigForm.navbar.navItems.splice(index, 1)
+}
+
+// 页脚链接组增删
+const addFooterLinkGroup = () => {
+  siteConfigForm.footer.links.push({ group: '', items: [] })
+}
+const removeFooterLinkGroup = (index: number) => {
+  siteConfigForm.footer.links.splice(index, 1)
+}
+
+// 页脚组内链接增删
+const addFooterLink = (groupIndex: number) => {
+  siteConfigForm.footer.links[groupIndex]!.items.push({ label: '', href: '' })
+}
+const removeFooterLink = (groupIndex: number, itemIndex: number) => {
+  siteConfigForm.footer.links[groupIndex]!.items.splice(itemIndex, 1)
+}
+
+// ╭────────────────────────────────────────────────────────────╮
 // │  生命周期 - 加载用户数据
 // ╰────────────────────────────────────────────────────────────╯
 onMounted(() => {
   loadUserInfo()
-  // 超管进入时预加载外链列表
+  // 超管进入时预加载外链列表与站点配置
   if (authStore.isAdmin) {
     loadLinks()
+    loadSiteConfig()
   }
 })
 </script>
@@ -1858,5 +2062,70 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   margin-top: 8px;
+}
+
+/* ═══════════════ 站点设置（超管tab） ═══════════════ */
+/* 导航项编辑行：名称 + 路径 + 删除按钮 */
+.nav-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.nav-item-row .form-input {
+  flex: 1;
+}
+
+.nav-item-row .form-input:first-child {
+  flex: 0 0 40%;
+}
+
+/* 页脚链接组容器 */
+.footer-group {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.footer-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.footer-group-header .form-input {
+  flex: 1;
+}
+
+/* 页脚组内链接编辑行 */
+.footer-group-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.footer-group-item .form-input {
+  flex: 1;
+}
+
+.footer-group-item .form-input:first-child {
+  flex: 0 0 40%;
+}
+
+.footer-group > .avatar-btn {
+  margin-top: 4px;
+}
+
+/* 保存提示文字 */
+.site-config-hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 10px;
 }
 </style>

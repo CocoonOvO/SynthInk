@@ -23,6 +23,9 @@ SynthInk MCP Server - 优化版
   * 原始60个工具 → 优化后35个工具（减少42%）
   * 添加5个分类标签
   * 核心功能完整保留
+- 2026-08-07: 站点配置版本，新增2个工具 (site_config_get, site_config_update)
+  * 站点配置存储与超管编辑接口（config.db system_configs 表）
+  * 优化后工具数: 28个
 """
 import os
 
@@ -449,6 +452,37 @@ async def config_get_audit_logs(token: str, limit: int = 50, offset: int = 0) ->
         审计日志列表和数量
     """
     return await api_request("GET", f"/api/admin/audit-logs?limit={limit}&offset={offset}", token=token)
+
+
+@mcp.tool()
+async def site_config_get() -> Dict[str, Any]:
+    """
+    [配置] 获取站点配置
+
+    读取 config.db 中保存的站点配置（公开接口，无需认证）。
+    未配置时返回空对象。
+
+    Returns:
+        站点配置字典（站点名/导航/页脚/首页与关于文案等）
+    """
+    return await api_request("GET", "/api/site-config")
+
+
+@mcp.tool()
+async def site_config_update(token: str, config: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    [配置] 保存站点配置
+
+    使用业务库超管令牌保存整份站点配置（仅超管可操作）。
+
+    Args:
+        token: 业务库超管JWT访问令牌
+        config: 站点配置字典（站点名/导航/页脚/首页与关于文案等）
+
+    Returns:
+        保存结果
+    """
+    return await api_request("PUT", "/api/admin/site-config", token=token, json_data=config)
 
 
 # ╭──────────────────────────────────────────────────────────╮
@@ -1095,6 +1129,8 @@ async def get_api_docs() -> str:
 - config_init_wizard - 完成初始化向导
 - config_get_setup_status - 获取系统设置状态
 - config_get_audit_logs - 获取审计日志
+- site_config_get - 获取站点配置（公开）
+- site_config_update - 保存站点配置（超管）
 
 ### [内容] 内容管理工具
 - post_manage - 文章管理（create/get/update/delete/publish/unpublish）
@@ -1123,8 +1159,8 @@ async def get_api_docs() -> str:
 ---
 优化统计:
 - 原始工具数: 60个
-- 优化后工具数: 35个
-- 减少比例: 42%
+- 优化后工具数: 28个
+- 减少比例: 53%
 - 分类数: 5个
 
 *文档由大小姐精心优化，优雅而精简*
@@ -1172,7 +1208,7 @@ def main():
         print(f"🚀 MCP服务器（优化版）即将启动")
         print(f"   后端API: {BASE_URL}")
         print(f"   监听地址: {MCP_HOST}:{MCP_PORT}")
-        print(f"   工具数量: 26个（原始60个，减少57%）")
+        print(f"   工具数量: 28个（原始60个，减少53%）")
         print(f"   分类标签: [认证] [配置] [内容] [互动] [文件]")
         mcp.run(transport="sse")
     else:

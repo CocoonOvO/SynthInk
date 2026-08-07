@@ -46,13 +46,13 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useThemeStore } from '@/stores'
 import { ParticleSystem } from '@/effects/particles'
-import copywriting from '@/config/copywriting.json'
+import { getSiteConfig } from '@/config/siteConfig'
 
 // 主题store
 const themeStore = useThemeStore()
 
-// 文案配置
-const cw = copywriting.about
+// 文案配置（站点可配置：内置默认 + 本地覆盖）
+const cw = getSiteConfig().about
 
 // 粒子系统
 let particleSystem: ParticleSystem | null = null

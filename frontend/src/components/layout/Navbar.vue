@@ -214,7 +214,8 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useThemeStore } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
-import copywriting from '@/config/copywriting.json'
+import { getSiteConfig } from '@/config/siteConfig'
+import { THEMES } from '@/config/themes'
 import type { Theme } from '@/stores/theme'
 
 // 扩展HTMLElement类型以支持_clickOutside
@@ -231,8 +232,8 @@ const currentTheme = ref<Theme>(themeStore.currentTheme)
 // 认证store
 const authStore = useAuthStore()
 
-// 文案配置
-const cw = copywriting.navbar
+// 文案配置（站点可配置：内置默认 + 本地覆盖）
+const cw = getSiteConfig().navbar
 
 // 滚动状态
 const isScrolled = ref(false)
@@ -260,25 +261,12 @@ const handleResize = () => {
   }
 }
 
-// 主题列表 - 10个核心主题
-const scifiThemes = [
-  { id: 'deep-space', name: '深空', icon: '🌙' },
-  { id: 'cyberpunk', name: '赛博朋克', icon: '🌃' },
-  { id: 'exia', name: '能天使', icon: '⚡' },
-]
+// 主题列表 - 由单一数据源 THEMES 按分类派生
+const scifiThemes = THEMES.filter(t => t.category === 'scifi')
 
-const natureThemes = [
-  { id: 'sakura', name: '樱花', icon: '🌸' },
-  { id: 'bamboo', name: '竹林绿', icon: '🎋' },
-  { id: 'twins', name: '双子', icon: '♊' },
-  { id: 'mygo-light', name: '星歌', icon: '⭐' },
-]
+const natureThemes = THEMES.filter(t => t.category === 'nature')
 
-const healingThemes = [
-  { id: 'strawberry-cream', name: '草莓奶油', icon: '🍓' },
-  { id: 'mint-choco', name: '薄荷巧克力', icon: '🍃' },
-  { id: 'orange-soda', name: '香橙气泡', icon: '🍊' },
-]
+const healingThemes = THEMES.filter(t => t.category === 'healing')
 
 // 切换主题面板
 const toggleThemePanel = () => {
