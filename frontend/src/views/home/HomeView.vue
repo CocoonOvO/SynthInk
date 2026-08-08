@@ -143,6 +143,7 @@ import { useTypewriter, useTextScramble, useCountUp } from '@/effects'
 import { postsApi, statsApi } from '@/api'
 import type { Post } from '@/types'
 import { getSiteConfig } from '@/config/siteConfig'
+import { themeHasBehavior } from '@/themes'
 
 // 路由
 const router = useRouter()
@@ -153,8 +154,8 @@ const themeStore = useThemeStore()
 // 文案配置（站点可配置：内置默认 + 本地覆盖）
 const cw = getSiteConfig().home
 
-// 判断是否矩阵主题
-const isMatrixTheme = computed(() => themeStore.currentTheme === 'cyberpunk')
+// 判断是否矩阵雨主题（通过主题能力标记查询，替代硬编码主题 id）
+const isMatrixTheme = computed(() => themeHasBehavior(themeStore.currentTheme, 'matrix-rain'))
 
 // ╭── 动效相关 ──╮
 // 标题打字机效果（整行一起打字，不换行）

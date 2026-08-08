@@ -119,9 +119,23 @@ npm run config:init
 
 ## 主题系统
 
-- **主题元数据**（名称/图标/分类）：`src/config/themes.ts` 单一数据源（10 个主题：科幻 3 / 自然 4 / 治愈 3）
-- **主题变量**：`src/styles/themes/index.css`，通过 `data-theme` 属性 + CSS 变量实现
-- **默认主题**：由站点配置 `site.defaultTheme` 控制（仅首次访问用户生效）
+主题由 `src/themes/index.ts` 自动发现，每个主题一个独立目录：
+
+```
+src/themes/
+├── index.ts              # 发现模块：自动扫描 system/ 与 custom/，聚合元数据/CSS/脚本
+├── system/               # 系统主题（入库）：deep-space/ cyberpunk/ exia/ sakura/ bamboo/
+│   │                     #   twins/ mygo-light/ strawberry-cream/ mint-choco/ orange-soda/
+│   └── <id>/theme.json + theme.css
+└── custom/               # 自定义主题（gitignore，不入仓库）
+    └── <id>/theme.json + theme.css + theme.ts(可选)
+```
+
+- **theme.json** 元数据：`id` / `name` / `icon` / `category`（任意字符串，未知分类自动归组）/ `behaviors`（可选能力标记，如 `["matrix-rain"]`）
+- **theme.css** 主题变量：选择器**必须写 `:root[data-theme="主题id"]`**（特异性高于 `:root`，避免注入顺序导致变量被默认值覆盖）；可含 `--particle-type` 等粒子变量
+- **theme.ts** 可选主题脚本：`export function activate(ctx)`（返回可选 cleanup）+ 可选 `export function deactivate(ctx)`；主题切换/初始化时由 store 自动调用
+- **自定义主题**：放入 `custom/<id>/` 即自动出现在主题面板；与系统主题同 id 时**覆盖**系统主题（CSS 与脚本）；新增主题后 dev 需重启（或触发模块重载），build 自动扫描
+- **矩阵雨等能力判断**：用 `themeHasBehavior(id, 'matrix-rain')`，不要硬编码主题 id
 
 切换主题:
 ```typescript
@@ -129,6 +143,8 @@ import { useThemeStore } from '@/stores'
 const themeStore = useThemeStore()
 themeStore.setTheme('theme-id')
 ```
+
+默认主题：由站点配置 `site.defaultTheme` 控制（仅首次访问用户生效）。
 
 ---
 

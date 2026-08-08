@@ -1,0 +1,24 @@
+/* 主题：星歌（mygo-light） - 变量定义由 src/themes/index.ts 自动加载 */
+/* 星歌 */
+:root[data-theme="mygo-light"],
+:root[data-theme="stargaze"] {
+    --bg-primary: #f0f4f8;
+    --bg-secondary: rgba(232, 240, 248, 0.95);
+    --bg-card: rgba(255, 255, 255, 0.98);
+    --bg-elevated: rgba(248, 250, 252, 0.99);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a6a;
+    --accent-primary: #6b5ce7;
+    --accent-secondary: #a29bfe;
+    --accent-tertiary: #dfe6e9;
+    --border-subtle: rgba(107, 92, 231, 0.1);
+    --border-glow: rgba(107, 92, 231, 0.25);
+    --glow-primary: rgba(107, 92, 231, 0.08);
+    --glow-strong: rgba(162, 155, 254, 0.2);
+    --particle-color: #a29bfe;
+    --particle-opacity: 0.4;
+    --particle-type: musical;
+    --grid-opacity: 0.01;
+    --card-radius: 12px;
+    --button-radius: 8px;
+}

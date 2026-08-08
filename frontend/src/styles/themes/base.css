@@ -1,0 +1,196 @@
+/**
+ * SynthSpark Theme System
+ * 基础样式文件 - 共享的 :root 变量与通用效果样式
+ * 各主题的 [data-theme] 变量定义已拆分至 src/themes/system/<主题id>/theme.css，
+ * 由 src/themes/index.ts 自动发现并加载
+ */
+
+/* ============================================
+   基础变量（默认主题：深空）
+   ============================================ */
+:root {
+    /* 颜色系统 */
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-card: rgba(20, 20, 30, 0.6);
+    --bg-elevated: rgba(30, 30, 45, 0.8);
+
+    /* 文字颜色 */
+    --text-primary: #e8e8f0;
+    --text-secondary: #9090a0;
+    --text-tertiary: #606070;
+    --text-muted: #505060;
+
+    /* 强调色 */
+    --accent-primary: #52b788;
+    --accent-secondary: #7ee787;
+    --accent-tertiary: #2d6a4f;
+
+    /* 边框与发光 */
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-glow: rgba(82, 183, 136, 0.3);
+    --glow-primary: rgba(82, 183, 136, 0.15);
+    --glow-strong: rgba(82, 183, 136, 0.4);
+
+    /* 字体 */
+    --font-display: 'Orbitron', 'Noto Sans SC', sans-serif;
+    --font-body: 'Inter', 'Noto Sans SC', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Noto Sans SC', monospace;
+
+    /* 圆角 */
+    --card-radius: 12px;
+    --button-radius: 8px;
+    --input-radius: 6px;
+
+    /* 间距 */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+
+    /* 过渡 */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+
+    /* 粒子效果 */
+    --particle-color: #52b788;
+    --particle-opacity: 0.5;
+    --particle-type: floating;
+
+    /* 特效 */
+    --scanline-opacity: 0;
+    --grid-opacity: 0.03;
+    --noise-opacity: 0.02;
+}
+
+/* ============================================
+   主题选择器组件样式
+   ============================================ */
+.theme-selector {
+    position: relative;
+}
+
+/* ============================================
+   粒子画布
+   ============================================ */
+#particle-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ============================================
+   背景效果层
+   ============================================ */
+.bg-effects {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    overflow: hidden;
+}
+
+/* 网格背景 */
+.bg-effects::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(rgba(82, 183, 136, var(--grid-opacity)) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(82, 183, 136, var(--grid-opacity)) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: var(--grid-opacity);
+}
+
+/* 扫描线效果 */
+.bg-effects::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, var(--scanline-opacity)) 2px,
+        rgba(0, 0, 0, var(--scanline-opacity)) 4px
+    );
+    pointer-events: none;
+    opacity: var(--scanline-opacity);
+}
+
+/* ============================================
+   矩阵雨效果（赛博朋克主题专用）
+   ============================================ */
+.matrix-rain {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.matrix-rain.active {
+    opacity: 0.15;
+}
+
+.matrix-column {
+    position: absolute;
+    top: -100%;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--accent-primary);
+    text-shadow: 0 0 5px var(--accent-primary);
+    animation: matrixDrop 8s linear infinite;
+    white-space: nowrap;
+}
+
+@keyframes matrixDrop {
+    to { transform: translateY(200vh); opacity: 0; }
+}
+
+/* ============================================
+   主题过渡动画
+   ============================================ */
+*, *::before, *::after {
+    transition: background-color 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease,
+                color 0.3s ease;
+}
+
+/* ============================================
+   减少动画偏好支持
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    #particle-canvas,
+    .matrix-rain {
+        display: none;
+    }
+}

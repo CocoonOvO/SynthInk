@@ -43,9 +43,9 @@
  * 关于页面 - 精简版
  * 只保留Hero和技术架构两个section
  */
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useThemeStore } from '@/stores'
-import { ParticleSystem } from '@/effects/particles'
+import { ParticleSystem, type ParticleType } from '@/effects/particles'
 import { getSiteConfig } from '@/config/siteConfig'
 
 // 主题store
@@ -57,19 +57,47 @@ const cw = getSiteConfig().about
 // 粒子系统
 let particleSystem: ParticleSystem | null = null
 
-onMounted(() => {
-  // 初始化粒子效果
-  const canvas = document.getElementById('particle-canvas') as HTMLCanvasElement
-  if (canvas) {
-    particleSystem = new ParticleSystem({
-      type: 'floating',
-      color: '#52b788',
-      opacity: 0.5,
-      count: 50
-    })
-    particleSystem.init(canvas)
-    particleSystem.start()
+// 初始化粒子效果：读取当前主题的粒子配置（CSS 变量驱动，与首页一致）
+const initParticles = () => {
+  // 销毁旧的粒子系统（主题切换重建时）
+  if (particleSystem) {
+    particleSystem.destroy()
+    particleSystem = null
   }
+
+  const canvas = document.getElementById('particle-canvas') as HTMLCanvasElement
+  if (!canvas) return
+
+  // 从 document.documentElement 读取主题粒子变量（变量定义在 :root 主题块）
+  const style = getComputedStyle(document.documentElement)
+  const particleType = style.getPropertyValue('--particle-type').trim()
+  const particleColor = style.getPropertyValue('--particle-color').trim() || '#52b788'
+  const particleOpacity = parseFloat(style.getPropertyValue('--particle-opacity')) || 0.5
+
+  // none 表示主题自带粒子效果（由主题脚本负责，如定制主题的专属 canvas），跳过系统粒子画布
+  if (!particleType || particleType === 'none') {
+    return
+  }
+
+  // 移动端减半粒子数量
+  particleSystem = new ParticleSystem({
+    // CSS 变量为 string，运行时由粒子引擎 switch 校验（未知值回退 floating）
+    type: particleType as ParticleType,
+    color: particleColor,
+    opacity: particleOpacity,
+    count: window.innerWidth < 768 ? 25 : 50
+  })
+  particleSystem.init(canvas)
+  particleSystem.start()
+}
+
+onMounted(() => {
+  initParticles()
+})
+
+// 主题切换时重建粒子（与首页行为一致）
+watch(() => themeStore.currentTheme, () => {
+  initParticles()
 })
 
 onUnmounted(() => {

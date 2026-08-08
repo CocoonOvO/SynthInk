@@ -1,16 +1,25 @@
 /**
  * 主题状态管理
- * 精简版主题系统 - 10个核心主题
- * 主题元数据（名称/图标/分类）统一由 src/config/themes.ts 提供
+ * 主题元数据由 src/themes/index.ts 自动发现（系统主题 + 自定义主题）
+ * - currentTheme 为动态 string（自定义主题无法静态枚举）
+ * - 主题切换时调用对应主题脚本的 activate/deactivate 生命周期钩子
  */
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { THEMES, THEME_CATEGORY_LABELS, type Theme } from '@/config/themes'
+import {
+  THEMES,
+  themeCategories,
+  getThemeMeta,
+  getCategoryLabel,
+  activateThemeScript,
+  deactivateThemeScript,
+  type Theme,
+} from '@/themes'
 import { getSiteConfig } from '@/config/siteConfig'
 
 // 向后兼容导出（旧代码路径：@/stores/theme）
-export type { Theme } from '@/config/themes'
-export { themeCategories } from '@/config/themes'
+export type { Theme } from '@/themes'
+export { themeCategories } from '@/themes'
 
 // 本地存储键名
 const THEME_STORAGE_KEY = 'synthink-theme'
@@ -34,7 +43,10 @@ export const useThemeStore = defineStore('theme', () => {
   // 是否已初始化
   const isInitialized = ref(false)
 
-  // 获取存储的主题（兼容旧主题）
+  // 当前主题脚本的 cleanup（activate 返回的清理函数，离开主题时调用）
+  let scriptCleanup: (() => void) | undefined
+
+  // 获取存储的主题（兼容旧主题；无存储时用站点配置的默认主题）
   const getStoredTheme = (): Theme => {
     if (typeof window === 'undefined') return 'exia'
     const stored = localStorage.getItem(THEME_STORAGE_KEY)
@@ -42,22 +54,26 @@ export const useThemeStore = defineStore('theme', () => {
     if (stored && legacyThemeMap[stored]) {
       return legacyThemeMap[stored]
     }
-    // 检查是否是有效的新主题
-    const validThemes: Theme[] = [
-      'deep-space', 'cyberpunk', 'exia',
-      'sakura', 'bamboo', 'twins', 'mygo-light',
-      'strawberry-cream', 'mint-choco', 'orange-soda'
-    ]
-    if (validThemes.includes(stored as Theme)) {
-      return stored as Theme
+    // 检查是否是已发现的有效主题
+    if (stored && THEMES.some(t => t.id === stored)) {
+      return stored
     }
     // 首次访问（无本地存储）时，使用站点配置的默认主题（无效值回退 exia）
     const configured = getSiteConfig().site.defaultTheme
-    return validThemes.includes(configured as Theme) ? (configured as Theme) : 'exia'
+    return THEMES.some(t => t.id === configured) ? configured : 'exia'
   }
 
   // 设置主题
   const setTheme = (theme: Theme) => {
+    // 无效主题（未被发现）时忽略
+    if (!THEMES.some(t => t.id === theme)) return
+
+    // 停用旧主题脚本（cleanup 优先，其次 deactivate 钩子）
+    const oldMeta = getThemeMeta(currentTheme.value)
+    scriptCleanup?.()
+    scriptCleanup = undefined
+    deactivateThemeScript(oldMeta, currentTheme.value)
+
     currentTheme.value = theme
 
     // 应用到DOM
@@ -69,6 +85,9 @@ export const useThemeStore = defineStore('theme', () => {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(THEME_STORAGE_KEY, theme)
     }
+
+    // 激活新主题脚本（脚本可返回 cleanup，离开时自动执行）
+    scriptCleanup = activateThemeScript(getThemeMeta(theme), theme)
   }
 
   // 初始化主题
@@ -80,7 +99,7 @@ export const useThemeStore = defineStore('theme', () => {
     isInitialized.value = true
   }
 
-  // 切换主题（在几个常用主题间循环）
+  // 切换主题（在深空/赛博朋克/樱花/星歌四个核心主题间循环）
   const toggleTheme = () => {
     const themes: Theme[] = ['deep-space', 'cyberpunk', 'sakura', 'mygo-light']
     const currentIndex = themes.indexOf(currentTheme.value)
@@ -91,18 +110,18 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
-  // 获取主题名称（由单一数据源 THEMES 查找）
+  // 获取主题名称（由动态 THEMES 查找）
   const themeName = computed(() => {
-    return THEMES.find(t => t.id === currentTheme.value)?.name || '深空'
+    return getThemeMeta(currentTheme.value)?.name || '深空'
   })
 
-  // 获取主题分类（由单一数据源 THEMES 分类判断）
+  // 获取主题分类（由动态 THEMES 分类判断，未知分类回退科幻标签）
   const themeCategory = computed(() => {
-    const meta = THEMES.find(t => t.id === currentTheme.value)
+    const meta = getThemeMeta(currentTheme.value)
     if (meta) {
-      return THEME_CATEGORY_LABELS[meta.category]
+      return getCategoryLabel(meta.category)
     }
-    return THEME_CATEGORY_LABELS.scifi
+    return getCategoryLabel('scifi')
   })
 
   return {

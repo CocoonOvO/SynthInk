@@ -1,0 +1,22 @@
+/* 主题：赛博朋克（cyberpunk） - 变量定义由 src/themes/index.ts 自动加载 */
+/* 赛博朋克 */
+:root[data-theme="cyberpunk"] {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-card: rgba(18, 18, 26, 0.8);
+    --bg-elevated: rgba(25, 25, 35, 0.95);
+    --text-primary: #e8e8f0;
+    --text-secondary: #9090a0;
+    --accent-primary: #00f5d4;
+    --accent-secondary: #ff006e;
+    --accent-tertiary: #ff006e;
+    --border-subtle: rgba(0, 245, 212, 0.15);
+    --border-glow: rgba(0, 245, 212, 0.4);
+    --glow-primary: rgba(0, 245, 212, 0.2);
+    --glow-strong: rgba(255, 0, 110, 0.5);
+    --particle-color: #00f5d4;
+    --particle-opacity: 0.6;
+    --particle-type: matrix;
+    --scanline-opacity: 0.1;
+    --grid-opacity: 0.05;
+}

@@ -267,6 +267,18 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = '${SCHEMA}
 
 ---
 
+## 6.7 主题系统（自动发现）
+
+- **目录结构**：`frontend/src/themes/`——`index.ts` 发现模块 + `system/`（10 个系统主题入库，每主题一个目录）+ `custom/`（**已被 gitignore**，部署者自研主题不入仓库）
+- **主题内容**（每主题目录 `<id>/`）：`theme.json`（id/name/icon/category/behaviors）、`theme.css`（必须用 `:root[data-theme="id"]` 选择器，特异性压过 `:root` 默认变量）、可选 `theme.ts`（`activate(ctx)` 返回 cleanup + 可选 `deactivate(ctx)`，主题切换时由 store 自动调用）
+- **自动发现**：Vite `import.meta.glob` 编译期扫描 system/ 与 custom/，元数据聚合 + CSS 全局注入 + 脚本生命周期；非法主题跳过并输出 `[主题系统]` 中文警告
+- **覆盖规则**：custom 与 system 同 id 时自定义覆盖（CSS 与脚本均生效）
+- **能力判断**：页面用 `themeHasBehavior(id, 'matrix-rain')` 查询主题行为，禁止硬编码主题 id（如首页矩阵雨）
+- **新增主题**：复制一个 system 主题目录到 custom/ 修改即可；dev 下新增主题需重启 dev server 生效，`npm run build` 自动扫描
+- **默认主题**：站点配置 `site.defaultTheme`（后台「站点设置」tab 可配，仅首次访问用户生效）
+
+---
+
 ## 7. 日志与文件
 
 ### 7.1 日志
@@ -370,4 +382,4 @@ server {
 
 ---
 
-*最后更新: 2026-08-07*
+*最后更新: 2026-08-08*

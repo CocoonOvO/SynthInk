@@ -1,0 +1,23 @@
+/* 主题：樱花（sakura） - 变量定义由 src/themes/index.ts 自动加载 */
+/* 樱花 */
+:root[data-theme="sakura"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: rgba(255, 245, 250, 0.95);
+    --bg-card: rgba(255, 255, 255, 0.98);
+    --bg-elevated: rgba(255, 250, 252, 0.99);
+    --text-primary: #1a1a1a;
+    --text-secondary: #5a4a52;
+    --accent-primary: #ff69b4;
+    --accent-secondary: #ffb7c5;
+    --accent-tertiary: #ffc8dd;
+    --border-subtle: rgba(255, 105, 180, 0.12);
+    --border-glow: rgba(255, 105, 180, 0.3);
+    --glow-primary: rgba(255, 105, 180, 0.1);
+    --glow-strong: rgba(255, 183, 197, 0.3);
+    --particle-color: #ff69b4;
+    --particle-opacity: 0.4;
+    --particle-type: sakura;
+    --grid-opacity: 0.01;
+    --card-radius: 16px;
+    --button-radius: 12px;
+}

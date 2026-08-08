@@ -1,0 +1,17 @@
+/* 主题：深空（deep-space） - 变量定义由 src/themes/index.ts 自动加载 */
+/* 深空 - 默认暗色主题 */
+:root[data-theme="deep-space"],
+:root[data-theme="dark"] {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-card: rgba(20, 20, 30, 0.6);
+    --bg-elevated: rgba(30, 30, 45, 0.8);
+    --text-primary: #e8e8f0;
+    --text-secondary: #9090a0;
+    --accent-primary: #52b788;
+    --accent-secondary: #7ee787;
+    --border-glow: rgba(82, 183, 136, 0.3);
+    --glow-primary: rgba(82, 183, 136, 0.15);
+    --particle-color: #52b788;
+    --particle-type: floating;
+}
