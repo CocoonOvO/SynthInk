@@ -1,10 +1,12 @@
 /**
  * 样式入口
  * 按 frontend-architecture.md 定义
+ *
+ * 注意：主题基础样式（themes/base.css）改由 src/themes/index.ts 导入
+ * （dev 下 @import 异步加载会晚于主题 glob CSS 注入，导致 :root 反序覆盖主题变量）
  */
 
 @import './variables.css';
-@import './themes/index.css';
 @import './effects/transitions.css';
 @import './pages/home.css';
 @import './milkdown/index.css';

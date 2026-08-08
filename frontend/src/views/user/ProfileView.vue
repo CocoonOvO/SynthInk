@@ -463,7 +463,7 @@ import { authApi, postsApi, groupsApi, uploadApi, linksApi, siteConfigApi } from
 import type { ExternalLink } from '@/api'
 import { getSiteConfig } from '@/config/siteConfig'
 import type { SiteConfig } from '@/config/siteConfig'
-import { THEMES } from '@/config/themes'
+import { THEMES } from '@/themes'
 import { useAuthStore } from '@/stores'
 
 // ╭────────────────────────────────────────────────────────────╮

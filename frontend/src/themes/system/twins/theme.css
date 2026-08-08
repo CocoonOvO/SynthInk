@@ -1,0 +1,21 @@
+/* 主题：双子（twins） - 变量定义由 src/themes/index.ts 自动加载 */
+/* 双子 */
+:root[data-theme="twins"] {
+    --bg-primary: #0f0a15;
+    --bg-secondary: #1a1220;
+    --bg-card: rgba(30, 20, 40, 0.65);
+    --bg-elevated: rgba(45, 30, 55, 0.8);
+    --text-primary: #f0e8f5;
+    --text-secondary: #c8b8d8;
+    --accent-primary: #ffd700;
+    --accent-secondary: #00bfff;
+    --accent-tertiary: #ff6b9d;
+    --border-subtle: rgba(255, 215, 0, 0.15);
+    --border-glow: rgba(0, 191, 255, 0.35);
+    --glow-primary: rgba(255, 215, 0, 0.15);
+    --glow-strong: rgba(0, 191, 255, 0.4);
+    --particle-color: #ffd700;
+    --particle-opacity: 0.5;
+    --particle-type: twinparticle;
+    --grid-opacity: 0.03;
+}

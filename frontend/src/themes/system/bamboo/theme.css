@@ -1,0 +1,23 @@
+/* 主题：竹林绿（bamboo） - 变量定义由 src/themes/index.ts 自动加载 */
+/* 竹林绿 */
+:root[data-theme="bamboo"] {
+    --bg-primary: #f5f5f0;
+    --bg-secondary: rgba(240, 245, 240, 0.95);
+    --bg-card: rgba(255, 255, 255, 0.98);
+    --bg-elevated: rgba(250, 252, 250, 0.99);
+    --text-primary: #1a1a1a;
+    --text-secondary: #4a5a4a;
+    --accent-primary: #4a7c59;
+    --accent-secondary: #6b9b7a;
+    --accent-tertiary: #8fbc8f;
+    --border-subtle: rgba(74, 124, 89, 0.12);
+    --border-glow: rgba(74, 124, 89, 0.3);
+    --glow-primary: rgba(74, 124, 89, 0.1);
+    --glow-strong: rgba(107, 155, 122, 0.25);
+    --particle-color: #6b9b7a;
+    --particle-opacity: 0.4;
+    --particle-type: firefly;
+    --grid-opacity: 0.01;
+    --card-radius: 8px;
+    --button-radius: 6px;
+}

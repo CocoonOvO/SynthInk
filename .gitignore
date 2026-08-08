@@ -83,6 +83,10 @@ build/
 # 站点可配置（本地/部署实际配置，不入仓库；模板见 frontend/public/site.config.example.json）
 frontend/public/site.config.json
 
+# 自定义主题目录（部署者自研主题，不入仓库；.gitkeep 保留目录结构）
+frontend/src/themes/custom/*
+!frontend/src/themes/custom/.gitkeep
+
 # Local development
 *.local
 

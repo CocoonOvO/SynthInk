@@ -1,0 +1,23 @@
+/* 主题：香橙气泡（orange-soda） - 变量定义由 src/themes/index.ts 自动加载 */
+/* 香橙气泡 */
+:root[data-theme="orange-soda"] {
+    --bg-primary: #fff8f0;
+    --bg-secondary: rgba(255, 248, 240, 0.95);
+    --bg-card: rgba(255, 255, 255, 0.98);
+    --bg-elevated: rgba(255, 252, 248, 0.99);
+    --text-primary: #2d2520;
+    --text-secondary: #6a5a4a;
+    --accent-primary: #ff8c42;
+    --accent-secondary: #ffb366;
+    --accent-tertiary: #ffd9b3;
+    --border-subtle: rgba(255, 140, 66, 0.1);
+    --border-glow: rgba(255, 140, 66, 0.3);
+    --glow-primary: rgba(255, 140, 66, 0.1);
+    --glow-strong: rgba(255, 179, 102, 0.25);
+    --particle-color: #ffb366;
+    --particle-opacity: 0.5;
+    --particle-type: rising;
+    --grid-opacity: 0.01;
+    --card-radius: 10px;
+    --button-radius: 8px;
+}

@@ -1,0 +1,7 @@
+{
+  "id": "cyberpunk",
+  "name": "赛博朋克",
+  "icon": "🌃",
+  "category": "scifi",
+  "behaviors": ["matrix-rain"]
+}

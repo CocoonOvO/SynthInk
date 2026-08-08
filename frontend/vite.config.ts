@@ -29,6 +29,15 @@ function ensureSiteConfigFile(): void {
   console.log('[站点配置] public/site.config.json 不存在，已从模板自动生成（可编辑该文件覆盖站点配置）')
 }
 
+/**
+ * 确保自定义主题目录存在（src/themes/custom 已被 gitignore，clone 后可能缺失）
+ * dev / build 时自动创建，保证 import.meta.glob 能发现自定义主题
+ */
+function ensureCustomThemeDir(): void {
+  const customDir = fileURLToPath(new URL('./src/themes/custom', import.meta.url))
+  mkdirSync(customDir, { recursive: true })
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   // 加载环境变量
@@ -47,10 +56,12 @@ export default defineConfig(({ mode }) => {
         // build 时在模块加载阶段生成（dist 拷贝 public 目录前完成）
         buildStart() {
           ensureSiteConfigFile()
+          ensureCustomThemeDir()
         },
         // dev 启动时生成，保证 /site.config.json 可访问
         configureServer() {
           ensureSiteConfigFile()
+          ensureCustomThemeDir()
         },
       },
     ],

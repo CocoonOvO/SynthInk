@@ -136,47 +136,13 @@
         <!-- 主题面板 -->
         <div v-if="isThemePanelOpen" class="theme-panel" v-click-outside="closeThemePanel">
           <div class="theme-panel-header">选择主题</div>
-          
-          <!-- 科幻 -->
-          <div class="theme-category">
-            <div class="theme-category-label">科幻</div>
-            <div class="theme-grid">
-              <div 
-                v-for="theme in scifiThemes" 
-                :key="theme.id"
-                class="theme-option"
-                :class="{ active: currentTheme === theme.id }"
-                @click="setTheme(theme.id)"
-              >
-                <span class="theme-icon">{{ theme.icon }}</span>
-                <span class="theme-name">{{ theme.name }}</span>
-              </div>
-            </div>
-          </div>
 
-          <!-- 自然 -->
-          <div class="theme-category">
-            <div class="theme-category-label">自然</div>
+          <!-- 动态分类分组（系统主题 + 自定义主题，未知分类自动归组） -->
+          <div v-for="group in themeGroups" :key="group.category" class="theme-category">
+            <div class="theme-category-label">{{ group.label }}</div>
             <div class="theme-grid">
               <div 
-                v-for="theme in natureThemes" 
-                :key="theme.id"
-                class="theme-option"
-                :class="{ active: currentTheme === theme.id }"
-                @click="setTheme(theme.id)"
-              >
-                <span class="theme-icon">{{ theme.icon }}</span>
-                <span class="theme-name">{{ theme.name }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 治愈 -->
-          <div class="theme-category">
-            <div class="theme-category-label">治愈</div>
-            <div class="theme-grid">
-              <div 
-                v-for="theme in healingThemes" 
+                v-for="theme in group.themes" 
                 :key="theme.id"
                 class="theme-option"
                 :class="{ active: currentTheme === theme.id }"
@@ -215,7 +181,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useThemeStore } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
 import { getSiteConfig } from '@/config/siteConfig'
-import { THEMES } from '@/config/themes'
+import { themeCategories, getCategoryLabel } from '@/themes'
 import type { Theme } from '@/stores/theme'
 
 // 扩展HTMLElement类型以支持_clickOutside
@@ -261,12 +227,12 @@ const handleResize = () => {
   }
 }
 
-// 主题列表 - 由单一数据源 THEMES 按分类派生
-const scifiThemes = THEMES.filter(t => t.category === 'scifi')
-
-const natureThemes = THEMES.filter(t => t.category === 'nature')
-
-const healingThemes = THEMES.filter(t => t.category === 'healing')
+// 主题分组 - 由发现模块 themeCategories 动态派生（含自定义主题与未知分类）
+const themeGroups = Object.entries(themeCategories).map(([category, themes]) => ({
+  category,
+  label: getCategoryLabel(category),
+  themes,
+}))
 
 // 切换主题面板
 const toggleThemePanel = () => {
