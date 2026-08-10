@@ -277,6 +277,11 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = '${SCHEMA}
 - **新增主题**：复制一个 system 主题目录到 custom/ 修改即可；dev 下新增主题需重启 dev server 生效，`npm run build` 自动扫描
 - **默认主题**：站点配置 `site.defaultTheme`（后台「站点设置」tab 可配，仅首次访问用户生效）
 
+**已知修复记录（2026-08-10）**：
+- frostsugar 主题文章详情正文白块 bug：根因是 `styles/milkdown/base.css` 的 `.milkdown { background: var(--milkdown-bg) !important; }` 用 `!important` 压过 `MarkdownRenderer.vue` 的 `background: transparent`，正文容器被填上不透明 `--bg-primary`；该主题又是唯一 body 背景为渐变、与 `--bg-primary` 不一致的主题，故仅在 frostsugar 可见，且 60s 渐变流动会造成"时有时无"的错觉。修复分两部分：
+  1. `MarkdownRenderer.vue` 的 `background: transparent` 加 `!important`（scoped 特异性 0,2,0 压过 0,1,0），正文透出页面底色（**在分支 `fix/markdown-renderer-transparent-bg`，已提交**）
+  2. frostsugar `theme.css` 删除 60s `background-position` 流动动画与 `background-size: 300% 300%`，保留静态渐变（custom 目录不入库，直接改动）
+
 ---
 
 ## 7. 日志与文件
