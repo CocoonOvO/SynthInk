@@ -231,6 +231,31 @@ class BaseAdapter(ABC):
         pass
 
     @abstractmethod
+    async def check_ip_comment_limit(
+        self,
+        ip_address: str,
+        daily_limit: int,
+        min_interval: int = 0
+    ) -> dict[str, Any]:
+        """
+        检查IP匿名评论频率限制（每日上限 + 最小间隔）
+
+        Args:
+            ip_address: IP地址
+            daily_limit: 每日限制次数
+            min_interval: 两次评论最小间隔秒数（0 表示不限制）
+
+        Returns:
+            {
+                "success": True,
+                "allowed": bool,    # 是否允许继续评论
+                "message": str,     # 提示信息（如果被限制）
+                "retry_after": int  # 建议重试等待秒数
+            }
+        """
+        pass
+
+    @abstractmethod
     async def increment_like_count(self, post_id: str) -> dict[str, Any]:
         """
         原子增加文章点赞数

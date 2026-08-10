@@ -204,14 +204,19 @@ GET /comments/post/{post_id}
 ### 发表评论
 ```
 POST /comments/
-Authorization: Bearer {token}
+Authorization: Bearer {token}   # 可选：未登录用户可匿名评论
 {
   "post_id": "文章ID",
   "content": "评论内容",
-  "parent_id": null
+  "parent_id": null,
+  "author_name": "访客昵称",      # 匿名评论必填（1-50字符）
+  "author_email": "guest@example.com"  # 可选，仅存储不展示
 }
 ```
-注：parent_id用于回复评论
+注：
+- parent_id用于回复评论
+- 已登录用户评论无需 author_name/author_email（后端强制忽略）
+- 匿名评论受 IP 限流（24小时20条 + 30秒间隔），超限返回 429
 
 ### 更新评论
 ```

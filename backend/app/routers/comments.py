@@ -1,12 +1,13 @@
 """
 评论路由模块
 处理文章评论的CRUD操作和嵌套回复
+支持匿名评论（名称必填 + 邮箱可选），匿名评论按 IP 限流
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated, List, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from ..db_manager import db_manager
 from ..models.comment import (
@@ -14,22 +15,40 @@ from ..models.comment import (
     CommentUserInfo, CommentListResponse
 )
 from ..models.user import User
-from ..utils.xss_guard import sanitize_html
-from .auth import get_current_active_user
+from ..utils.ip import get_client_ip
+from ..utils.xss_guard import escape_html_entities, sanitize_html
+from .auth import get_current_active_user, get_current_user_optional
 
 router = APIRouter()
 
+# 匿名评论 IP 限流参数（单 IP 维度，登录用户评论不占配额）
+ANONYMOUS_COMMENT_DAILY_LIMIT = 20   # 每 IP 每日匿名评论上限
+ANONYMOUS_COMMENT_MIN_INTERVAL = 30  # 两次匿名评论最小间隔（秒）
 
-async def get_comment_author_info(user_id: str) -> Optional[CommentUserInfo]:
+# 匿名评论默认显示名（author_name 缺失时兜底）
+ANONYMOUS_DEFAULT_NAME = "匿名用户"
+
+
+async def get_comment_author_info(user_id: Optional[str], author_name: Optional[str] = None) -> Optional[CommentUserInfo]:
     """
     获取评论作者信息
-    
+
     Args:
-        user_id: 用户ID
-    
+        user_id: 用户ID（匿名评论为 None）
+        author_name: 匿名评论的显示名（user_id 为空时使用）
+
     Returns:
-        用户信息，如果不存在则返回None
+        用户信息；匿名评论返回匿名作者信息；查询异常返回 None
     """
+    # 匿名评论：直接以 author_name 构造作者信息
+    if not user_id:
+        return CommentUserInfo(
+            id="anonymous",
+            username=author_name or ANONYMOUS_DEFAULT_NAME,
+            display_name=None,
+            avatar_url=None
+        )
+
     # 检查数据库是否已初始化
     try:
         _ = db_manager.db
@@ -76,8 +95,11 @@ async def build_comment_tree(
     result = []
     for comment_data in comments:
         if comment_data.get("parent_id") == parent_id:
-            # 获取作者信息
-            author = await get_comment_author_info(comment_data["author_id"])
+            # 获取作者信息（匿名评论以 author_name 兜底，不再跳过）
+            author = await get_comment_author_info(
+                comment_data.get("author_id"),
+                comment_data.get("author_name")
+            )
             if not author:
                 continue
             
@@ -146,7 +168,8 @@ async def count_total_comments(post_id: str) -> int:
 @router.post("", response_model=Comment, status_code=status.HTTP_201_CREATED, summary="创建评论")
 async def create_comment(
     comment_data: CommentCreate,
-    current_user: Annotated[User, Depends(get_current_active_user)]
+    request: Request,
+    current_user: Annotated[Optional[User], Depends(get_current_user_optional)]
 ) -> Comment:
     """
     创建评论或回复
@@ -154,6 +177,8 @@ async def create_comment(
     - 普通评论：不指定parent_id
     - 回复评论：指定parent_id为要回复的评论ID
     - 最多支持3层嵌套回复
+    - 已登录用户直接评论；未登录用户匿名评论，需提供 author_name（邮箱可选）
+    - 匿名评论受 IP 限流约束（每日上限 + 最小间隔）
     """
     # 检查文章是否存在
     post_result = await db_manager.db.get("posts", comment_data.post_id)
@@ -206,12 +231,46 @@ async def create_comment(
                 detail="评论嵌套层数超过限制（最多3层）"
             )
     
-    # 创建评论
-    now = datetime.utcnow()
+    # 获取客户端 IP（登录与匿名评论均落库，供后续统计分析）
+    ip_address = get_client_ip(request)
+    
+    # ========== 区分登录用户与匿名用户 ==========
+    if current_user:
+        # 登录用户：忽略客户端传入的匿名字段，作者信息一律取自账号
+        author_id = current_user.id
+        author_name = None
+        author_email = None
+    else:
+        # 匿名用户：名称必填（trim 后非空），邮箱可选
+        raw_name = (comment_data.author_name or "").strip()
+        if not raw_name:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="匿名评论必须填写名称"
+            )
+        
+        # 严格 IP 限流（每日上限 + 最小间隔）
+        allowed, message = await check_anonymous_comment_rate_limit(ip_address)
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=message
+            )
+        
+        author_id = None
+        # XSS防护：名称按纯文本转义存储
+        author_name = escape_html_entities(raw_name[:50])
+        author_email = str(comment_data.author_email) if comment_data.author_email else None
+    
+    # 创建评论（时间戳使用带时区 UTC，避免 naive datetime 被 asyncpg 按会话时区误解导致时间偏差）
+    now = datetime.now(timezone.utc)
     comment_dict = {
         "id": str(uuid4()),
         "post_id": comment_data.post_id,
-        "author_id": current_user.id,
+        "author_id": author_id,
+        "author_name": author_name,
+        "author_email": author_email,
+        "ip_address": ip_address,
         "content": sanitize_html(comment_data.content),  # XSS防护：净化HTML内容
         "parent_id": comment_data.parent_id,
         "is_deleted": False,
@@ -227,7 +286,7 @@ async def create_comment(
         )
     
     # 构建响应
-    author = await get_comment_author_info(current_user.id)
+    author = await get_comment_author_info(author_id, author_name)
     return Comment(
         id=comment_dict["id"],
         post_id=comment_dict["post_id"],
@@ -241,6 +300,29 @@ async def create_comment(
         reply_count=0,
         total_reply_count=0
     )
+
+
+async def check_anonymous_comment_rate_limit(ip_address: str) -> tuple[bool, str]:
+    """
+    检查匿名评论 IP 限流（每日上限 + 最小间隔）
+
+    Args:
+        ip_address: 客户端IP
+
+    Returns:
+        (是否允许, 错误信息)
+    """
+    result = await db_manager.db.check_ip_comment_limit(
+        ip_address,
+        ANONYMOUS_COMMENT_DAILY_LIMIT,
+        ANONYMOUS_COMMENT_MIN_INTERVAL
+    )
+    
+    if not result.get("success"):
+        # 数据库错误时允许操作（降级处理）
+        return True, ""
+    
+    return result.get("allowed", True), result.get("message", "")
 
 
 @router.get("/", response_model=CommentListResponse, summary="获取文章评论列表")
@@ -409,13 +491,16 @@ async def get_comment(comment_id: str) -> Comment:
                 detail="评论不存在"
             )
     
-    # 获取作者信息
-    author = await get_comment_author_info(comment_data["author_id"])
+    # 获取作者信息（匿名评论以 author_name 兜底）
+    author = await get_comment_author_info(
+        comment_data.get("author_id"),
+        comment_data.get("author_name")
+    )
     if not author:
         # 作者信息获取失败，使用默认信息
         author = CommentUserInfo(
-            id=comment_data["author_id"],
-            username="未知用户",
+            id=str(comment_data.get("author_id") or "anonymous"),
+            username=comment_data.get("author_name") or "未知用户",
             display_name=None,
             avatar_url=None
         )
@@ -606,7 +691,10 @@ async def get_user_comments(
     # 构建评论列表
     comments = []
     for comment_data in comments_data:
-        author = await get_comment_author_info(comment_data["author_id"])
+        author = await get_comment_author_info(
+            comment_data.get("author_id"),
+            comment_data.get("author_name")
+        )
         if not author:
             continue
         

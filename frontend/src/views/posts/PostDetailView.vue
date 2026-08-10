@@ -121,6 +121,22 @@
           <span v-else>{{ authStore.isLoggedIn ? (authStore.user?.username?.[0] || '我') : '匿' }}</span>
         </div>
         <div class="comment-input-wrapper">
+          <!-- 匿名评论信息栏：未登录时填写名称（必填）与邮箱（可选） -->
+          <div v-if="!authStore.isLoggedIn" class="comment-meta-fields">
+            <input
+              v-model="anonymousName"
+              type="text"
+              class="comment-meta-input"
+              placeholder="填写你的称呼 *"
+              maxlength="50"
+            >
+            <input
+              v-model="anonymousEmail"
+              type="email"
+              class="comment-meta-input"
+              placeholder="邮箱（可选，仅站长可见）"
+            >
+          </div>
           <textarea
             v-model="newComment"
             class="comment-input"
@@ -399,6 +415,21 @@ const isFollowing = ref(false)
 
 // 评论相关
 const newComment = ref('')
+
+// 匿名评论信息（localStorage 记忆，方便访客再次评论）
+const ANONYMOUS_STORAGE_KEY = 'synthink_anonymous_comment'
+const anonymousName = ref('')
+const anonymousEmail = ref('')
+// 加载时回填上次填写的名称/邮箱
+;(() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ANONYMOUS_STORAGE_KEY) || '{}')
+    if (saved?.name) anonymousName.value = saved.name
+    if (saved?.email) anonymousEmail.value = saved.email
+  } catch {
+    // 本地存储解析失败时静默忽略
+  }
+})()
 interface CommentItem {
   id: number
   author: string
@@ -567,17 +598,49 @@ const submitComment = async () => {
     return
   }
 
+  // 匿名评论：名称必填，邮箱可选（前端格式校验）
+  let requestAuthorName: string | undefined
+  let requestAuthorEmail: string | undefined
+  if (!authStore.isLoggedIn) {
+    const name = anonymousName.value.trim()
+    if (!name) {
+      alert('请填写你的称呼')
+      return
+    }
+    const email = anonymousEmail.value.trim()
+    if (email && !isValidEmail(email)) {
+      alert('邮箱格式不正确')
+      return
+    }
+    requestAuthorName = name
+    requestAuthorEmail = email || undefined
+  }
+
   try {
-    // 调用API提交评论（支持匿名评论）
+    // 调用API提交评论（登录用户实名，未登录用户匿名）
     const comment = await commentsApi.create({
       post_id: postId,
-      content: newComment.value.trim()
+      content: newComment.value.trim(),
+      author_name: requestAuthorName,
+      author_email: requestAuthorEmail
     })
 
-    // 获取当前用户名（已登录用用户名，未登录用匿名）
+    // 记忆匿名填写信息，下次自动回填
+    if (!authStore.isLoggedIn) {
+      try {
+        localStorage.setItem(ANONYMOUS_STORAGE_KEY, JSON.stringify({
+          name: requestAuthorName,
+          email: requestAuthorEmail
+        }))
+      } catch {
+        // 存储失败（隐私模式等）时静默忽略
+      }
+    }
+
+    // 获取当前用户名（已登录用用户名，未登录用评论返回的匿名名称）
     const currentUserName = authStore.isLoggedIn 
       ? (authStore.user?.display_name || authStore.user?.username || '我')
-      : (comment.author_name || '匿名用户')
+      : (comment.author_name || requestAuthorName || '匿名用户')
 
     // 添加到评论列表
     comments.value.unshift({
@@ -594,6 +657,11 @@ const submitComment = async () => {
     console.error('发表评论失败:', error)
     alert(error.message || '发表评论失败，请稍后重试')
   }
+}
+
+// 简易邮箱格式校验（仅前端提示用，后端 pydantic 会再次校验）
+const isValidEmail = (email: string) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
 // 移动端目录
@@ -1192,6 +1260,36 @@ onUnmounted(() => {
 
 .comment-input-wrapper {
   flex: 1;
+}
+
+/* 匿名评论信息栏：名称 + 邮箱两列 */
+.comment-meta-fields {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.comment-meta-input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: var(--transition-fast);
+  font-family: inherit;
+}
+
+.comment-meta-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 16px var(--glow-primary);
+}
+
+.comment-meta-input::placeholder {
+  color: var(--text-tertiary);
 }
 
 .comment-input {

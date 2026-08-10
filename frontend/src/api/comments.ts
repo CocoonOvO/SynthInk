@@ -8,7 +8,7 @@ import { client } from './client'
 export interface Comment {
   id: number
   post_id: number | string  // 支持string类型
-  author_id: number | string
+  author_id?: number | string | null  // 匿名评论为 null
   author_name?: string
   author_avatar?: string
   content: string
@@ -39,6 +39,9 @@ export interface CreateCommentRequest {
   content: string
   parent_id?: number
   reply_to?: string
+  // 匿名评论字段：仅未登录用户填写（名称必填，邮箱可选）
+  author_name?: string
+  author_email?: string
 }
 
 // 更新评论请求

@@ -19,6 +19,7 @@ from ..config_db import (
 from ..dependencies import DatabaseNotConfiguredException
 from ..db_manager import db_manager
 from ..config import get_settings
+from ..utils.ip import get_client_ip  # 统一IP获取（原本地实现已迁移至 utils/ip.py）
 
 
 router = APIRouter(prefix="/admin", tags=["Admin - 超管配置"])
@@ -301,24 +302,6 @@ class SwitchDatabaseResponse(BaseModel):
 
 
 # ========== 辅助函数 ==========
-
-def get_client_ip(request: Request) -> str:
-    """
-    获取客户端IP地址
-    
-    优先从X-Forwarded-For头获取，否则使用直接连接的IP
-    
-    Args:
-        request: FastAPI请求对象
-        
-    Returns:
-        IP地址字符串
-    """
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        return forwarded_for.split(",")[0].strip()
-    return request.client.host if request.client else ""
-
 
 # ========== 公开接口（无需认证） ==========
 

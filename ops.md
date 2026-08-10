@@ -53,7 +53,7 @@ npm run dev
 | 问题 | 说明 |
 |------|------|
 | `test_register_api` / `test_integration` 失败 | 注册接口已改为需超管权限，这些用例仍按公开注册断言（陈旧） |
-| `test_likes` 失败 | `likes` 表未加入两个适配器的 `ALL_TABLES`/`init_schema`，全新库不会自动建表 |
+| `test_likes` 失败 | likes 表已纳入 postgres 建表体系（2026-08-10 修复），剩余失败为陈旧断言：`test_like_post_unauthorized`（未登录+文章不存在返回404而非401）、`test_unlike_post_unauthorized`（400而非401）、`test_get_like_status_public`/`test_get_post_likers`（响应结构已改为 `items[]`，用例仍按数组断言）；SQLite 适配器仍未建 likes 表 |
 | `test_seo` 失败 | SEOMiddleware 与新版 starlette 不兼容 |
 | `test_smoke` 失败 | 活服务测试，需 8002 后端运行且设置 `SMOKE_SUPERUSER_USERNAME` / `SMOKE_SUPERUSER_PASSWORD` |
 
@@ -284,6 +284,19 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = '${SCHEMA}
 
 ---
 
+## 6.8 匿名评论与 IP 落库
+
+- **匿名评论**：未登录用户可评论，需填写名称（必填，1-50 字符，XSS 转义存储）+ 邮箱（可选，仅存储不对外展示）。`POST /api/comments` 鉴权改为可选（`get_current_user_optional`），登录用户提交的匿名字段被强制忽略
+- **IP 限流**（仅匿名评论，登录用户不限流）：24 小时滚动窗口上限 20 条 + 最小间隔 30 秒，超限返回 429。参数在 `backend/app/routers/comments.py` 顶部常量（`ANONYMOUS_COMMENT_DAILY_LIMIT` / `ANONYMOUS_COMMENT_MIN_INTERVAL`）。限流时间比较用数据库相对时间（`NOW() - INTERVAL`），规避 naive datetime 时区坑
+- **数据字段**：comments 表新增 `author_name`（匿名显示名）、`author_email`（可选邮箱，不进入任何 API 响应）、`ip_address`（评论 IP，登录+匿名均落库，供将来统计分析）；`author_id` 改为可空（匿名评论为空）
+- **likes 表补建**：原先未纳入建表体系（全新库无此表），现已加入 `PostgresAdapter.create_table`/`init_schema`；`user_id` 可空、`anonymous_token`、`like_type`、`ip_address`（登录+匿名点赞均落库）
+- **自动迁移**：`PostgresAdapter.ensure_anonymous_features()` 幂等补列（查 `information_schema.columns`，缺失则 ALTER），`init_schema()` 末尾调用 → 后端启动与 `POST /api/admin/database/init` 均会执行；SQLite 适配器仍残缺（评论/likes 表未定义，属既有问题）
+- **评论搜索**：comments 搜索改为 LEFT JOIN users + COALESCE，匿名评论可被搜到
+- **时区坑（重要）**：项目历史代码用 `datetime.utcnow()`（naive）写入 timestamptz 列，asyncpg 按会话时区（+08）解释，存储时刻偏差 8 小时。评论创建已改为 `datetime.now(timezone.utc)`；限流统计不受影响。点赞等模块仍用旧写法（既有行为，未动）
+- **前端**：`PostDetailView.vue` 评论区未登录时显示名称+邮箱输入（邮箱格式前端预校验），提交字段 `author_name`/`author_email`；localStorage（key `synthink_anonymous_comment`）记忆上次填写内容
+
+---
+
 ## 7. 日志与文件
 
 ### 7.1 日志
@@ -387,4 +400,4 @@ server {
 
 ---
 
-*最后更新: 2026-08-08*
+*最后更新: 2026-08-10*
