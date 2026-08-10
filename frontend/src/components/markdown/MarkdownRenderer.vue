@@ -163,7 +163,10 @@ watch(() => props.content, async (newValue) => {
 /* Milkdown 预览样式 */
 :deep(.milkdown) {
   padding: 0;
-  background: transparent;
+  /* 必须 !important 压过 styles/milkdown/base.css 中 .milkdown 的
+     background: var(--milkdown-bg) !important（实色 --bg-primary），
+     阅读器正文透出页面底色，避免出现与主题背景不一致的色块 */
+  background: transparent !important;
   color: var(--text-primary);
 }
 
