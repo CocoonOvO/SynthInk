@@ -4,7 +4,7 @@
 """
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
 
 
 class CommentBase(BaseModel):
@@ -16,6 +16,14 @@ class CommentCreate(CommentBase):
     """评论创建模型"""
     post_id: str = Field(..., description="文章ID")
     parent_id: Optional[str] = Field(None, description="父评论ID，用于回复")
+    # 匿名评论字段：仅未登录用户填写，登录用户提交时后端强制忽略
+    author_name: Optional[str] = Field(
+        None, min_length=1, max_length=50,
+        description="匿名评论显示名（仅匿名用户，必填）"
+    )
+    author_email: Optional[EmailStr] = Field(
+        None, description="匿名评论联系邮箱（可选，仅存储不对外展示）"
+    )
 
 
 class CommentUpdate(BaseModel):

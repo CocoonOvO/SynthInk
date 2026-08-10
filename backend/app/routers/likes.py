@@ -12,6 +12,7 @@ import hashlib
 from app.models import Like, LikeCreate, LikeStatus, PostWithLikeStatus
 from app.routers.auth import get_current_user, get_current_user_optional
 from app.db_manager import db_manager
+from app.utils.ip import get_client_ip
 
 router = APIRouter(tags=["点赞"])
 
@@ -23,25 +24,6 @@ IP_DAILY_LIMIT = 50  # 每IP每日点赞上限
 def generate_anonymous_token() -> str:
     """生成匿名用户token"""
     return secrets.token_urlsafe(32)
-
-
-def get_client_ip(request: Request) -> str:
-    """获取客户端IP地址"""
-    # 尝试从X-Forwarded-For获取（代理环境）
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    
-    # 从X-Real-IP获取
-    real_ip = request.headers.get("X-Real-IP")
-    if real_ip:
-        return real_ip
-    
-    # 直接从连接获取
-    if request.client:
-        return request.client.host
-    
-    return "unknown"
 
 
 async def check_anonymous_rate_limit(ip_address: str) -> tuple[bool, str]:
@@ -125,11 +107,12 @@ async def like_post(
                 is_liked=True
             )
         
-        # 创建点赞记录
+        # 创建点赞记录（登录用户同样落 IP，供后续统计分析）
         like_data = {
             "post_id": post_id,
             "user_id": user_id,
             "like_type": "user",
+            "ip_address": ip_address,
             "created_at": datetime.utcnow()
         }
         

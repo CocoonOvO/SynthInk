@@ -1,18 +1,20 @@
+/**
+ * Vitest 配置文件
+ * 独立于 vite.config.ts，避免构建插件（站点配置生成等）干扰测试环境
+ */
 import { fileURLToPath } from 'node:url'
-import { mergeConfig, defineConfig, configDefaults } from 'vitest/config'
-import viteConfigFn from './vite.config'
+import { defineConfig } from 'vitest/config'
 
-// vite.config.ts 是函数式配置（defineConfig(({ mode }) => ...)），
-// mergeConfig 只接受对象，故以 test 模式求值后再合并（与 vitest 内部行为一致）
-const viteConfig = viteConfigFn({ mode: 'test', command: 'serve' })
-
-export default mergeConfig(
-  viteConfig,
-  defineConfig({
-    test: {
-      environment: 'jsdom',
-      exclude: [...configDefaults.exclude, 'e2e/**'],
-      root: fileURLToPath(new URL('./', import.meta.url)),
+export default defineConfig({
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/__tests__/setup.ts'],
+    exclude: ['e2e/**', 'node_modules/**'],
+  },
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
-  }),
-)
+  },
+})

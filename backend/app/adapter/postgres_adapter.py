@@ -33,10 +33,11 @@ class PostgresAdapter(BaseAdapter):
     TABLE_GROUPS = "groups"
     TABLE_POST_TAGS = "post_tags"
     TABLE_COMMENTS = "comments"
+    TABLE_LIKES = "likes"
     TABLE_EXTERNAL_LINKS = "external_links"
     
     # 所有表名列表
-    ALL_TABLES = [TABLE_USERS, TABLE_POSTS, TABLE_TAGS, TABLE_GROUPS, TABLE_POST_TAGS, TABLE_COMMENTS, TABLE_EXTERNAL_LINKS]
+    ALL_TABLES = [TABLE_USERS, TABLE_POSTS, TABLE_TAGS, TABLE_GROUPS, TABLE_POST_TAGS, TABLE_COMMENTS, TABLE_LIKES, TABLE_EXTERNAL_LINKS]
     
     def __init__(self, dsn: str, schema: str = "public"):
         """
@@ -319,12 +320,29 @@ class PostgresAdapter(BaseAdapter):
                 CREATE TABLE IF NOT EXISTS {full_table_name} (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     post_id UUID NOT NULL REFERENCES {self.schema}.posts(id) ON DELETE CASCADE,
-                    author_id UUID NOT NULL REFERENCES {self.schema}.users(id) ON DELETE CASCADE,
+                    author_id UUID REFERENCES {self.schema}.users(id) ON DELETE CASCADE,
+                    author_name VARCHAR(50),
+                    author_email VARCHAR(254),
+                    ip_address INET,
                     content TEXT NOT NULL,
                     parent_id UUID REFERENCES {self.schema}.comments(id) ON DELETE CASCADE,
                     is_deleted BOOLEAN DEFAULT FALSE,
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+        elif name == self.TABLE_LIKES:
+            # 点赞表（登录与匿名点赞均落库 IP，供后续统计分析）
+            await self._execute(f"""
+                CREATE TABLE IF NOT EXISTS {full_table_name} (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    post_id UUID NOT NULL REFERENCES {self.schema}.posts(id) ON DELETE CASCADE,
+                    user_id UUID REFERENCES {self.schema}.users(id) ON DELETE CASCADE,
+                    anonymous_token TEXT,
+                    like_type VARCHAR(20) DEFAULT 'user',
+                    ip_address INET NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 )
             """)
         
@@ -449,7 +467,11 @@ class PostgresAdapter(BaseAdapter):
         """根据ID获取数据"""
         full_table = self._get_table_name(table)
         query = f"SELECT * FROM {full_table} WHERE id = $1"
-        row = await self._fetchrow(query, id)
+        try:
+            row = await self._fetchrow(query, id)
+        except Exception as e:
+            # 非法 UUID 等参数错误按不存在处理（返回 not found 而非 500）
+            return {"success": False, "error": f"Record not found in {table}: invalid id"}
         
         if row is None:
             return {"success": False, "error": f"Record not found in {table}"}
@@ -608,7 +630,64 @@ class PostgresAdapter(BaseAdapter):
         await self.create_table(self.TABLE_POSTS)
         await self.create_table(self.TABLE_POST_TAGS)
         await self.create_table(self.TABLE_COMMENTS)
+        await self.create_table(self.TABLE_LIKES)
         await self.create_table(self.TABLE_EXTERNAL_LINKS)
+        # 对已存在的旧表执行幂等迁移（匿名评论支持 + 点赞/评论 IP 落库）
+        await self.ensure_anonymous_features()
+
+    async def _ensure_column(self, table: str, column: str, column_ddl: str) -> None:
+        """
+        幂等补列：检查 information_schema.columns，缺失则执行 ALTER TABLE ADD COLUMN
+
+        Args:
+            table: 表名（不带 schema 前缀）
+            column: 列名
+            column_ddl: 完整列定义（如 "author_name VARCHAR(50)"）
+        """
+        full_table = self._get_table_name(table)
+        check_query = f"""
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = $1 AND table_name = $2 AND column_name = $3
+        """
+        exists = await self._fetchrow(check_query, self.schema, table, column)
+        if exists:
+            return
+        await self._execute(f"ALTER TABLE {full_table} ADD COLUMN {column_ddl}")
+
+    async def ensure_anonymous_features(self) -> None:
+        """
+        匿名评论支持与 IP 落库的幂等迁移
+
+        覆盖场景：
+        1. 全新库：comments/likes 建表语句已含新列，本函数为空操作
+        2. 旧库：comments 表已存在（author_id NOT NULL、无 author_name/author_email/ip_address），
+           likes 表可能不存在或缺少 ip_address —— 均在此补全
+        """
+        try:
+            # comments 表补匿名评论列
+            await self._ensure_column(self.TABLE_COMMENTS, "author_name", "author_name VARCHAR(50)")
+            await self._ensure_column(self.TABLE_COMMENTS, "author_email", "author_email VARCHAR(254)")
+            await self._ensure_column(self.TABLE_COMMENTS, "ip_address", "ip_address INET")
+
+            # comments.author_id 去掉 NOT NULL（匿名评论无用户）
+            full_comments = self._get_table_name(self.TABLE_COMMENTS)
+            nullable_query = f"""
+                SELECT is_nullable FROM information_schema.columns
+                WHERE table_schema = $1 AND table_name = $2 AND column_name = 'author_id'
+            """
+            row = await self._fetchrow(nullable_query, self.schema, self.TABLE_COMMENTS)
+            if row and row["is_nullable"] == "NO":
+                await self._execute(
+                    f"ALTER TABLE {full_comments} ALTER COLUMN author_id DROP NOT NULL"
+                )
+
+            # likes 表：确保存在且含 ip_address 列（旧库可能整表缺失）
+            await self.create_table(self.TABLE_LIKES)
+            await self._ensure_column(self.TABLE_LIKES, "ip_address", "ip_address INET")
+            await self._ensure_column(self.TABLE_LIKES, "user_id", "user_id UUID")
+        except Exception as e:
+            # 迁移失败不阻塞启动，打印警告后降级（表操作由后续请求触发时再次尝试）
+            print(f"[匿名评论迁移] 表结构升级失败: {e}")
     
     # ========== 业务特有方法 ==========
     
@@ -888,11 +967,13 @@ class PostgresAdapter(BaseAdapter):
             
             # 搜索评论
             if search_type in ["all", "comments"] and remaining_limit > 0:
+                # LEFT JOIN：匿名评论（author_id 为空）也能被搜到，作者信息回退为 author_name
                 comments_query = f"""
-                    SELECT c.*, u.username as author_name, u.display_name as author_display_name,
+                    SELECT c.*, COALESCE(u.username, c.author_name) as author_name,
+                           u.display_name as author_display_name,
                            u.avatar_url as author_avatar_url
                     FROM {self.schema}.comments c
-                    JOIN {self.schema}.users u ON c.author_id = u.id
+                    LEFT JOIN {self.schema}.users u ON c.author_id = u.id
                     WHERE c.is_deleted = false
                     AND c.content ILIKE $1
                     ORDER BY c.created_at DESC
@@ -1155,6 +1236,77 @@ class PostgresAdapter(BaseAdapter):
         except Exception as e:
             # 数据库错误时允许操作（降级处理）
             return {"success": True, "allowed": True, "message": ""}
+
+    async def check_ip_comment_limit(
+        self,
+        ip_address: str,
+        daily_limit: int,
+        min_interval: int = 0
+    ) -> dict[str, Any]:
+        """
+        检查IP匿名评论频率限制（双窗口：24小时滚动上限 + 最小间隔）
+
+        仅统计匿名评论（author_id IS NULL），登录用户评论不占配额。
+        时间比较全部使用数据库相对时间（NOW() - INTERVAL），
+        规避 Python naive datetime 与 timestamptz 会话时区解释不一致的坑。
+
+        Args:
+            ip_address: 客户端IP
+            daily_limit: 24小时内匿名评论上限
+            min_interval: 两次匿名评论的最小间隔秒数（0 表示不限制）
+
+        Returns:
+            {
+                "success": True,
+                "allowed": bool,     # 是否允许继续评论
+                "message": str,      # 被限制时的提示信息
+                "retry_after": int   # 建议重试等待秒数（未被限制时为 0）
+            }
+        """
+        try:
+            # 24小时滚动窗口内匿名评论计数
+            count_query = f"""
+                SELECT COUNT(*) as count
+                FROM {self.schema}.comments
+                WHERE ip_address = $1::inet
+                AND author_id IS NULL
+                AND created_at >= NOW() - INTERVAL '24 hours'
+            """
+            count_row = await self._fetchrow(count_query, ip_address)
+            ip_count = count_row["count"] if count_row else 0
+
+            if ip_count >= daily_limit:
+                return {
+                    "success": True,
+                    "allowed": False,
+                    "message": f"匿名评论已达上限（{daily_limit}条/24小时），请稍后再试",
+                    "retry_after": 0
+                }
+
+            # 最小间隔检查：该IP在最近 min_interval 秒内是否发过匿名评论
+            if min_interval > 0:
+                recent_query = f"""
+                    SELECT 1
+                    FROM {self.schema}.comments
+                    WHERE ip_address = $1::inet
+                    AND author_id IS NULL
+                    AND created_at > NOW() - ($2::int * INTERVAL '1 second')
+                    LIMIT 1
+                """
+                recent_row = await self._fetchrow(recent_query, ip_address, min_interval)
+                if recent_row:
+                    return {
+                        "success": True,
+                        "allowed": False,
+                        "message": f"评论太频繁，请 {min_interval} 秒后再试",
+                        "retry_after": min_interval
+                    }
+
+            return {"success": True, "allowed": True, "message": "", "retry_after": 0}
+
+        except Exception as e:
+            # 数据库错误时允许操作（降级处理）
+            return {"success": True, "allowed": True, "message": "", "retry_after": 0}
 
     async def increment_like_count(self, post_id: str) -> dict[str, Any]:
         """
