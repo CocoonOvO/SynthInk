@@ -4,7 +4,7 @@
     <nav class="menubar">
       <div class="menu-left">
         <span class="logo display"> SynthOS</span>
-        <router-link to="/" class="hub-link brutal-border">← Hub</router-link>
+        <router-link to="/" class="hub-link">← Hub</router-link>
         <span class="menu-item hide-mobile">文件</span>
         <span class="menu-item hide-mobile">编辑</span>
         <span class="menu-item hide-mobile">窗口</span>
@@ -14,7 +14,7 @@
         <span class="menu-title">{{ topTitle }}</span>
       </div>
       <div class="menu-right">
-        <button class="spotlight-trigger mono brutal-border" @click="spotlightOpen = !spotlightOpen" title="Spotlight 搜索 (⌘K)">
+        <button class="spotlight-trigger mono" @click="spotlightOpen = !spotlightOpen" title="Spotlight 搜索 (⌘K)">
           ⌕ 搜索
         </button>
         <span class="time mono">{{ now }}</span>
@@ -24,12 +24,12 @@
 
     <!-- 桌面主区域 -->
     <div class="desktop" ref="desktopRef" @click="onDesktopClick">
-      <!-- 桌面壁纸网格 -->
+      <!-- 桌面壁纸柔和渐变 -->
       <div class="wallpaper-grid" />
 
       <!-- Spotlight 搜索覆盖层 -->
       <div v-if="spotlightOpen" class="spotlight-overlay" @click.self="spotlightOpen = false">
-        <div class="spotlight brutal-border brutal-shadow">
+        <div class="spotlight">
           <div class="spotlight-input-row">
             <span class="spot-icon">⌕</span>
             <input
@@ -46,7 +46,7 @@
             <div v-if="!spotlightQuery.trim()" class="spot-hint mono">
               <p>试试输入「野蛮」「终端」「Agent」「MCP」…</p>
               <div class="spot-quick mono">
-                <button v-for="k in quickKeys" :key="k" class="quick-chip brutal-border" @click="spotlightQuery = k">{{ k }}</button>
+                <button v-for="k in quickKeys" :key="k" class="quick-chip" @click="spotlightQuery = k">{{ k }}</button>
               </div>
             </div>
             <template v-else>
@@ -54,7 +54,7 @@
               <button
                 v-for="p in spotlightResults"
                 :key="p.id"
-                class="spot-item brutal-border"
+                class="spot-item"
                 @click="openPost(p)"
               >
                 <span class="spot-item-icon">📄</span>
@@ -84,7 +84,7 @@
         @click.stop="selectIcon(icon.id)"
         @dblclick.stop="openFromIcon(icon)"
       >
-        <div class="desk-icon-img brutal-border" :style="{ background: icon.bg }">
+        <div class="desk-icon-img" :style="{ background: icon.bg }">
           <span class="desk-emoji">{{ icon.emoji }}</span>
           <!-- 文件夹叠层效果 -->
           <span v-if="icon.type === 'folder'" class="folder-tab"></span>
@@ -98,7 +98,7 @@
         v-for="win in windows"
         :key="win.id"
         v-show="!win.minimized"
-        class="window brutal-border brutal-shadow"
+        class="window"
         :style="{ left: win.x + 'px', top: win.y + 'px', width: win.w + 'px', height: win.h + 'px', zIndex: win.z }"
         @mousedown="bringToFront(win.id)"
       >
@@ -122,7 +122,7 @@
             <button
               v-for="g in finderGroups"
               :key="g.id"
-              class="side-item mono brutal-border"
+              class="side-item mono"
               :class="{ active: win.groupFilter === g.id }"
               @click="win.groupFilter = g.id"
             >
@@ -132,7 +132,7 @@
             <div class="side-divider"></div>
             <div class="side-title mono">标签</div>
             <div class="side-tags">
-              <span v-for="t in mockTags" :key="t.id" class="side-tag mono brutal-border" :style="{ background: t.color }">{{ t.name }}</span>
+              <span v-for="t in mockTags" :key="t.id" class="side-tag mono" :style="{ background: t.color }">{{ t.name }}</span>
             </div>
             <div class="side-foot mono">共 {{ filteredPosts(win).length }} 项</div>
           </aside>
@@ -140,17 +140,17 @@
             <div class="finder-toolbar mono">
               <span>▦ 网格</span>
               <span class="muted">{{ win.groupFilter === 'all' ? '全部文件' : (mockGroups.find(g=>g.id===win.groupFilter)?.name || '文件夹') }}</span>
-              <button class="toolbar-btn brutal-border" @click="openEditor">＋ 新建文档</button>
+              <button class="toolbar-btn" @click="openEditor">＋ 新建文档</button>
             </div>
             <div class="file-grid">
               <button
                 v-for="p in filteredPosts(win)"
                 :key="p.id"
-                class="file-card brutal-border"
+                class="file-card"
                 @click="openPost(p)"
                 @dblclick="openPost(p)"
               >
-                <div class="file-thumb brutal-border" :style="{ background: p.tags[0]?.color || '#fff' }">
+                <div class="file-thumb" :style="{ background: p.tags[0]?.color || '#fff' }">
                   <img :src="p.cover" :alt="p.title" loading="lazy" />
                   <span class="file-ext mono">{{ p.group.slug }}</span>
                 </div>
@@ -165,47 +165,47 @@
         <!-- Post 窗口：标题作者封面正文标签评论点赞 -->
         <div v-else-if="win.type === 'post'" class="win-body post-body">
           <template v-if="getPostById(win.postId!)">
-            <div class="post-cover-wrap brutal-border">
+            <div class="post-cover-wrap">
               <img :src="getPostById(win.postId!)!.cover" :alt="getPostById(win.postId!)!.title" />
-              <span class="post-cover-tag mono brutal-border" :style="{ background: getPostById(win.postId!)!.tags[0]?.color || '#ffd700' }">{{ getPostById(win.postId!)!.group.icon }} {{ getPostById(win.postId!)!.group.name }}</span>
+              <span class="post-cover-tag mono" :style="{ background: getPostById(win.postId!)!.tags[0]?.color || '#5ac8fa' }">{{ getPostById(win.postId!)!.group.icon }} {{ getPostById(win.postId!)!.group.name }}</span>
             </div>
             <div class="post-inner">
               <h2 class="post-title display">{{ getPostById(win.postId!)!.title }}</h2>
               <p class="post-intro mono">{{ getPostById(win.postId!)!.intro }}</p>
-              <div class="post-meta mono brutal-border">
+              <div class="post-meta mono">
                 <span class="author-line"><span class="avatar">{{ getPostById(win.postId!)!.author.avatar }}</span> {{ getPostById(win.postId!)!.author.display_name }} · {{ getPostById(win.postId!)!.author.type }}</span>
                 <span>{{ getPostById(win.postId!)!.createdAt }} · 👁 {{ getPostById(win.postId!)!.views }}</span>
               </div>
               <div class="post-tags mono">
-                <span v-for="t in getPostById(win.postId!)!.tags" :key="t.id" class="post-tag brutal-border" :style="{ background: t.color }">{{ t.name }}</span>
+                <span v-for="t in getPostById(win.postId!)!.tags" :key="t.id" class="post-tag" :style="{ background: t.color }">{{ t.name }}</span>
               </div>
               <!-- 正文：保留换行与代码块样式 -->
-              <pre class="post-content mono brutal-border">{{ getPostById(win.postId!)!.content }}</pre>
+              <pre class="post-content mono">{{ getPostById(win.postId!)!.content }}</pre>
 
               <!-- 操作栏：点赞 -->
               <div class="post-actions mono">
-                <button class="action-btn brutal-border" :class="{ liked: isLiked(win.postId!) }" @click="toggleLike(win.postId!)">
+                <button class="action-btn" :class="{ liked: isLiked(win.postId!) }" @click="toggleLike(win.postId!)">
                   {{ isLiked(win.postId!) ? '♥ 已赞' : '♡ 点赞' }} {{ getLikes(win.postId!) }}
                 </button>
                 <span class="muted">💬 {{ localComments.length }} 评论 · 分享 ↗</span>
-                <button class="action-btn brutal-border" @click="showToast('链接已复制（Mock）')">复制链接</button>
+                <button class="action-btn" @click="showToast('链接已复制（Mock）')">复制链接</button>
               </div>
 
               <!-- 评论区 -->
               <div class="comments">
                 <div class="comments-title mono">评论 · {{ localComments.length }}</div>
-                <div class="comment-input-row brutal-border">
+                <div class="comment-input-row">
                   <input v-model="newCommentText" class="comment-input mono" placeholder="写点什么…（本地 Mock，不会上传）" @keydown.enter="addComment" />
-                  <button class="comment-send mono brutal-border" @click="addComment">发送</button>
+                  <button class="comment-send mono" @click="addComment">发送</button>
                 </div>
-                <div v-for="c in localComments" :key="c.id" class="comment brutal-border">
+                <div v-for="c in localComments" :key="c.id" class="comment">
                   <div class="comment-head mono">
                     <span><b>{{ c.avatar }} {{ c.author }}</b> · {{ c.time }}</span>
                     <span>♥ {{ c.likes }}</span>
                   </div>
                   <p class="comment-body mono">{{ c.content }}</p>
                   <div v-if="c.replies && c.replies.length" class="comment-replies">
-                    <div v-for="r in c.replies" :key="r.id" class="reply mono brutal-border">
+                    <div v-for="r in c.replies" :key="r.id" class="reply mono">
                       <b>{{ r.avatar }} {{ r.author }}</b>：{{ r.content }} <span class="muted">· {{ r.time }}</span>
                     </div>
                   </div>
@@ -222,14 +222,14 @@
             <span>✎ SynthPad — 本地草稿自动保存</span>
             <span class="muted hide-mobile">{{ saveStatus }}</span>
           </div>
-          <input v-model="editorTitle" class="editor-title-input display brutal-border" placeholder="无标题文档…" />
-          <textarea v-model="editorContent" class="editor-textarea mono brutal-border" placeholder="在此输入正文… 支持 Markdown，保存仅在本地 localStorage，不会请求后端。"></textarea>
+          <input v-model="editorTitle" class="editor-title-input display" placeholder="无标题文档…" />
+          <textarea v-model="editorContent" class="editor-textarea mono" placeholder="在此输入正文… 支持 Markdown，保存仅在本地 localStorage，不会请求后端。"></textarea>
           <div class="editor-foot mono">
             <span>{{ editorContent.length }} 字 · {{ editorTitle ? '有标题' : '无标题' }}</span>
             <div class="editor-actions">
-              <button class="action-btn brutal-border" @click="clearEditor">清空</button>
-              <button class="action-btn primary brutal-border" @click="saveEditor">💾 保存到本地</button>
-              <button class="action-btn brutal-border" @click="publishAsPost">发布为新文件 → Finder</button>
+              <button class="action-btn" @click="clearEditor">清空</button>
+              <button class="action-btn primary" @click="saveEditor">💾 保存到本地</button>
+              <button class="action-btn" @click="publishAsPost">发布为新文件 → Finder</button>
             </div>
           </div>
         </div>
@@ -239,16 +239,16 @@
       </div>
 
       <!-- 轻提示 Toast -->
-      <div v-if="toastMsg" class="toast mono brutal-border brutal-shadow">{{ toastMsg }}</div>
+      <div v-if="toastMsg" class="toast mono">{{ toastMsg }}</div>
     </div>
 
     <!-- 底部 Dock -->
     <div class="dock-wrap">
-      <div class="dock brutal-border brutal-shadow">
+      <div class="dock">
         <button
           v-for="d in dockItems"
           :key="d.id"
-          class="dock-item brutal-border"
+          class="dock-item"
           :class="{ active: isDockActive(d.id) }"
           :style="{ background: d.bg }"
           :title="d.label"
@@ -259,7 +259,7 @@
           <span v-if="isDockActive(d.id)" class="dock-dot"></span>
         </button>
         <span class="dock-divider"></span>
-        <button class="dock-item brutal-border trash" title="废纸篓" @click="showToast('废纸篓是空的（Mock）')">
+        <button class="dock-item trash" title="废纸篓" @click="showToast('废纸篓是空的（Mock）')">
           <span class="dock-icon">🗑️</span>
           <span class="dock-label mono">废纸篓</span>
         </button>
@@ -271,9 +271,10 @@
 
 <script setup lang="ts">
 /**
- * SynthOS — 浏览器内伪操作系统
+ * SynthOS — 浏览器内伪操作系统 (Glass Aqua 拟态)
  * 纯前端 Mock，无后端；所有数据来自 frontend-demo/src/mock/data.ts
  * 交互：拖拽/缩放/层叠窗口、Finder 过滤、Post 阅读、Editor 本地保存、Spotlight 全局搜索
+ * 设计语言：Glass Aqua — 毛玻璃 + 淡蓝灰 + 柔和阴影 + Inter/SF Mono
  */
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { mockPosts, mockGroups, mockTags, mockComments, type MockPost } from '@/mock/data'
@@ -372,7 +373,7 @@ const topTitle = computed(() => {
 // 桌面图标：4 篇 mockPosts + 2 文件夹，散落排布
 const desktopIcons = computed<DeskIcon[]>(() => {
   const posts = mockPosts.slice(0, 4)
-  const bgs = ['#fff', '#ffd700', '#ff006e', '#00f5d4']
+  const bgs = ['#ffffff', '#e0f2fe', '#fce7f3', '#e0fdf4']
   const icons: DeskIcon[] = posts.map((p, i) => ({
     id: `icon-${p.id}`,
     type: 'post',
@@ -392,7 +393,7 @@ const desktopIcons = computed<DeskIcon[]>(() => {
       label: mockGroups[0].name,
       sub: `${mockGroups[0].count} 项`,
       emoji: '📁',
-      bg: '#00f5d4',
+      bg: '#dcfce7',
       x: 420,
       y: 24,
       groupId: mockGroups[0].id,
@@ -403,7 +404,7 @@ const desktopIcons = computed<DeskIcon[]>(() => {
       label: mockGroups[1].name,
       sub: `${mockGroups[1].count} 项`,
       emoji: '📁',
-      bg: '#ff8c42',
+      bg: '#ffedd5',
       x: 420,
       y: 168,
       groupId: mockGroups[1].id,
@@ -425,9 +426,9 @@ const spotlightResults = computed(() => {
 
 // Dock 配置
 const dockItems: { id: DockId; icon: string; label: string; bg: string }[] = [
-  { id: 'finder', icon: '🗂️', label: '访达', bg: '#00f5d4' },
-  { id: 'post', icon: '📄', label: '文章', bg: '#ffd700' },
-  { id: 'editor', icon: '✎', label: '编辑器', bg: '#fff' },
+  { id: 'finder', icon: '🗂️', label: '访达', bg: 'rgba(255,255,255,0.85)' },
+  { id: 'post', icon: '📄', label: '文章', bg: 'rgba(255,255,255,0.85)' },
+  { id: 'editor', icon: '✎', label: '编辑器', bg: 'rgba(255,255,255,0.85)' },
 ]
 
 // —— 工具函数 ——
@@ -782,26 +783,46 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ========== Glass Aqua 设计语言 ========== */
+/* 背景 #eef2f7 淡蓝灰 · 窗口 rgba(255,255,255,.72) blur18 · 边框 rgba(0,0,0,.08) · 圆角12 · 阴影 0 8 32 / inset 高光 */
+/* 字体 Inter + SF Mono · Dock 放大 scale · 菜单栏毛玻璃 · 彻底无 brutal 粗黑边 */
+
 /* —— 整体 OS 布局 —— */
 .os {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #e8e4d8;
+  background: #eef2f7;
   overflow: hidden;
-  font-family: 'JetBrains Mono', monospace;
+  /* 主字体 Inter，中文回退 */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  color: #1d1d1f;
 }
+/* 等宽辅助 */
+.mono {
+  font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.display {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* —— 顶部菜单栏：半透明毛玻璃 —— */
 .menubar {
-  height: 32px;
-  background: #0a0a0f;
-  color: #f4f4f0;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px;
-  border-bottom: 3px solid #0a0a0f;
+  padding: 0 14px;
   flex-shrink: 0;
   gap: 12px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 1px 8px rgba(0, 0, 0, 0.04);
+  z-index: 50;
 }
 .menu-left,
 .menu-right {
@@ -811,175 +832,236 @@ onUnmounted(() => {
 }
 .logo {
   font-weight: 800;
-  font-size: 14px;
-  letter-spacing: 0.04em;
+  font-size: 13px;
+  letter-spacing: -0.02em;
   white-space: nowrap;
+  color: #1d1d1f;
 }
 .hub-link {
-  background: #f4f4f0;
-  color: #0a0a0f;
+  background: rgba(0, 122, 255, 0.08);
+  border: 1px solid rgba(0, 122, 255, 0.18);
   padding: 3px 10px;
+  border-radius: 8px;
   font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  border-width: 2px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #007aff;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.15s;
 }
 .hub-link:hover {
-  background: #ffd700;
+  background: rgba(0, 122, 255, 0.16);
+  transform: translateY(-0.5px);
 }
 .menu-item {
   font-size: 11px;
-  opacity: 0.9;
+  font-weight: 500;
+  color: #3a3a3c;
+  opacity: 0.85;
   cursor: default;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.menu-item:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
 .menu-title {
   font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #6e6e73;
   max-width: 420px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .spotlight-trigger {
-  background: #f4f4f0;
-  color: #0a0a0f;
-  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 4px 12px;
+  border-radius: 999px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
+  color: #3a3a3c;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-width: 2px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s;
 }
 .spotlight-trigger:hover {
-  background: #ffd700;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 .time,
 .battery {
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   white-space: nowrap;
+  color: #1d1d1f;
 }
 
-/* —— 桌面 —— */
+/* —— 桌面：淡蓝灰 + 柔和水色光斑 —— */
 .desktop {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #d9d6cc;
-  /* 拟物网格壁纸 */
+  background: #eef2f7;
+  /* 淡蓝灰基底 + 水波光晕 */
   background-image:
-    linear-gradient(rgba(10, 10, 15, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(10, 10, 15, 0.06) 1px, transparent 1px),
-    radial-gradient(circle at 70% 30%, rgba(255, 0, 110, 0.12), transparent 40%),
-    radial-gradient(circle at 20% 80%, rgba(0, 245, 212, 0.18), transparent 45%);
-  background-size: 28px 28px, 28px 28px, auto, auto;
+    radial-gradient(ellipse 820px 520px at 18% 12%, rgba(125, 211, 252, 0.18) 0%, transparent 62%),
+    radial-gradient(ellipse 680px 480px at 82% 78%, rgba(167, 139, 250, 0.14) 0%, transparent 64%),
+    radial-gradient(ellipse 540px 360px at 55% 45%, rgba(255, 255, 255, 0.9) 0%, transparent 66%),
+    linear-gradient(180deg, #eef2f7 0%, #e8ecf3 100%);
 }
 .wallpaper-grid {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  /* 极淡的网格纹理，营造纸感但不抢戏 */
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.55) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.45) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.35;
 }
 
-/* —— 桌面图标 —— */
+/* —— 桌面图标：玻璃拟态 + 悬浮感 —— */
 .desk-icon {
   position: absolute;
   width: 96px;
   text-align: center;
   cursor: pointer;
   user-select: none;
-  padding: 6px 4px;
-  border: 2px solid transparent;
+  padding: 8px 4px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.desk-icon:hover {
+  transform: translateY(-1px);
 }
 .desk-icon.selected {
-  background: rgba(10, 10, 15, 0.08);
-  border-color: #0a0a0f;
+  background: rgba(255, 255, 255, 0.58);
+  border-color: rgba(0, 122, 255, 0.18);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 .desk-icon-img {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   margin: 0 auto 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  border-width: 3px;
-  box-shadow: 4px 4px 0 #0a0a0f;
-  transition: transform 0.12s;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.85) inset;
+  backdrop-filter: blur(8px);
+  transition: transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.18s;
 }
 .desk-icon:hover .desk-icon-img {
-  transform: translate(-1px, -1px);
-  box-shadow: 6px 6px 0 #0a0a0f;
+  transform: scale(1.06) translateY(-1px);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
 }
 .desk-icon.selected .desk-icon-img {
-  background: #0a0a0f !important;
-  color: #f4f4f0;
+  box-shadow:
+    0 8px 24px rgba(0, 122, 255, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  border-color: rgba(0, 122, 255, 0.2);
 }
 .desk-emoji {
-  font-size: 28px;
+  font-size: 26px;
   line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.08));
 }
 .folder-tab {
   position: absolute;
-  top: -6px;
-  left: 6px;
-  width: 28px;
-  height: 8px;
+  top: -5px;
+  left: 10px;
+  width: 22px;
+  height: 6px;
   background: inherit;
-  border: 2px solid #0a0a0f;
+  border-radius: 4px 4px 0 0;
+  border: 1px solid rgba(255, 255, 255, 0.7);
   border-bottom: none;
-  filter: brightness(0.92);
+  filter: brightness(1.04);
+  opacity: 0.9;
 }
 .desk-icon-label {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.3;
-  color: #0a0a0f;
-  background: #f4f4f0;
-  border: 1.5px solid #0a0a0f;
-  padding: 2px 4px;
+  color: #1d1d1f;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 3px 6px;
+  border-radius: 7px;
   display: inline-block;
   max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
 }
 .desk-icon.selected .desk-icon-label {
-  background: #0a0a0f;
-  color: #f4f4f0;
+  background: #007aff;
+  color: #fff;
+  border-color: rgba(0, 122, 255, 0.4);
+  box-shadow: 0 2px 10px rgba(0, 122, 255, 0.28);
 }
 .desk-icon-sub {
   font-size: 9px;
-  color: #333;
-  margin-top: 3px;
+  color: #6e6e73;
+  margin-top: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-/* —— 窗口 —— */
+/* —— 窗口：核心玻璃拟态 ==  */
 .window {
   position: absolute;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px) saturate(175%);
+  -webkit-backdrop-filter: blur(18px) saturate(175%);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-width: 3px;
-  box-shadow: 8px 8px 0 #0a0a0f;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 0 0 0.5px rgba(255, 255, 255, 0.4) inset;
   min-width: 320px;
   min-height: 240px;
+  transition: box-shadow 0.2s;
+}
+.window:active {
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.14),
+    0 1px 0 rgba(255, 255, 255, 0.65) inset;
 }
 .win-titlebar {
-  height: 34px;
-  background: #f4f4f0;
-  border-bottom: 3px solid #0a0a0f;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8px;
+  padding: 0 10px;
   cursor: grab;
   user-select: none;
   flex-shrink: 0;
@@ -990,25 +1072,28 @@ onUnmounted(() => {
 }
 .traffic {
   display: flex;
-  gap: 6px;
+  gap: 7px;
   align-items: center;
 }
 .dot {
-  width: 13px;
-  height: 13px;
-  border: 2px solid #0a0a0f;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   cursor: pointer;
   display: inline-block;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  transition: transform 0.15s, filter 0.15s;
 }
 .dot.red { background: #ff5f56; }
 .dot.yellow { background: #ffbd2e; }
 .dot.green { background: #27c93f; }
-.dot:hover { filter: brightness(0.9); transform: scale(1.05); }
+.dot:hover { filter: brightness(0.96); transform: scale(1.12); }
 .win-title {
   font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #1d1d1f;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1017,31 +1102,49 @@ onUnmounted(() => {
 }
 .win-type-pill {
   font-size: 9px;
-  background: #0a0a0f;
-  color: #fff;
-  padding: 2px 6px;
+  font-weight: 700;
+  background: rgba(0, 122, 255, 0.1);
+  color: #007aff;
+  padding: 3px 7px;
   border-radius: 999px;
+  border: 1px solid rgba(0, 122, 255, 0.14);
+  letter-spacing: 0.04em;
 }
 .win-body {
   flex: 1;
   overflow: auto;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.18);
   position: relative;
+}
+/* 滚动条柔和 */
+.win-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.win-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.win-body::-webkit-scrollbar-track {
+  background: transparent;
 }
 .resize-handle {
   position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 18px;
-  height: 18px;
+  right: 6px;
+  bottom: 6px;
+  width: 14px;
+  height: 14px;
   cursor: nwse-resize;
+  opacity: 0.5;
   background:
-    linear-gradient(135deg, transparent 50%, #0a0a0f 50%, #0a0a0f 55%, transparent 55%),
-    linear-gradient(135deg, transparent 65%, #0a0a0f 65%, #0a0a0f 70%, transparent 70%);
-  background-repeat: no-repeat;
-  background-position: right bottom;
-  opacity: 0.9;
+    linear-gradient(135deg, transparent 40%, rgba(0, 0, 0, 0.18) 40%, rgba(0, 0, 0, 0.18) 48%, transparent 48%),
+    linear-gradient(135deg, transparent 60%, rgba(0, 0, 0, 0.18) 60%, rgba(0, 0, 0, 0.18) 68%, transparent 68%);
+  border-radius: 2px;
+  transition: opacity 0.2s;
 }
+.resize-handle:hover { opacity: 0.85; }
 
 /* —— Finder —— */
 .finder-body {
@@ -1050,9 +1153,10 @@ onUnmounted(() => {
   overflow: hidden;
 }
 .finder-side {
-  background: #f4f4f0;
-  border-right: 3px solid #0a0a0f;
-  padding: 10px 8px;
+  background: rgba(255, 255, 255, 0.38);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 12px 8px;
   overflow: auto;
   display: flex;
   flex-direction: column;
@@ -1060,37 +1164,48 @@ onUnmounted(() => {
 }
 .side-title {
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  color: #666;
-  margin-top: 4px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #86868b;
+  margin-top: 6px;
+  text-transform: uppercase;
 }
 .side-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 7px 8px;
-  background: #fff;
+  padding: 7px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
+  color: #1d1d1f;
   cursor: pointer;
-  border-width: 2px;
   text-align: left;
   width: 100%;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.side-item:hover {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.04);
 }
 .side-item.active {
-  background: #0a0a0f;
-  color: #f4f4f0;
+  background: #007aff;
+  color: #fff;
+  border-color: rgba(0, 122, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.28);
 }
+.side-item.active .side-count { color: rgba(255, 255, 255, 0.85); }
 .side-count {
   font-size: 10px;
-  opacity: 0.7;
+  color: #86868b;
+  font-weight: 500;
 }
 .side-divider {
-  height: 2px;
-  background: #0a0a0f;
-  margin: 6px 0;
-  opacity: 0.12;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 8px 4px;
 }
 .side-tags {
   display: flex;
@@ -1099,20 +1214,23 @@ onUnmounted(() => {
 }
 .side-tag {
   font-size: 9px;
-  padding: 3px 6px;
-  font-weight: 800;
-  border-width: 2px;
+  padding: 4px 7px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  color: #1d1d1f;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 .side-foot {
   margin-top: auto;
   font-size: 10px;
-  color: #666;
-  padding-top: 8px;
-  border-top: 1px dashed #bbb;
+  color: #86868b;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
 }
 .finder-main {
   overflow: auto;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.22);
   display: flex;
   flex-direction: column;
 }
@@ -1120,53 +1238,63 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
-  border-bottom: 2px solid #0a0a0f;
-  background: #f4f4f0;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(10px);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
+  color: #1d1d1f;
 }
 .finder-toolbar .muted {
-  color: #666;
+  color: #86868b;
   font-weight: 400;
   margin-left: 6px;
 }
 .toolbar-btn {
   margin-left: auto;
-  background: #0a0a0f;
+  background: #007aff;
   color: #fff;
-  padding: 4px 10px;
+  padding: 6px 12px;
+  border-radius: 8px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
-  border-width: 2px;
+  border: 1px solid rgba(0, 122, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.28), 0 1px 0 rgba(255, 255, 255, 0.4) inset;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
 }
-.toolbar-btn:hover { background: #1a1a22; }
+.toolbar-btn:hover { background: #0a84ff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,122,255,0.32); }
 .file-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
-  gap: 12px;
-  padding: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+  padding: 16px;
 }
 .file-card {
-  background: #fff;
-  padding: 8px;
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(12px);
+  padding: 10px;
   text-align: left;
   cursor: pointer;
-  border-width: 2px;
-  transition: transform 0.12s, box-shadow 0.12s;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s, border-color 0.2s;
 }
 .file-card:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 4px 4px 0 #0a0a0f;
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+  border-color: rgba(0, 122, 255, 0.12);
 }
 .file-thumb {
   height: 92px;
   overflow: hidden;
   position: relative;
-  background: #f4f4f0;
-  border-width: 2px;
-  margin-bottom: 8px;
+  background: #f5f7fb;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 10px;
 }
 .file-thumb img {
   width: 100%;
@@ -1176,28 +1304,32 @@ onUnmounted(() => {
 }
 .file-ext {
   position: absolute;
-  bottom: 4px;
-  right: 4px;
-  background: #0a0a0f;
+  bottom: 6px;
+  right: 6px;
+  background: rgba(29, 29, 31, 0.82);
+  backdrop-filter: blur(8px);
   color: #fff;
   font-size: 8px;
-  padding: 2px 5px;
-  font-weight: 800;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 .file-name {
   font-size: 12px;
-  font-weight: 800;
-  line-height: 1.2;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #1d1d1f;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 28px;
+  min-height: 30px;
 }
 .file-meta,
 .file-stats {
   font-size: 10px;
-  color: #666;
+  color: #86868b;
   margin-top: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -1207,16 +1339,13 @@ onUnmounted(() => {
 /* —— Post —— */
 .post-body {
   padding: 0;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.32);
 }
 .post-cover-wrap {
   height: 176px;
   overflow: hidden;
   position: relative;
-  border-left: none;
-  border-right: none;
-  border-top: none;
-  border-width: 3px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 .post-cover-wrap img {
   width: 100%;
@@ -1226,47 +1355,58 @@ onUnmounted(() => {
 }
 .post-cover-tag {
   position: absolute;
-  bottom: 10px;
-  left: 10px;
-  padding: 4px 8px;
+  bottom: 12px;
+  left: 12px;
+  padding: 5px 9px;
+  border-radius: 999px;
   font-size: 10px;
-  font-weight: 800;
-  border-width: 2px;
+  font-weight: 700;
+  color: #1d1d1f;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  backdrop-filter: blur(8px);
 }
 .post-inner {
-  padding: 14px 16px 20px;
+  padding: 16px 18px 22px;
 }
 .post-title {
-  font-size: 22px;
-  line-height: 1.05;
+  font-size: 21px;
+  line-height: 1.15;
   font-weight: 800;
+  color: #1d1d1f;
+  letter-spacing: -0.03em;
 }
 .post-intro {
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 12px;
-  line-height: 1.6;
-  color: #333;
-  background: #f4f4f0;
-  border-left: 4px solid #0a0a0f;
-  padding: 8px 10px;
+  line-height: 1.65;
+  color: #3a3a3c;
+  background: rgba(255, 255, 255, 0.58);
+  border-left: 3px solid rgba(0, 122, 255, 0.32);
+  padding: 10px 12px;
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
 }
 .post-meta {
-  margin-top: 10px;
+  margin-top: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 10px;
-  background: #fff;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
   font-size: 11px;
-  border-width: 2px;
+  color: #3a3a3c;
   gap: 8px;
   flex-wrap: wrap;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
 }
 .avatar {
   font-size: 14px;
 }
 .author-line {
-  font-weight: 800;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1274,28 +1414,33 @@ onUnmounted(() => {
 .post-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 7px;
+  margin-top: 12px;
 }
 .post-tag {
   font-size: 10px;
-  padding: 3px 8px;
-  font-weight: 800;
-  border-width: 2px;
+  padding: 4px 9px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 .post-content {
-  margin-top: 14px;
-  background: #fcfcf8;
-  padding: 14px 12px;
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  padding: 16px 14px;
   font-size: 12px;
-  line-height: 1.75;
+  line-height: 1.78;
   white-space: pre-wrap;
   word-break: break-word;
-  border-width: 2px;
-  max-height: none;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  color: #1d1d1f;
 }
 .post-actions {
-  margin-top: 14px;
+  margin-top: 16px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1303,91 +1448,122 @@ onUnmounted(() => {
   font-size: 11px;
 }
 .action-btn {
-  background: #fff;
-  padding: 6px 12px;
-  font-weight: 800;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(10px);
+  padding: 7px 14px;
+  font-weight: 700;
   cursor: pointer;
-  border-width: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 999px;
   font-size: 11px;
+  color: #1d1d1f;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+  transition: all 0.18s;
 }
-.action-btn:hover { background: #f4f4f0; }
+.action-btn:hover { background: #fff; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
 .action-btn.liked {
-  background: #0a0a0f;
+  background: #ff3b30;
   color: #fff;
+  border-color: rgba(255, 59, 48, 0.3);
+  box-shadow: 0 4px 14px rgba(255, 59, 48, 0.28);
 }
 .action-btn.primary {
-  background: #ffd700;
+  background: #007aff;
+  color: #fff;
+  border-color: rgba(0, 122, 255, 0.32);
+  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.28);
 }
+.action-btn.primary:hover { background: #0a84ff; }
 .comments {
-  margin-top: 16px;
-  border-top: 3px solid #0a0a0f;
-  padding-top: 12px;
+  margin-top: 18px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: 14px;
 }
 .comments-title {
   font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  margin-bottom: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #1d1d1f;
+  margin-bottom: 10px;
 }
 .comment-input-row {
   display: flex;
   gap: 8px;
-  padding: 6px;
-  background: #f4f4f0;
-  border-width: 2px;
-  margin-bottom: 12px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.56);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
 }
 .comment-input {
   flex: 1;
-  border: 2px solid #0a0a0f;
-  padding: 7px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 8px 12px;
   font-size: 11px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
   outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.comment-input:focus {
+  border-color: rgba(0, 122, 255, 0.32);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
 }
 .comment-send {
-  background: #0a0a0f;
+  background: #007aff;
   color: #fff;
-  padding: 6px 14px;
-  font-weight: 800;
+  padding: 7px 16px;
+  font-weight: 700;
   cursor: pointer;
-  border-width: 2px;
+  border: 1px solid rgba(0, 122, 255, 0.3);
+  border-radius: 999px;
   font-size: 11px;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.28);
+  transition: all 0.15s;
 }
+.comment-send:hover { background: #0a84ff; transform: translateY(-0.5px); }
 .comment {
-  background: #fff;
-  padding: 10px 10px;
-  border-width: 2px;
-  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.66);
+  backdrop-filter: blur(10px);
+  padding: 12px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
 }
 .comment-head {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
   margin-bottom: 6px;
+  color: #3a3a3c;
 }
 .comment-body {
   font-size: 12px;
   line-height: 1.6;
+  color: #1d1d1f;
 }
 .comment-replies {
-  margin-top: 8px;
-  padding-left: 10px;
-  border-left: 3px solid #0a0a0f;
+  margin-top: 10px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(0, 122, 255, 0.16);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 .reply {
-  background: #f4f4f0;
-  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 7px 10px;
   font-size: 11px;
-  border-width: 1.5px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 .empty-tip {
-  padding: 24px;
+  padding: 32px;
   text-align: center;
-  color: #666;
+  color: #86868b;
   font-size: 12px;
 }
 
@@ -1395,41 +1571,59 @@ onUnmounted(() => {
 .editor-body {
   display: flex;
   flex-direction: column;
-  padding: 10px;
-  gap: 8px;
-  background: #f4f4f0;
+  padding: 12px;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.24);
 }
 .editor-toolbar {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  font-weight: 800;
-  padding: 6px 0;
+  font-weight: 700;
+  color: #1d1d1f;
+  padding: 4px 2px;
 }
+.editor-toolbar .muted { color: #86868b; font-weight: 500; }
 .editor-title-input {
-  padding: 10px 12px;
-  font-size: 18px;
+  padding: 12px 14px;
+  font-size: 17px;
   font-weight: 800;
-  border-width: 3px;
-  background: #fff;
+  letter-spacing: -0.02em;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(10px);
   outline: none;
+  color: #1d1d1f;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.editor-title-input:focus,
+.editor-textarea:focus {
+  border-color: rgba(0, 122, 255, 0.28);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12), 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 .editor-textarea {
   flex: 1;
   min-height: 180px;
-  padding: 12px;
+  padding: 14px;
   font-size: 12px;
-  line-height: 1.7;
-  border-width: 3px;
-  background: #fff;
+  line-height: 1.72;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(10px);
   outline: none;
   resize: none;
+  color: #1d1d1f;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
 }
 .editor-foot {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 11px;
+  color: #86868b;
   gap: 10px;
   flex-wrap: wrap;
 }
@@ -1439,12 +1633,13 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 
-/* —— Spotlight —— */
+/* —— Spotlight：玻璃拟态居中弹窗 —— */
 .spotlight-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(10, 10, 15, 0.22);
-  backdrop-filter: blur(2px);
+  background: rgba(238, 242, 247, 0.42);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -1454,53 +1649,80 @@ onUnmounted(() => {
 .spotlight {
   width: 560px;
   max-width: 92%;
-  background: #fff;
-  border-width: 3px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   max-height: 70vh;
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.14),
+    0 1px 0 rgba(255, 255, 255, 0.7) inset;
+  animation: spotIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+}
+@keyframes spotIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .spotlight-input-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 12px;
-  border-bottom: 3px solid #0a0a0f;
-  background: #f4f4f0;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.42);
 }
 .spot-icon {
   font-size: 16px;
   font-weight: 800;
+  color: #86868b;
 }
 .spot-input {
   flex: 1;
-  border: 2px solid #0a0a0f;
-  padding: 8px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 9px 12px;
   font-size: 13px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
   outline: none;
+  color: #1d1d1f;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.spot-input:focus {
+  border-color: rgba(0, 122, 255, 0.32);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
 }
 .spot-esc {
   font-size: 10px;
-  background: #0a0a0f;
-  color: #fff;
-  padding: 4px 7px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.06);
+  color: #3a3a3c;
+  padding: 5px 8px;
+  border-radius: 6px;
   cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: background 0.15s;
 }
+.spot-esc:hover { background: rgba(0, 0, 0, 0.1); }
 .spotlight-results {
   overflow: auto;
-  padding: 10px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-height: 120px;
 }
+.spotlight-results::-webkit-scrollbar { width: 6px; }
+.spotlight-results::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 999px; }
 .spot-hint {
   text-align: center;
-  padding: 18px 10px;
+  padding: 22px 10px;
   font-size: 11px;
-  color: #666;
+  color: #86868b;
   line-height: 1.6;
 }
 .spot-quick {
@@ -1508,66 +1730,77 @@ onUnmounted(() => {
   gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 .quick-chip {
-  background: #fff;
-  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 5px 11px;
+  border-radius: 999px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
+  color: #1d1d1f;
   cursor: pointer;
-  border-width: 2px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s;
 }
-.quick-chip:hover { background: #ffd700; }
+.quick-chip:hover { background: #007aff; color: #fff; border-color: rgba(0,122,255,0.3); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,122,255,0.2); }
 .spot-empty {
   text-align: center;
-  padding: 20px;
+  padding: 24px;
   font-size: 11px;
-  color: #666;
+  color: #86868b;
 }
 .spot-item {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
-  padding: 10px 10px;
-  background: #fff;
+  padding: 11px 12px;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
   text-align: left;
   cursor: pointer;
-  border-width: 2px;
   width: 100%;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.03);
+  transition: all 0.18s;
 }
 .spot-item:hover {
-  background: #f4f4f0;
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 #0a0a0f;
+  background: rgba(255, 255, 255, 0.92);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 122, 255, 0.14);
 }
 .spot-item-icon {
-  font-size: 20px;
+  font-size: 18px;
   width: 36px;
   height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffd700;
-  border: 2px solid #0a0a0f;
+  background: rgba(0, 122, 255, 0.1);
+  border: 1px solid rgba(0, 122, 255, 0.12);
+  border-radius: 8px;
   flex-shrink: 0;
 }
 .spot-item-main {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   flex: 1;
   min-width: 0;
 }
 .spot-item-main b {
   font-size: 12px;
+  color: #1d1d1f;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .spot-item-main span {
   font-size: 10px;
-  color: #555;
+  color: #86868b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1579,47 +1812,58 @@ onUnmounted(() => {
 }
 .spot-tag {
   font-size: 9px;
-  padding: 1px 5px;
-  color: #0a0a0f;
-  font-weight: 800;
-  border: 1px solid #0a0a0f;
+  padding: 2px 6px;
+  color: #1d1d1f;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 .spot-group {
   font-size: 9px;
-  background: #0a0a0f;
-  color: #fff;
-  padding: 1px 5px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #3a3a3c;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 .spot-arrow {
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
+  color: #86868b;
 }
 .spot-foot {
-  padding: 7px 12px;
-  border-top: 2px solid #0a0a0f;
-  background: #f4f4f0;
+  padding: 8px 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.42);
   font-size: 10px;
-  color: #666;
+  color: #86868b;
   text-align: center;
 }
 
-/* —— Dock —— */
+/* —— Dock：毛玻璃 + 放大动效 —— */
 .dock-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 10px 0 12px;
+  padding: 10px 0 14px;
   background: transparent;
   gap: 6px;
+  pointer-events: none;
 }
 .dock {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(244, 244, 240, 0.96);
-  padding: 8px 10px;
-  border-width: 3px;
-  backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.64);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  padding: 8px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.65) inset;
+  pointer-events: auto;
 }
 .dock-item {
   width: 52px;
@@ -1630,75 +1874,99 @@ onUnmounted(() => {
   justify-content: center;
   gap: 1px;
   cursor: pointer;
-  border-width: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
   position: relative;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.9);
   padding: 2px;
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.06),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  transition: transform 0.24s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s, background 0.2s, border-color 0.2s;
+  transform-origin: bottom center;
 }
 .dock-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 3px 3px 0 #0a0a0f;
+  transform: scale(1.28) translateY(-6px);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.14),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  border-color: rgba(0, 122, 255, 0.16);
+  background: #fff;
+  z-index: 2;
 }
 .dock-item.active {
-  border-color: #0a0a0f;
-  box-shadow: 3px 3px 0 #0a0a0f;
+  border-color: rgba(0, 122, 255, 0.18);
+  box-shadow:
+    0 4px 16px rgba(0, 122, 255, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  background: #fff;
 }
 .dock-icon {
   font-size: 20px;
   line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.06));
 }
 .dock-label {
   font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   white-space: nowrap;
+  color: #3a3a3c;
 }
 .dock-dot {
   position: absolute;
-  bottom: -6px;
-  width: 5px;
-  height: 5px;
-  background: #0a0a0f;
+  bottom: -7px;
+  width: 4px;
+  height: 4px;
+  background: #007aff;
   border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 122, 255, 0.4);
 }
 .dock-divider {
-  width: 2px;
-  height: 36px;
-  background: #0a0a0f;
-  opacity: 0.2;
-  margin: 0 2px;
+  width: 1px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 0 4px;
 }
 .dock-item.trash {
-  background: #f4f4f0;
+  background: rgba(255, 255, 255, 0.72);
 }
 .dock-hint {
   font-size: 9px;
-  color: #666;
-  letter-spacing: 0.06em;
+  color: #86868b;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-/* —— Toast —— */
+/* —— Toast：玻璃胶囊 —— */
 .toast {
   position: absolute;
   top: 14px;
   left: 50%;
   transform: translateX(-50%);
-  background: #0a0a0f;
-  color: #f4f4f0;
-  padding: 8px 14px;
+  background: rgba(29, 29, 31, 0.88);
+  backdrop-filter: blur(14px);
+  color: #f5f5f7;
+  padding: 9px 16px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   z-index: 99999;
-  border-width: 2px;
-  border-color: #f4f4f0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
   white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  animation: toastIn 0.2s ease;
 }
-.muted { color: #666; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.muted { color: #86868b; }
 
 /* —— 响应式：窄屏优化 —— */
 @media (max-width: 860px) {
   .finder-body { grid-template-columns: 1fr; }
-  .finder-side { border-right: none; border-bottom: 3px solid #0a0a0f; max-height: 160px; }
+  .finder-side { border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); max-height: 160px; }
   .hide-mobile { display: none !important; }
   .desk-icon { transform: scale(0.92); }
   .window { min-width: 280px; }
@@ -1706,7 +1974,9 @@ onUnmounted(() => {
 @media (max-width: 560px) {
   .desktop { padding-bottom: 20px; }
   .desk-icon { width: 84px; }
-  .desk-icon-img { width: 56px; height: 56px; }
+  .desk-icon-img { width: 56px; height: 56px; border-radius: 12px; }
   .spotlight { max-width: 96%; }
+  .dock-item { width: 46px; height: 46px; }
+  .dock-item:hover { transform: scale(1.16) translateY(-4px); }
 }
 </style>

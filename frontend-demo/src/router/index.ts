@@ -6,6 +6,9 @@ const TerminalDemo = () => import('@/views/demos/TerminalDemo.vue')
 const SpaceDemo = () => import('@/views/demos/SpaceDemo.vue')
 const DeskDemo = () => import('@/views/demos/DeskDemo.vue')
 const ChatDemo = () => import('@/views/demos/ChatDemo.vue')
+const MagazineDemo = () => import('@/views/demos/MagazineDemo.vue')
+const NewspaperDemo = () => import('@/views/demos/NewspaperDemo.vue')
+const ArcadeDemo = () => import('@/views/demos/ArcadeDemo.vue')
 
 const router = createRouter({
   history: createWebHistory(),
@@ -16,6 +19,9 @@ const router = createRouter({
     { path: '/space', name: 'Space', component: SpaceDemo },
     { path: '/desk', name: 'Desk', component: DeskDemo },
     { path: '/chat', name: 'Chat', component: ChatDemo },
+    { path: '/magazine', name: 'Magazine', component: MagazineDemo },
+    { path: '/newspaper', name: 'Newspaper', component: NewspaperDemo },
+    { path: '/arcade', name: 'Arcade', component: ArcadeDemo },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
   scrollBehavior() { return { top: 0 } }
