@@ -98,8 +98,8 @@
                 </div>
               </div>
 
-              <!-- 正文：暖纸底 + 细边框 + 手写行距 -->
-              <pre class="content">{{ current.content }}</pre>
+              <!-- 正文：暖纸底 + 细边框 + 手写行距，Markdown 渲染（paper 主题） -->
+              <MarkdownRenderer :content="current.content" theme="paper" />
 
               <!-- 操作区：点赞 / 翻页，大按钮鼠标友好 -->
               <div class="actions">
@@ -194,6 +194,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { mockPosts, mockGroups, mockComments } from '@/mock/data'
 import type { MockPost } from '@/mock/data'
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
 // —— 搜索与分组过滤 ——
 const q = ref('')

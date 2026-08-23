@@ -368,8 +368,8 @@
               <!-- 引语块：左侧粗边 -->
               <blockquote class="pullquote">{{ selectedPost.intro }}</blockquote>
               <div class="rule rule--thin" aria-hidden="true"></div>
-              <!-- 正文：等宽 + 首字下沉 -->
-              <pre class="content mono">{{ selectedPost.content }}</pre>
+              <!-- 正文：使用 Markdown 渲染器，报纸主题高对比油墨风格 -->
+              <MarkdownRenderer :content="selectedPost.content" theme="newspaper" />
               <div class="rule rule--thin" aria-hidden="true"></div>
               <!-- 文末装饰 -->
               <div class="end-mark" aria-hidden="true">❧ 完 ❧</div>
@@ -400,6 +400,8 @@
 import { ref, computed } from 'vue'
 import { mockPosts, mockGroups, mockTags } from '@/mock/data'
 import type { MockPost } from '@/mock/data'
+// 引入 Markdown 渲染器：详情页正文由纯文本 <pre> 升级为富文本渲染
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
 // —— 顶部日期：展示今日（静态 Mock 日期，避免 hydration 差异，用固定文案亦可） ——
 const todayLabel = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })

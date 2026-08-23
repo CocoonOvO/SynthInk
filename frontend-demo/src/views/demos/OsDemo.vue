@@ -179,8 +179,17 @@
               <div class="post-tags mono">
                 <span v-for="t in getPostById(win.postId!)!.tags" :key="t.id" class="post-tag" :style="{ background: t.color }">{{ t.name }}</span>
               </div>
-              <!-- 正文：保留换行与代码块样式 -->
-              <pre class="post-content mono">{{ getPostById(win.postId!)!.content }}</pre>
+              <!-- 正文：Markdown 渲染（glass 玻璃拟态主题，适配毛玻璃卡片） -->
+              <MarkdownRenderer :content="getPostById(win.postId!)!.content" theme="glass" />
+              <!-- 额外图片：若存在 images/extraImages 则补充展示（Markdown 内已可通过 ![ ](url) 渲染，此处可选兜底） -->
+              <div v-if="(getPostById(win.postId!) as any)?.images?.length || (getPostById(win.postId!) as any)?.extraImages?.length" class="post-extra-images mono">
+                <template v-if="(getPostById(win.postId!) as any)?.images?.length">
+                  <img v-for="(img, idx) in (getPostById(win.postId!) as any).images" :key="`img-${idx}`" :src="img" loading="lazy" :alt="`image-${Number(idx)+1}`" />
+                </template>
+                <template v-if="(getPostById(win.postId!) as any)?.extraImages?.length">
+                  <img v-for="(img, idx) in (getPostById(win.postId!) as any).extraImages" :key="`extra-${idx}`" :src="img" loading="lazy" :alt="`extra-${Number(idx)+1}`" />
+                </template>
+              </div>
 
               <!-- 操作栏：点赞 -->
               <div class="post-actions mono">
@@ -278,6 +287,7 @@
  */
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { mockPosts, mockGroups, mockTags, mockComments, type MockPost } from '@/mock/data'
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
 // —— 类型定义 ——
 interface OsWindow {
@@ -1438,6 +1448,31 @@ onUnmounted(() => {
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
   color: #1d1d1f;
+}
+/* Markdown 容器：沿用 post-content 卡片质感，适配 glass 玻璃拟态 */
+.post-inner .md {
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  padding: 16px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+/* 额外图片网格：images/extraImages 兜底展示（Markdown 内已可通过 ![ ](url) 渲染） */
+.post-extra-images {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+.post-extra-images img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 .post-actions {
   margin-top: 16px;

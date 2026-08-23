@@ -220,8 +220,8 @@
             <div class="modal-tags mono">
               <span v-for="t in selected.tags" :key="t.id" class="modal-tag" :style="tagPillStyle(t)">{{ t.name }}</span>
             </div>
-            <!-- 正文：保留换行与代码块质感，深空极简 -->
-            <pre class="modal-content mono">{{ selected.content }}</pre>
+            <!-- 正文：Markdown 渲染（深空极简主题） -->
+            <MarkdownRenderer :content="selected.content" theme="space" />
 
             <!-- 操作：点赞本地计数 -->
             <div class="modal-actions mono">
@@ -274,6 +274,8 @@
  * 状态：用 ref 管理 posts 位置、缩放、偏移、选中 等，保持原 TS 逻辑仅替换样式
  */
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+// 引入 Markdown 渲染器（深空主题）
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { mockPosts, mockGroups, mockTags, mockStats, mockComments, type MockPost, type MockTag } from '@/mock/data'
 
 // —— 模式：星系（纵深环形）/ 画廊（墙面网格）/ 俯瞰（等轴缩放） ——

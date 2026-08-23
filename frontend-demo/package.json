@@ -10,12 +10,15 @@
     "type-check": "vue-tsc --build"
   },
   "dependencies": {
+    "dompurify": "^3.4.14",
+    "marked": "^18.0.10",
     "pinia": "^3.0.4",
     "vue": "^3.5.29",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.5",
+    "@types/dompurify": "^3.0.5",
     "@types/node": "^24.11.0",
     "@vitejs/plugin-vue": "^6.0.4",
     "@vue/tsconfig": "^0.8.1",

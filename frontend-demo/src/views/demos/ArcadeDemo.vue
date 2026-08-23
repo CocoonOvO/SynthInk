@@ -82,7 +82,8 @@
               <span>♥ {{ likes[inserted.id] ?? inserted.likes }}</span>
               <button class="brutal-border like" @click="like(inserted!.id)">{{ liked.has(inserted!.id) ? '♥ 已赞' : '♡ 点赞' }}</button>
             </div>
-            <pre class="content mono">{{ inserted.content }}</pre>
+            <!-- 文章内容：使用 Markdown 渲染器（arcade 主题）替换纯文本 pre 标签 -->
+            <MarkdownRenderer :content="inserted.content" theme="arcade" />
             <div class="comments mono">
               <div v-for="c in comments" :key="c.id" class="comment brutal-border"><b>{{ c.avatar }} {{ c.author }}</b> {{ c.content }}</div>
               <div class="composer brutal-border">
@@ -110,6 +111,8 @@
 import { ref, computed } from 'vue'
 import { mockPosts, mockGroups, mockTags, mockComments } from '@/mock/data'
 import type { MockPost } from '@/mock/data'
+// 引入 Markdown 渲染器，用于电视屏文章内容的富文本展示
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
 const groupFilter = ref('')
 const tagFilter = ref('')

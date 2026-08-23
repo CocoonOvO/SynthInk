@@ -243,7 +243,9 @@
                             <span>— cat {{ p.slug }} —</span>
                             <button class="expand-close" @click.stop="toggleExpand(p.id)">×</button>
                           </div>
-                          <pre class="expand-content mono">{{ p.content }}</pre>
+                          <div class="brutal-border">
+                            <MarkdownRenderer :content="p.content" theme="crt" />
+                          </div>
                           <div class="expand-foot mono">
                             <button class="act-btn" @click.stop="runCommand(`cat ${p.slug}`)">在终端新开 cat →</button>
                             <button class="act-btn" @click.stop="runCommand(`search ${p.tags[0]?.name || ''}`)">搜同标签</button>
@@ -414,7 +416,9 @@
                         <button v-for="t in h.data.post.tags" :key="t.id" class="post-tag" :style="{ background: t.color, color: '#050508' }" @click="runCommand(`tag ${t.slug}`)">{{ t.name }}</button>
                       </div>
                       <!-- 分屏正文 + 操作 -->
-                      <pre class="post-detail-content mono">{{ h.data.post.content }}</pre>
+                      <div class="brutal-border">
+                        <MarkdownRenderer :content="h.data.post.content" theme="crt" />
+                      </div>
                       <div class="post-actions mono">
                         <button class="act-btn" :class="{ liked: likedSet.has(h.data.post.id) }" @click="toggleLike(h.data.post.id)">
                           {{ likedSet.has(h.data.post.id) ? '♥ 已赞' : '♡ 点赞' }} {{ getLikes(h.data.post.id) }}
@@ -523,6 +527,8 @@
  */
 import { ref, nextTick, onMounted } from 'vue'
 import { mockPosts, mockGroups, mockTags, mockUsers, mockStats, type MockPost } from '@/mock/data'
+// 引入 Markdown 渲染器（Terminal 对应 crt 主题）
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
 // —— 主题（荧光色） ——
 const phosphor = ref<'amber' | 'green'>('amber')

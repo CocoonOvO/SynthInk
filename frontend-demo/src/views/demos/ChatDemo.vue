@@ -112,7 +112,8 @@
             <span class="views">{{ selectedPost.views }} 阅</span>
             <button class="like-btn" @click="toggleLike(selectedPost!.id)">♥ {{ liked[selectedPost.id] ? '已赞' : '点赞' }} {{ localLikes[selectedPost.id] }}</button>
           </div>
-          <pre class="content mono">{{ selectedPost.content }}</pre>
+          <!-- Markdown 渲染：右栏详情正文，Chat 使用 pop 主题 -->
+          <MarkdownRenderer :content="selectedPost.content" theme="pop" />
           <div class="typing mono"><span class="typing-dots"><i></i><i></i><i></i></span> {{ typingUser }} 正在输入…</div>
           <div class="comments">
             <div v-for="c in localComments" :key="c.id" class="comment">
@@ -182,6 +183,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { mockPosts, mockUsers, mockGroups, mockComments } from '@/mock/data'
 import type { MockPost } from '@/mock/data'
+// 引入 Markdown 渲染器（Chat 对应 pop 主题）
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
 // 视图切换：chat 三栏 / city 等轴城市
 const view = ref<'chat' | 'city'>('chat')

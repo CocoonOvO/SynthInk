@@ -262,7 +262,8 @@
 
             <!-- 分栏正文：column-count + 首字下沉 + 大留白 -->
             <div class="modal-columns">
-              <p class="modal-dropcap">{{ selectedPost.content }}</p>
+              <!-- Markdown 渲染：editorial 主题，替换原文插值以支持富文本 -->
+              <MarkdownRenderer :content="selectedPost.content" theme="editorial" />
               <p class="modal-more">
                 这是一期纸上杂志的排版实验。所有正文均采用分栏流动（column-count）、首字下沉（::first-letter）与大留白，
                 图像默认黑白滤镜，鼠标悬停恢复彩色，交互完全依赖鼠标点击。内容来自 Mock，无需后端。
@@ -309,6 +310,8 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { mockPosts, mockGroups, mockTags } from '@/mock/data'
 import type { MockPost } from '@/mock/data'
+// 引入 Markdown 渲染器，用于杂志长文 Editorial 主题渲染
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
 // —— 响应式状态：搜索 / 过滤 / 选中文章 ——
 const search = ref('') // 搜索框，双向绑定，过滤 hero + grid
