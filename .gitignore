@@ -166,3 +166,6 @@ backend/API_PLAN.md
 
 # Trae IDE 初始开发配置（不入库）
 .trae/
+frontend-demo/tsconfig.tsbuildinfo
+frontend-demo/dist
+frontend-demo/node_modules

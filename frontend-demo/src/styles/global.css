@@ -1,0 +1,19 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #app { height: 100%; }
+body {
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  background: #f4f4f0;
+  color: #0a0a0f;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #0a0a0f; border-radius: 4px; }
+
+/* 后现代全局粗边框工具 */
+.brutal-border { border: 3px solid #0a0a0f; }
+.brutal-shadow { box-shadow: 6px 6px 0 #0a0a0f; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+.display { font-family: 'Bricolage Grotesque', sans-serif; }
+.serif { font-family: 'Instrument Serif', serif; }
