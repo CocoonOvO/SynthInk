@@ -31,9 +31,15 @@ class SQLiteBizAdapter(BaseAdapter):
     TABLE_GROUPS = "groups"
     TABLE_POST_TAGS = "post_tags"
     TABLE_EXTERNAL_LINKS = "external_links"
+    TABLE_PAT_TOKENS = "user_api_tokens"
+    TABLE_COMMENTS = "comments"
+    TABLE_LIKES = "likes"
     
     # 所有表名列表
-    ALL_TABLES = [TABLE_USERS, TABLE_POSTS, TABLE_TAGS, TABLE_GROUPS, TABLE_POST_TAGS, TABLE_EXTERNAL_LINKS]
+    ALL_TABLES = [TABLE_USERS, TABLE_POSTS, TABLE_TAGS, TABLE_GROUPS, TABLE_POST_TAGS, TABLE_EXTERNAL_LINKS, TABLE_PAT_TOKENS, TABLE_COMMENTS, TABLE_LIKES]
+
+    # 白名单（与 Postgres 保持一致，供校验复用）
+    VALID_TABLES = {TABLE_USERS, TABLE_POSTS, TABLE_TAGS, TABLE_GROUPS, TABLE_POST_TAGS, TABLE_EXTERNAL_LINKS, TABLE_PAT_TOKENS, TABLE_COMMENTS, TABLE_LIKES, "seo_configs", "seo_templates", "seo_analyses", "seo_reports", "metadata", "redirects"}
     
     def __init__(self, dsn: str = "sqlite+aiosqlite:///:memory:"):
         """
@@ -205,6 +211,54 @@ class SQLiteBizAdapter(BaseAdapter):
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+
+        elif name == self.TABLE_PAT_TOKENS:
+            # PAT 凭证表（SQLite 适配：TEXT 类型，DATETIME）
+            await self._execute("""
+                CREATE TABLE IF NOT EXISTS user_api_tokens (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    name TEXT NOT NULL,
+                    token_hash TEXT UNIQUE NOT NULL,
+                    scopes TEXT,
+                    expires_at DATETIME NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    created_by TEXT,
+                    revoked INTEGER DEFAULT 0,
+                    last_used_at DATETIME,
+                    UNIQUE(user_id, name)
+                )
+            """)
+
+        elif name == self.TABLE_COMMENTS:
+            await self._execute("""
+                CREATE TABLE IF NOT EXISTS comments (
+                    id TEXT PRIMARY KEY,
+                    post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+                    author_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+                    author_name TEXT,
+                    author_email TEXT,
+                    ip_address TEXT,
+                    content TEXT NOT NULL,
+                    parent_id TEXT REFERENCES comments(id) ON DELETE CASCADE,
+                    is_deleted INTEGER DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+        elif name == self.TABLE_LIKES:
+            await self._execute("""
+                CREATE TABLE IF NOT EXISTS likes (
+                    id TEXT PRIMARY KEY,
+                    post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+                    user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+                    anonymous_token TEXT,
+                    like_type TEXT DEFAULT 'user',
+                    ip_address TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
         
         return {"success": True, "table": name}
     
@@ -232,6 +286,8 @@ class SQLiteBizAdapter(BaseAdapter):
         # 处理JSON字段
         if "agent_config" in data and data["agent_config"] is not None:
             data["agent_config"] = self._json_dumps(data["agent_config"])
+        if "scopes" in data and isinstance(data["scopes"], (dict, list)):
+            data["scopes"] = self._json_dumps(data["scopes"])
         
         # 构建INSERT语句
         columns = ", ".join(data.keys())
@@ -258,12 +314,28 @@ class SQLiteBizAdapter(BaseAdapter):
         # 处理JSON字段
         if "agent_config" in data and data["agent_config"] is not None:
             data["agent_config"] = self._json_dumps(data["agent_config"])
+        # scopes JSON 处理（PAT 表）
+        if "scopes" in data and isinstance(data["scopes"], (dict, list)):
+            data["scopes"] = self._json_dumps(data["scopes"])
         
         # 构建UPDATE语句
         set_clause = ", ".join([f"{k} = ?" for k in data.keys()])
-        query = f"UPDATE {table} SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+        # 仅对含 updated_at 列的表自动更新时间戳，避免 PAT/likes 等表报错
+        tables_with_updated_at = {"users", "posts", "groups", "external_links", "comments"}
+        if table in tables_with_updated_at:
+            query = f"UPDATE {table} SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+        else:
+            query = f"UPDATE {table} SET {set_clause} WHERE id = ?"
         
-        await self._execute(query, *data.values(), id)
+        try:
+            await self._execute(query, *data.values(), id)
+        except Exception as e:
+            # 兼容部分旧库 updated_at 列缺失的降级：去掉 updated_at 再试一次
+            if "updated_at" in query and "no such column" in str(e).lower():
+                fallback = f"UPDATE {table} SET {set_clause} WHERE id = ?"
+                await self._execute(fallback, *data.values(), id)
+            else:
+                raise
         
         return await self.get(table, id)
     
@@ -504,3 +576,129 @@ class SQLiteBizAdapter(BaseAdapter):
             "query": query,
             "type": search_type
         }
+
+    # ========== 兼容 BaseAdapter 抽象接口的补充实现（用于 PAT 等新功能在 SQLite 测试环境可用） ==========
+
+    @property
+    def schema(self) -> str:
+        """返回 schema 名称（SQLite 无 schema 概念，返回默认）"""
+        return "public"
+
+    async def get_stats_summary(self) -> dict[str, Any]:
+        """获取统计摘要（SQLite 版）"""
+        try:
+            agent_row = await self._fetchrow("SELECT COUNT(*) as count FROM users WHERE user_type = 'agent'")
+            agent_count = agent_row["count"] if agent_row else 0
+            post_row = await self._fetchrow("SELECT COUNT(*) as count FROM posts")
+            post_count = post_row["count"] if post_row else 0
+            view_row = await self._fetchrow("SELECT COALESCE(SUM(view_count),0) as total FROM posts")
+            total_views = view_row["total"] if view_row else 0
+            return {"success": True, "data": {"agent_count": agent_count, "post_count": post_count, "total_views": total_views}}
+        except Exception as e:
+            return {"success": False, "error": f"获取统计数据失败: {e}"}
+
+    async def execute_raw(self, query: str, *params) -> dict[str, Any]:
+        """执行原始 SELECT（SQLite 占位符 ?）"""
+        try:
+            # 将 Postgres 占位符 $1/$2 转为 ?
+            import re
+            sqlite_query = re.sub(r"\$\d+", "?", query)
+            rows = await self._fetch(sqlite_query, *params)
+            return {"success": True, "data": rows}
+        except Exception as e:
+            return {"success": False, "error": f"查询执行失败: {e}"}
+
+    async def execute_raw_command(self, query: str, *params) -> dict[str, Any]:
+        """执行原始 INSERT/UPDATE/DELETE"""
+        try:
+            import re
+            sqlite_query = re.sub(r"\$\d+", "?", query)
+            await self._execute(sqlite_query, *params)
+            return {"success": True, "row_count": 1}
+        except Exception as e:
+            return {"success": False, "error": f"命令执行失败: {e}"}
+
+    async def get_search_suggestions(self, search_pattern: str, limit: int = 10) -> dict[str, Any]:
+        """获取搜索建议（SQLite 简化）"""
+        suggestions = []
+        try:
+            tags = await self._fetch("SELECT name FROM tags WHERE name LIKE ? ORDER BY post_count DESC LIMIT ?", search_pattern, limit)
+            for row in tags:
+                suggestions.append({"text": row["name"], "type": "tag"})
+            posts = await self._fetch("SELECT title FROM posts WHERE status = 'published' AND title LIKE ? ORDER BY view_count DESC LIMIT ?", search_pattern, limit)
+            for row in posts:
+                suggestions.append({"text": row["title"], "type": "post"})
+            users = await self._fetch("SELECT username, display_name FROM users WHERE is_active = 1 AND (username LIKE ? OR display_name LIKE ?) LIMIT ?", search_pattern, search_pattern, limit)
+            for row in users:
+                txt = row["display_name"] or row["username"]
+                suggestions.append({"text": txt, "type": "user"})
+            # 去重
+            seen = set()
+            uniq = []
+            for item in suggestions:
+                if item["text"] not in seen and len(uniq) < limit:
+                    seen.add(item["text"])
+                    uniq.append(item)
+            return {"success": True, "data": uniq}
+        except Exception as e:
+            return {"success": False, "error": f"获取搜索建议失败: {e}"}
+
+    async def check_ip_like_limit(self, ip_address: str, daily_limit: int) -> dict[str, Any]:
+        """检查 IP 点赞限制（SQLite 降级：直接放行）"""
+        return {"success": True, "allowed": True, "message": ""}
+
+    async def check_ip_comment_limit(self, ip_address: str, daily_limit: int, min_interval: int = 0) -> dict[str, Any]:
+        """检查 IP 评论限制（SQLite 降级：直接放行）"""
+        return {"success": True, "allowed": True, "message": "", "retry_after": 0}
+
+    async def increment_like_count(self, post_id: str) -> dict[str, Any]:
+        """增加点赞数"""
+        try:
+            await self._execute("UPDATE posts SET like_count = like_count + 1 WHERE id = ?", post_id)
+            return {"success": True, "row_count": 1}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def decrement_like_count(self, post_id: str) -> dict[str, Any]:
+        """减少点赞数"""
+        try:
+            await self._execute("UPDATE posts SET like_count = like_count - 1 WHERE id = ? AND like_count > 0", post_id)
+            return {"success": True, "row_count": 1}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def get_post_tags(self, post_id: str) -> dict[str, Any]:
+        """获取文章标签"""
+        try:
+            rows = await self._fetch("SELECT t.* FROM tags t JOIN post_tags pt ON t.id = pt.tag_id WHERE pt.post_id = ?", post_id)
+            return {"success": True, "data": rows}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def add_post_tag(self, post_id: str, tag_id: str) -> dict[str, Any]:
+        """为文章添加标签"""
+        try:
+            await self._execute("INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)", post_id, tag_id)
+            await self._execute("UPDATE tags SET post_count = post_count + 1 WHERE id = ?", tag_id)
+            return {"success": True}
+        except Exception as e:
+            if "unique" in str(e).lower():
+                return {"success": False, "error": "Tag already added to post"}
+            return {"success": False, "error": str(e)}
+
+    async def remove_post_tag(self, post_id: str, tag_id: str) -> dict[str, Any]:
+        """移除文章标签"""
+        try:
+            await self._execute("DELETE FROM post_tags WHERE post_id = ? AND tag_id = ?", post_id, tag_id)
+            await self._execute("UPDATE tags SET post_count = post_count - 1 WHERE id = ?", tag_id)
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def increment_view_count(self, post_id: str) -> dict[str, Any]:
+        """增加浏览计数"""
+        try:
+            await self._execute("UPDATE posts SET view_count = view_count + 1 WHERE id = ?", post_id)
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}

@@ -95,7 +95,7 @@ export const mockPosts: MockPost[] = [
     id: 'p4', slug: 'paper-prototype', title: '纸的物理性：为什么我们需要拟物', intro: '在无限滚动的时代，纸张的边界反而让人安心。', content: '翻页、折角、便签。\n\n数字也需要重力。', cover: 'https://picsum.photos/seed/p4/800/500', author: mockUsers[3], group: mockGroups[2], tags: [mockTags[1], mockTags[4]], views: 1560, likes: 67, comments: 9, createdAt: '2026-08-05'
   },
   {
-    id: 'p5', slug: 'mcp-native', title: 'MCP 原生：给 Agent 的 API', intro: 'SynthInk 的 MCP 服务让 Agent 不经过人直接写作。', content: '```json\n{\n  "tool": "post_create",\n  "args": { "title": "Agent Post" }\n}\n```', cover: 'https://picsum.photos/seed/p5/800/500', author: mockUsers[0], group: mockGroups[0], tags: [mockTags[5], mockTags[3]], views: 4320, likes: 201, comments: 31, createdAt: '2026-08-01'
+    id: 'p5', slug: 'mcp-native', title: 'MCP 原生：给 Agent 的 API', intro: 'SynthSpark 的 MCP 服务让 Agent 不经过人直接写作。', content: '```json\n{\n  "tool": "post_create",\n  "args": { "title": "Agent Post" }\n}\n```', cover: 'https://picsum.photos/seed/p5/800/500', author: mockUsers[0], group: mockGroups[0], tags: [mockTags[5], mockTags[3]], views: 4320, likes: 201, comments: 31, createdAt: '2026-08-01'
   },
   {
     id: 'p6', slug: 'city-of-posts', title: '文章之城：等轴测的阅读', intro: '如果每篇文章是一栋建筑，博客就是一座城。', content: '俯瞰、漫游、推门而入。\n\n阅读是一次城市漫步。', cover: 'https://picsum.photos/seed/p6/800/500', author: mockUsers[2], group: mockGroups[1], tags: [mockTags[2], mockTags[4]], views: 2980, likes: 112, comments: 18, createdAt: '2026-07-28'

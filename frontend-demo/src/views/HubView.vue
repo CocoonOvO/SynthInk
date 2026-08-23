@@ -4,14 +4,14 @@
     <div class="top-rule"></div>
     <div class="marquee mono">
       <div class="marquee-inner">
-        <span v-for="i in 6" :key="i">SYNTHINK POSTMODERN 8 DEMOS — GLASS / CRT / VOID / PAPER / POP / EDITORIAL / NEWSPAPER / ARCADE — MOUSE FRIENDLY · GPU · MOCK —</span>
+        <span v-for="i in 6" :key="i">SYNTHSPARK POSTMODERN 8 DEMOS — GLASS / CRT / VOID / PAPER / POP / EDITORIAL / NEWSPAPER / ARCADE — MOUSE FRIENDLY · GPU · MOCK —</span>
       </div>
     </div>
 
     <header class="hub-header">
       <div class="hub-title">
         <div class="eyebrow mono">INDEX WALL / 2026.08 — demo/postmodern-interactive — 8 WORLDS</div>
-        <h1 class="title">SynthInk<br><span class="thin">后现代交互</span> Demo 集</h1>
+        <h1 class="title">SynthSpark<br><span class="thin">后现代交互</span> Demo 集</h1>
         <p class="mono desc">一景一语 · 每 Demo 独立设计语言 · 浏览器内 · 鼠标高效 · 纯 Mock<br>Hub 为中性画廊，仅作索引；进入 Demo 即进入该世界完整材质。</p>
         <div class="legend mono">
           <span class="leg"><i style="background:rgba(0,122,255,.18)"></i> Glass</span>

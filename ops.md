@@ -63,7 +63,7 @@ npm run dev
 
 | 变量 | 用途 |
 |------|------|
-| `TEST_DATABASE_URL` | 测试数据库连接串（如 `postgresql+asyncpg://用户:密码@localhost:5432/synthink_test`），未设置时自动回退读取 `backend/.env`，两者都没有则依赖 DB 的用例自动跳过 |
+| `TEST_DATABASE_URL` | 测试数据库连接串（如 `postgresql+asyncpg://用户:密码@localhost:5432/synthspark_test`），未设置时自动回退读取 `backend/.env`，两者都没有则依赖 DB 的用例自动跳过 |
 | `SMOKE_SUPERUSER_USERNAME` / `SMOKE_SUPERUSER_PASSWORD` | 冒烟测试的超管账号（`test_smoke.py`），未设置时相关用例跳过 |
 
 > **本地持久化建议**：
@@ -103,7 +103,7 @@ SEO_ENABLED=true|false
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `DATABASE_URL` | `sqlite+aiosqlite:///./synthink.db` | 数据库连接 |
+| `DATABASE_URL` | `sqlite+aiosqlite:///./synthspark.db` | 数据库连接 |
 | `UPLOAD_DIR` | `./uploads` | 上传目录(相对backend目录) |
 | `MAX_UPLOAD_SIZE` | `10485760` (10MB) | 最大上传大小 |
 
@@ -120,7 +120,7 @@ UPLOAD_DIR = "/path/to/uploads"
 
 | 变量名 | 默认值 | 说明 |
 |--------|--------|------|
-| `VITE_API_URL` | `http://localhost:8001` | API代理目标地址 |
+| `VITE_API_URL` | `http://localhost:8002` | API代理目标地址 |
 
 **配置示例**:
 ```bash
@@ -211,7 +211,7 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = '${SCHEMA}
 ```json
 {
   "mcpServers": {
-    "synthink": {
+    "synthspark": {
       "url": "http://127.0.0.1:8005/sse"
     }
   }
@@ -222,11 +222,11 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = '${SCHEMA}
 ```json
 {
   "mcpServers": {
-    "synthink": {
+    "synthspark": {
       "command": "python",
       "args": ["${PROJECT_ROOT}/mcp/server_optimized.py"],
       "env": {
-        "SYNTHINK_API_URL": "http://localhost:8002"
+        "SYNTHSPARK_API_URL": "http://localhost:8002"
       }
     }
   }
@@ -239,8 +239,10 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = '${SCHEMA}
 
 | Skill | 位置 | 权限 | 用途 |
 |-------|------|------|------|
-| 普通用户Skill | `${PROJECT_ROOT}/SKILL.md` | 普通用户 | 文章/标签/分组管理 |
-| 超管Skill | `${PROJECT_ROOT}/backend/app/skills/SKILL.md` | 超管 | 系统初始化/用户管理/审计 |
+| 统一Skill | `${PROJECT_ROOT}/SKILL.md` + `GET /skill.md` | 凭 is_superuser 区分 | 全量（认证/文章/标签/分组/评论/点赞/搜索/上传/用户/统计/外链/站点配置/系统初始化/PAT预留） |
+
+> **历史**：原两份 `SKILL.md`（`synthink-agent` 普通 / `synthink-superadmin` 超管）已于 Phase 3 合并为单一 `synthspark-agent`，凭证统一、权限凭 `is_superuser` 区分（普通 token 调非 admin，`/api/admin/*` 与 `/api/links` 写等需 is_superuser，失败 403）。`backend/app/skills/SKILL.md` 保留为同步副本（头部标注 DEPRECATED），以 `根 SKILL.md` 为准。
+> **MCP 注意**：MCP 服务（`mcp/server_optimized.py` 28 工具推荐 / `mcp/server.py` 63 工具）暂保留，修改后端接口后须同步更新 MCP，待测试验证后移除（Phase 4 PAT 落地后评估）。
 
 ---
 
@@ -293,7 +295,7 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = '${SCHEMA}
 - **自动迁移**：`PostgresAdapter.ensure_anonymous_features()` 幂等补列（查 `information_schema.columns`，缺失则 ALTER），`init_schema()` 末尾调用 → 后端启动与 `POST /api/admin/database/init` 均会执行；SQLite 适配器仍残缺（评论/likes 表未定义，属既有问题）
 - **评论搜索**：comments 搜索改为 LEFT JOIN users + COALESCE，匿名评论可被搜到
 - **时区坑（重要）**：项目历史代码用 `datetime.utcnow()`（naive）写入 timestamptz 列，asyncpg 按会话时区（+08）解释，存储时刻偏差 8 小时。评论创建已改为 `datetime.now(timezone.utc)`；限流统计不受影响。点赞等模块仍用旧写法（既有行为，未动）
-- **前端**：`PostDetailView.vue` 评论区未登录时显示名称+邮箱输入（邮箱格式前端预校验），提交字段 `author_name`/`author_email`；localStorage（key `synthink_anonymous_comment`）记忆上次填写内容
+- **前端**：`PostDetailView.vue` 评论区未登录时显示名称+邮箱输入（邮箱格式前端预校验），提交字段 `author_name`/`author_email`；localStorage（key `synthspark_anonymous_comment`）记忆上次填写内容
 
 ---
 
@@ -340,7 +342,7 @@ server {
     
     # 前端静态文件
     location / {
-        root /path/to/synthink/frontend/dist;  # 替换为实际dist目录路径
+        root /path/to/synthspark/frontend/dist;  # 替换为实际dist目录路径
         try_files $uri $uri/ /index.html;  # Vue Router SPA回退
     }
     
@@ -355,7 +357,7 @@ server {
     
     # 上传文件访问
     location /uploads {
-        alias /path/to/synthink/backend/uploads;  # 后端上传目录
+        alias /path/to/synthspark/backend/uploads;  # 后端上传目录
         expires 30d;
     }
 }
@@ -400,4 +402,12 @@ server {
 
 ---
 
-*最后更新: 2026-08-10*
+## 9. 更新日志 (2026-08-23 SynthSpark 统一改造)
+
+- **命名统一**：`SynthInk/synthink/SYNTHINK` 全量硬切为 `SynthSpark/synthspark/SYNTHSPARK`（`synthspark.db`、`SYNTHSPARK_API_URL`、`synthspark-token` 等，含 `frontend-demo`），`config.db` 文件名保留，库内默认值 `database=synthspark`、`TEST_DATABASE_URL=synthspark_test`，旧库需 `pg_dump synthink|psql synthspark` + `mv synthink.db synthspark.db`
+- **环境变量陷阱治理**：新增 `backend/.env.example`（SECRET_KEY 必填示例），修复 `frontend/.env.example` 与 `vite.config.ts` 默认 `8001→8002` + 未设时 `console.warn`，`backend/app/config.py` 支持绝对路径 `.env` 并对 `SECRET_KEY` 缺失抛友好 `RuntimeError`，`mcp/config.json` 与 `mcp/README.md` 端口 `8001/8000→8002/8005` 同步
+- **Skill 统一**：`/SKILL.md` 与 `backend/app/skills/SKILL.md` 合并为单一 `synthspark-agent`（凭 `is_superuser` 区分），全量补 `curl -H "Authorization: Bearer $SYNTHSPARK_API_TOKEN"` 示例，新增外链/站点配置/系统初始化场景，MCP 暂留待 Skill 测试通过后移除
+- **二级 PAT 凭证**：新增表 `user_api_tokens`（PG/SQLite 双适配，`stk_` 前缀 + SHA256，默认 90d，可续期），接口 `POST /api/auth/api-tokens`/`GET`/`DELETE`/`POST /renew`，权限手工二级：人类超管任意、超管AI仅普通AI、普通仅自身，PAT 优先于 JWT 校验（`auth.py: verify_pat_and_get_user`），超管可 `renew` 他人凭证，无自动续期
+- **验证**：`uv run pytest` 210 passed 47 skipped（已知 `test_register_api`/`test_seo`/`test_smoke` 陈旧），`npm run type-check` 通过，PAT 在 PG/SQLite 均通过二级权限全链路测试
+
+*最后更新: 2026-08-23*

@@ -352,7 +352,7 @@ localComments.value = JSON.parse(JSON.stringify(mockComments))
 const windows = ref<OsWindow[]>([
   {
     id: 'win-finder-root',
-    title: 'Finder — SynthInk 文件',
+    title: 'Finder — SynthSpark 文件',
     type: 'finder',
     x: 280,
     y: 28,
@@ -493,7 +493,7 @@ function openFinder(groupId: string = 'all'): void {
   }
   windows.value.push({
     id: `win-finder-${Date.now()}`,
-    title: 'Finder — SynthInk 文件',
+    title: 'Finder — SynthSpark 文件',
     type: 'finder',
     x: 260 + Math.random() * 60,
     y: 22 + Math.random() * 40,

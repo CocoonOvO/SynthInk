@@ -3,7 +3,9 @@
 处理用户登录、注册、Token刷新等
 """
 import json
-from datetime import timedelta
+import hashlib
+import secrets
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional
 from uuid import uuid4
 
@@ -15,7 +17,7 @@ from slowapi.util import get_remote_address
 from ..config import get_settings
 from ..db_manager import db_manager
 from ..models.user import User, UserCreate, UserInDB, AgentCreate
-from ..utils.security import verify_password, get_password_hash, create_access_token, decode_access_token
+from ..utils.security import verify_password, get_password_hash, create_access_token, decode_access_token, hash_pat_token
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
@@ -55,7 +57,16 @@ async def get_user_by_username(username: str) -> Optional[UserInDB]:
     """
     try:
         result = await db_manager.db.get_user_by_username(username)
-        if result.get("success") and result.get("data"):
+        # 兼容 Postgres（wrapped）与 SQLite（直接返回 dict）两种结构
+        if isinstance(result, dict) and "success" in result:
+            if result.get("success") and result.get("data"):
+                return UserInDB(**result["data"])
+            return None
+        # SQLite 直接返回用户 dict 或 None
+        if isinstance(result, dict) and result.get("username"):
+            return UserInDB(**result)
+        # SQLite 可能返回 {data: ...} 兼容
+        if isinstance(result, dict) and result.get("data"):
             return UserInDB(**result["data"])
         return None
     except RuntimeError:
@@ -85,14 +96,122 @@ async def authenticate_user(username: str, password: str) -> Optional[UserInDB]:
     return user
 
 
+async def verify_pat_and_get_user(token: str) -> Optional[User]:
+    """
+    校验 PAT 并返回对应用户
+
+    - 仅处理 stk_ 前缀的 token
+    - 通过 SHA256 hash 匹配 user_api_tokens
+    - 校验 revoked 与 expires_at
+    - 成功则更新 last_used_at 并返回 User
+    """
+    if not token or not token.startswith("stk_"):
+        return None
+    try:
+        token_hash = hash_pat_token(token)
+        # 查询 PAT 记录（兼容两种适配器返回结构）
+        try:
+            result = await db_manager.db.find("user_api_tokens", filters={"token_hash": token_hash}, limit=1)
+        except Exception:
+            return None
+
+        pat_data = None
+        if isinstance(result, dict) and "success" in result:
+            if not result.get("success"):
+                return None
+            data_list = result.get("data") or []
+            if not data_list:
+                return None
+            pat_data = data_list[0]
+        elif isinstance(result, list):
+            if not result:
+                return None
+            pat_data = result[0]
+        elif isinstance(result, dict) and result.get("id"):
+            pat_data = result
+        else:
+            return None
+
+        if not pat_data:
+            return None
+
+        # 校验是否已撤销（兼容 bool 与 0/1）
+        revoked = pat_data.get("revoked")
+        if revoked is True or revoked == 1 or str(revoked).lower() == "true":
+            return None
+        if pat_data.get("is_revoked"):
+            return None
+
+        # 校验过期时间
+        expires_at = pat_data.get("expires_at")
+        if not expires_at:
+            return None
+        try:
+            if isinstance(expires_at, str):
+                expires_dt = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+            else:
+                expires_dt = expires_at
+        except Exception:
+            return None
+        if expires_dt.tzinfo is None:
+            expires_dt = expires_dt.replace(tzinfo=timezone.utc)
+        now = datetime.now(timezone.utc)
+        if expires_dt <= now:
+            return None
+
+        user_id = pat_data.get("user_id")
+        if not user_id:
+            return None
+
+        try:
+            user_result = await db_manager.db.get("users", user_id)
+        except Exception:
+            return None
+
+        user_dict = None
+        if isinstance(user_result, dict) and "success" in user_result:
+            if not user_result.get("success"):
+                return None
+            user_dict = user_result.get("data")
+        else:
+            user_dict = user_result
+
+        if not user_dict:
+            return None
+
+        try:
+            user = User(**user_dict)
+        except Exception:
+            return None
+
+        if not user.is_active:
+            return None
+
+        # 更新 last_used_at（可选，失败不影响认证）
+        try:
+            await db_manager.db.update("user_api_tokens", pat_data["id"], {"last_used_at": datetime.now(timezone.utc).isoformat()})
+        except Exception:
+            pass
+
+        return user
+    except Exception:
+        return None
+
+
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
     """
     获取当前登录用户
     
-    - 解析JWT Token
+    - 优先尝试 PAT 校验（stk_ 前缀）
+    - 失败则解析JWT Token
     - 验证用户有效性
     - 返回用户对象
     """
+    # 优先尝试 PAT
+    pat_user = await verify_pat_and_get_user(token)
+    if pat_user:
+        return pat_user
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="无效的认证凭据",
@@ -109,12 +228,17 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
     if user_id is None:
         raise credentials_exception
     
-    # 从数据库获取用户
+    # 从数据库获取用户（兼容 Postgres/SQLite 返回结构）
     result = await db_manager.db.get("users", user_id)
-    if not result.get("success"):
-        raise credentials_exception
-    
-    user_data = result.get("data", {})
+    # SQLite 直接返回 dict，无 success 包装
+    if isinstance(result, dict) and "success" in result:
+        if not result.get("success"):
+            raise credentials_exception
+        user_data = result.get("data", {})
+    else:
+        if not result:
+            raise credentials_exception
+        user_data = result
     return User(**user_data)
 
 
@@ -156,6 +280,7 @@ async def get_current_user_optional(
     """
     获取当前登录用户（可选认证）
     
+    - 优先尝试 PAT 校验
     - 如果提供了有效的Token，返回用户对象
     - 如果未提供Token或Token无效，返回None
     - 用于公开接口中识别已登录用户（如显示"已点赞"状态）
@@ -167,6 +292,11 @@ async def get_current_user_optional(
         return None
     
     try:
+        # 优先尝试 PAT
+        pat_user = await verify_pat_and_get_user(token)
+        if pat_user:
+            return pat_user
+
         # 解码Token
         payload = decode_access_token(token)
         if payload is None:
@@ -177,12 +307,16 @@ async def get_current_user_optional(
         if user_id is None:
             return None
         
-        # 从数据库获取用户
+        # 从数据库获取用户（兼容两种返回结构）
         result = await db_manager.db.get("users", user_id)
-        if not result.get("success"):
-            return None
-        
-        user_data = result.get("data", {})
+        if isinstance(result, dict) and "success" in result:
+            if not result.get("success"):
+                return None
+            user_data = result.get("data", {})
+        else:
+            if not result:
+                return None
+            user_data = result
         user = User(**user_data)
         
         # 检查用户是否激活

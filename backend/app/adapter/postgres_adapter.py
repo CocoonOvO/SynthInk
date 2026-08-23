@@ -35,9 +35,10 @@ class PostgresAdapter(BaseAdapter):
     TABLE_COMMENTS = "comments"
     TABLE_LIKES = "likes"
     TABLE_EXTERNAL_LINKS = "external_links"
+    TABLE_PAT_TOKENS = "user_api_tokens"
     
     # 所有表名列表
-    ALL_TABLES = [TABLE_USERS, TABLE_POSTS, TABLE_TAGS, TABLE_GROUPS, TABLE_POST_TAGS, TABLE_COMMENTS, TABLE_LIKES, TABLE_EXTERNAL_LINKS]
+    ALL_TABLES = [TABLE_USERS, TABLE_POSTS, TABLE_TAGS, TABLE_GROUPS, TABLE_POST_TAGS, TABLE_COMMENTS, TABLE_LIKES, TABLE_EXTERNAL_LINKS, TABLE_PAT_TOKENS]
     
     def __init__(self, dsn: str, schema: str = "public"):
         """
@@ -82,6 +83,7 @@ class PostgresAdapter(BaseAdapter):
         'seo_configs', 'seo_templates', 'seo_analyses', 'seo_reports',
         'metadata', 'redirects'  # SEO模块相关表
         , 'external_links'  # 外链表（工具页面）
+        , 'user_api_tokens'  # PAT 凭证表
     }
     
     def _get_table_name(self, table: str) -> str:
@@ -358,6 +360,24 @@ class PostgresAdapter(BaseAdapter):
                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+
+        elif name == self.TABLE_PAT_TOKENS:
+            # PAT 凭证表：stk_ 前缀，SHA256 存 hash，明文仅返回一次
+            await self._execute(f"""
+                CREATE TABLE IF NOT EXISTS {full_table_name} (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    user_id UUID NOT NULL REFERENCES {self.schema}.users(id) ON DELETE CASCADE,
+                    name VARCHAR(50) NOT NULL,
+                    token_hash VARCHAR(128) UNIQUE NOT NULL,
+                    scopes JSONB,
+                    expires_at TIMESTAMPTZ NOT NULL,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    created_by UUID,
+                    revoked BOOLEAN DEFAULT FALSE,
+                    last_used_at TIMESTAMPTZ,
+                    UNIQUE(user_id, name)
+                )
+            """)
         
         elif name == 'metadata':
             await self._execute(f"""
@@ -418,10 +438,12 @@ class PostgresAdapter(BaseAdapter):
         # 处理特殊字段
         if "agent_config" in data_dict and isinstance(data_dict["agent_config"], dict):
             data_dict["agent_config"] = json.dumps(data_dict["agent_config"])
+        if "scopes" in data_dict and isinstance(data_dict["scopes"], (dict, list)):
+            data_dict["scopes"] = json.dumps(data_dict["scopes"])
         
         # 处理datetime字符串转换为datetime对象
         from datetime import datetime
-        for key in ["created_at", "updated_at", "published_at"]:
+        for key in ["created_at", "updated_at", "published_at", "expires_at", "last_used_at"]:
             if key in data_dict and isinstance(data_dict[key], str):
                 try:
                     # 尝试解析ISO格式时间字符串
@@ -498,9 +520,11 @@ class PostgresAdapter(BaseAdapter):
         # 处理特殊字段
         if "agent_config" in data and isinstance(data["agent_config"], dict):
             data["agent_config"] = json.dumps(data["agent_config"])
+        if "scopes" in data and isinstance(data["scopes"], (dict, list)):
+            data["scopes"] = json.dumps(data["scopes"])
         
         # 处理datetime字符串转换为datetime对象
-        for key in ["created_at", "updated_at", "published_at"]:
+        for key in ["created_at", "updated_at", "published_at", "expires_at", "last_used_at"]:
             if key in data and isinstance(data[key], str):
                 try:
                     # 尝试解析ISO格式时间字符串
@@ -632,6 +656,7 @@ class PostgresAdapter(BaseAdapter):
         await self.create_table(self.TABLE_COMMENTS)
         await self.create_table(self.TABLE_LIKES)
         await self.create_table(self.TABLE_EXTERNAL_LINKS)
+        await self.create_table(self.TABLE_PAT_TOKENS)
         # 对已存在的旧表执行幂等迁移（匿名评论支持 + 点赞/评论 IP 落库）
         await self.ensure_anonymous_features()
 
@@ -685,6 +710,12 @@ class PostgresAdapter(BaseAdapter):
             await self.create_table(self.TABLE_LIKES)
             await self._ensure_column(self.TABLE_LIKES, "ip_address", "ip_address INET")
             await self._ensure_column(self.TABLE_LIKES, "user_id", "user_id UUID")
+
+            # PAT 表：旧库缺失时幂等创建
+            try:
+                await self.create_table(self.TABLE_PAT_TOKENS)
+            except Exception:
+                pass
         except Exception as e:
             # 迁移失败不阻塞启动，打印警告后降级（表操作由后续请求触发时再次尝试）
             print(f"[匿名评论迁移] 表结构升级失败: {e}")

@@ -30,7 +30,7 @@
           <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
         </div>
         <div class="term-title mono">
-          <span class="title-main">synthink@synthterm:~ — zsh — 80×24</span>
+          <span class="title-main">synthspark@synthterm:~ — zsh — 80×24</span>
           <span class="title-sub hide-mobile">UTF-8 · LF · {{$route.path}}</span>
         </div>
         <div class="term-actions mono">
@@ -138,7 +138,7 @@
             <div v-for="h in history" :key="h.id" class="entry">
               <!-- 命令行回显 -->
               <div class="prompt-line">
-                <span class="prompt-user">synthink@synthterm</span><span class="prompt-sep">:</span><span class="prompt-path">~</span><span class="prompt-sep">$</span>
+                <span class="prompt-user">synthspark@synthterm</span><span class="prompt-sep">:</span><span class="prompt-path">~</span><span class="prompt-sep">$</span>
                 <span class="prompt-cmd typewriter">{{ h.cmd }}</span>
                 <span class="prompt-time">{{ h.time }}</span>
               </div>
@@ -151,7 +151,7 @@
                   <pre class="ascii mono">{{ asciiBanner }}</pre>
                   <div class="welcome-grid">
                     <div class="welcome-main">
-                      <h2 class="display">SYNTHINK TERMINAL</h2>
+                      <h2 class="display">SYNTHSPARK TERMINAL</h2>
                       <p class="mono welcome-desc">
                         浏览器内伪终端 · CRT 琥珀/绿磷光 · 扫描线 · 纯 JetBrains Mono<br>
                         <b>交互原则：鼠标友好</b> —— 所有命令都是芯片/按钮，输出是卡片；键盘仅作增强。
@@ -483,7 +483,7 @@
       <!-- 底部伪输入行：带闪烁光标 + 快捷芯片 + 粘贴友好 -->
       <footer class="input-bar mono">
         <div class="input-row">
-          <span class="prompt-label">synthink@term:~$</span>
+          <span class="prompt-label">synthspark@term:~$</span>
           <div class="input-wrap">
             <input
               ref="inputEl"

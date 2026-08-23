@@ -6,12 +6,12 @@
       <div class="masthead-meta">
         <router-link to="/" class="hub-link">← Hub</router-link>
         <span class="meta-item mono">VOL. III — No. 08</span>
-        <span class="meta-item mono hide-mobile">SYNTHINK EDITORIAL</span>
+        <span class="meta-item mono hide-mobile">SYNTHSPARK EDITORIAL</span>
         <span class="meta-date mono">{{ todayStr }}</span>
         <span class="meta-item mono hide-mobile">PARIS · TOKYO · REMOTE</span>
       </div>
-      <!-- 大标题 SYNTHINK：Cormorant Garamond 超大字号，字距压缩 -->
-      <h1 class="masthead-title">SYNTHINK</h1>
+      <!-- 大标题 SYNTHSPARK：Cormorant Garamond 超大字号，字距压缩 -->
+      <h1 class="masthead-title">SYNTHSPARK</h1>
       <div class="masthead-rule">
         <span class="rule-red"></span>
         <span class="rule-hair"></span>
@@ -22,7 +22,7 @@
       <!-- 副刊头：价格 / 标语 -->
       <div class="masthead-sub mono">
         <span>PRICE: FREE / OPEN ACCESS</span>
-        <span class="sub-center">“把博客重新排成一本可触摸的杂志” — SYNTHINK EDITORIAL — August 2026</span>
+        <span class="sub-center">“把博客重新排成一本可触摸的杂志” — SYNTHSPARK EDITORIAL — August 2026</span>
         <span>EDITION: DEMO</span>
       </div>
     </header>
@@ -141,7 +141,7 @@
         <!-- 期末 colophon -->
         <footer class="colophon mono">
           <span>— FIN —</span>
-          <span>SYNTHINK MAGAZINE · 编辑部排版实验室 · 2026</span>
+          <span>SYNTHSPARK MAGAZINE · 编辑部排版实验室 · 2026</span>
           <span>PRINTED IN THE BROWSER · #faf9f6 · #e8e0cc · #c1121f</span>
         </footer>
       </main>
@@ -218,7 +218,7 @@
           <!-- 订阅卡：红底 accent -->
           <div class="subscribe-card">
             <span class="sub-label mono">SUBSCRIBE</span>
-            <p class="sub-title">订阅 SYNTHINK<br>纸上杂志</p>
+            <p class="sub-title">订阅 SYNTHSPARK<br>纸上杂志</p>
             <p class="sub-desc mono">每月一期 · 排版即内容<br>点击右下角任意文章拉页阅读</p>
             <button class="sub-btn mono" @click="showToast('已订阅（Mock）')">立即订阅 — 免费</button>
           </div>
@@ -239,7 +239,7 @@
         <div class="modal-sheet">
           <!-- 顶栏控制 -->
           <div class="modal-top mono">
-            <span class="modal-kicker">SYNTHINK — {{ selectedPost.group.icon }} {{ selectedPost.group.name }} — {{ selectedPost.createdAt }}</span>
+            <span class="modal-kicker">SYNTHSPARK — {{ selectedPost.group.icon }} {{ selectedPost.group.name }} — {{ selectedPost.createdAt }}</span>
             <button class="modal-close" @click="closePost">✕ 关闭</button>
           </div>
           <div class="modal-rule">
@@ -500,7 +500,7 @@ onUnmounted(() => {
   color: #c1121f;
   letter-spacing: 0.06em;
 }
-/* 大标题 SYNTHINK */
+/* 大标题 SYNTHSPARK */
 .masthead-title {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 800;

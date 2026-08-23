@@ -67,7 +67,7 @@
           <!-- 左页：档案封面页，暖米黄渐变 -->
           <div class="page left-page">
             <div class="page-inner">
-              <div class="page-label">SYNTHINK ARCHIVE — {{ current.group.name }}</div>
+              <div class="page-label">SYNTHSPARK ARCHIVE — {{ current.group.name }}</div>
               <!-- 左页胶带：半透毛玻璃 -->
               <div class="tape tape--left"></div>
               <img :src="current.cover" class="left-cover" alt="" />

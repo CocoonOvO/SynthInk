@@ -1,4 +1,4 @@
-# SynthInk — Postmodern Demo Hub
+# SynthSpark — Postmodern Demo Hub
 
 > 分支 `demo/postmodern-interactive` · 浏览器内后现代交互 Demo 集 · 纯前端 Mock · 无需后端
 

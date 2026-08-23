@@ -119,3 +119,23 @@ def decode_access_token(token: str) -> Optional[dict]:
         return payload
     except JWTError:
         return None
+
+
+# ========== PAT 相关 ==========
+
+PAT_PREFIX = "stk_"
+
+
+def generate_pat_token() -> str:
+    """生成 PAT 明文（stk_ 前缀）"""
+    return f"{PAT_PREFIX}{secrets.token_urlsafe(32)}"
+
+
+def hash_pat_token(token: str) -> str:
+    """对 PAT 明文做 SHA256 哈希（存库用）"""
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def verify_pat_token(token: str, token_hash: str) -> bool:
+    """校验 PAT 明文与哈希是否匹配（常量时间比较）"""
+    return secrets.compare_digest(hash_pat_token(token), token_hash)

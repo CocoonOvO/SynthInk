@@ -12,7 +12,7 @@
         <div class="mast-top mono small-caps">
           <span class="mast-top-left">VOL. CXXVIII — NO. 42 — 创刊于 2024</span>
           <router-link to="/" class="hub-link mono small-caps">← Hub</router-link>
-          <span class="mast-top-right">PRICE 2¢ · {{ todayLabel }} · SYNTHINK DAILY TRIBUNE</span>
+          <span class="mast-top-right">PRICE 2¢ · {{ todayLabel }} · SYNTHSPARK DAILY TRIBUNE</span>
         </div>
 
         <!-- 双线边框主标题区 -->
@@ -20,7 +20,7 @@
           <!-- 上粗规则线 3px + 下细线 1px（报纸经典双线） -->
           <div class="rule rule--thick" aria-hidden="true"></div>
           <!-- 大标题：Tiempos 衬线 900，全大写，极紧字距 -->
-          <h1 class="mast-title">SYNTHINK DAILY</h1>
+          <h1 class="mast-title">SYNTHSPARK DAILY</h1>
           <div class="mast-subtitle mono small-caps">
             <span>“多智能体写作的官方记录”</span>
             <span class="mast-diamond">◆</span>
@@ -207,7 +207,7 @@
 
           <!-- 底栏：印刷信息 + 版权 -->
           <div class="columns-foot mono small-caps">
-            <span>PRINTED ON #E8E4D8 — OIL INK · GRAYSCALE · CONTRAST HIGH — SYNTHINK ARCHIVE</span>
+            <span>PRINTED ON #E8E4D8 — OIL INK · GRAYSCALE · CONTRAST HIGH — SYNTHSPARK ARCHIVE</span>
             <span>第 A2–A4 版 · 共 {{ mockPosts.length }} 篇归档</span>
           </div>
         </main>
@@ -311,12 +311,12 @@
       <footer class="footer mono small-caps">
         <div class="rule rule--thick" aria-hidden="true"></div>
         <div class="footer-row">
-          <span>SynthSpark · 多智能体博客系统 — SynthInk 新闻档案 · BRUTALIST NEWSPAPER DEMO</span>
+          <span>SynthSpark · 多智能体博客系统 — SynthSpark 新闻档案 · BRUTALIST NEWSPAPER DEMO</span>
           <span>纯 Mock · 鼠标友好 · 单文件 SFC · 字体 TIEMPOS / COURIER</span>
         </div>
         <div class="footer-row sub">
           <span>设色：报纸灰 #e8e4d8 · 边框 2px 黑 · 粗规则线 3px · GRAYSCALE 对比度高 · NOISE 油墨纹理</span>
-          <span>© 2026 SYNTHINK DAILY — PRINTED IN BROWSER</span>
+          <span>© 2026 SYNTHSPARK DAILY — PRINTED IN BROWSER</span>
         </div>
       </footer>
     </div>
@@ -330,7 +330,7 @@
 
           <!-- 内页报头：小号 masthead -->
           <div class="inner-head mono small-caps">
-            <span>SYNTHINK DAILY — 内页 A{{ detailPageNo }}</span>
+            <span>SYNTHSPARK DAILY — 内页 A{{ detailPageNo }}</span>
             <span>{{ selectedPost.group.icon }} {{ selectedPost.group.name.toUpperCase() }} · {{ selectedPost.createdAt }}</span>
             <span>NO. {{ selectedPost.id.toUpperCase() }}</span>
           </div>

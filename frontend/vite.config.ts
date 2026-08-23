@@ -43,8 +43,9 @@ export default defineConfig(({ mode }) => {
   // 加载环境变量
   const env = loadEnv(mode, process.cwd(), '')
 
-  // API目标地址，默认8001，可通过环境变量 VITE_API_URL 配置
-  const apiTarget = env.VITE_API_URL || 'http://localhost:8001'
+  // API目标地址，默认8002，可通过环境变量 VITE_API_URL 配置
+  const apiTarget = env.VITE_API_URL || 'http://localhost:8002'
+  if (!env.VITE_API_URL) console.warn('[Vite] 未设置 VITE_API_URL，已回退至 http://localhost:8002')
 
   return {
     plugins: [
@@ -52,7 +53,7 @@ export default defineConfig(({ mode }) => {
       vueDevTools(),
       {
         // 站点配置自动生成插件：保证 dev / build 时 public/site.config.json 始终可用
-        name: 'synthink-site-config',
+        name: 'synthspark-site-config',
         // build 时在模块加载阶段生成（dist 拷贝 public 目录前完成）
         buildStart() {
           ensureSiteConfigFile()

@@ -18,6 +18,7 @@ from .seo import router as seo_router
 from .stats import router as stats_router
 from .links import router as links_router
 from .site_config import router as site_config_router
+from .pat import router as pat_router
 
 # 创建主路由
 api_router = APIRouter(prefix="/api")
@@ -38,5 +39,6 @@ api_router.include_router(seo_router, tags=["SEO管理"])
 api_router.include_router(stats_router, tags=["统计"])
 api_router.include_router(links_router, prefix="/links", tags=["外链"])
 api_router.include_router(site_config_router, tags=["站点配置"])
+api_router.include_router(pat_router, prefix="/auth", tags=["PAT凭证"])
 
 __all__ = ["api_router"]
