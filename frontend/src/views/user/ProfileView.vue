@@ -48,10 +48,13 @@
           v-for="tab in displayTabs"
           :key="tab.id"
           class="tab-btn"
-          :class="{ active: currentTab === tab.id }"
-          @click="currentTab = tab.id"
+          :class="{ active: currentTab === tab.id, disabled: (tab as any).disabled }"
+          :disabled="(tab as any).disabled"
+          :title="(tab as any).disabled ? '仅超管可见' : ''"
+          @click="!(tab as any).disabled && (currentTab = tab.id)"
         >
           {{ tab.name }}
+          <span v-if="(tab as any).disabled" class="tab-lock">🔒</span>
         </button>
       </div>
 
@@ -285,6 +288,11 @@
           </div>
         </div>
       </div>
+      <div v-else-if="currentTab === 'links'" class="settings-panel">
+        <div class="settings-section">
+          <p class="avatar-hint">外链管理仅超管可见，请使用超管账号登录（默认 admin/123456，首次登录需改密）</p>
+        </div>
+      </div>
 
       <!-- 站点设置面板（仅超管可见） -->
       <div v-if="currentTab === 'siteConfig' && authStore.isAdmin" class="settings-panel">
@@ -292,33 +300,15 @@
           <div class="loading-spinner"></div>
           <p>加载中...</p>
         </div>
+        <div v-else-if="siteConfigError" class="settings-section">
+          <p class="modal-error" style="margin-bottom: 12px;">{{ siteConfigError }}</p>
+          <button class="avatar-btn" @click="loadSiteConfig">重试</button>
+        </div>
         <template v-else>
           <!-- 站点信息 -->
           <div class="settings-section">
             <h3 class="settings-title">站点信息</h3>
-            <div class="form-group">
-              <label class="form-label">站点名称</label>
-              <input v-model="siteConfigForm.site.name" type="text" class="form-input" placeholder="如 SynthSpark">
-            </div>
-            <div class="form-group">
-              <label class="form-label">浏览器标题</label>
-              <input v-model="siteConfigForm.site.title" type="text" class="form-input" placeholder="显示在浏览器标签页的标题">
-            </div>
-            <div class="form-group">
-              <label class="form-label">站点描述</label>
-              <textarea v-model="siteConfigForm.site.description" class="form-textarea" rows="2"></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">备案号</label>
-              <input v-model="siteConfigForm.site.icp" type="text" class="form-input" placeholder="留空表示不展示">
-            </div>
-            <div class="form-group">
-              <label class="form-label">默认主题</label>
-              <select v-model="siteConfigForm.site.defaultTheme" class="form-input">
-                <option v-for="t in themeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
-              </select>
-              <p class="avatar-hint">仅对首次访问（未选过主题）的用户生效，已选过主题的用户保持自己的选择</p>
-            </div>
+            <!-- Logo 置顶：首屏即可见，避免滚动盲区 -->
             <div class="form-group">
               <label class="form-label">站点 Logo（同时作为浏览器标签图标 favicon）</label>
               <div class="avatar-upload">
@@ -359,6 +349,29 @@
                 placeholder="或直接填入图片 URL，如 /uploads/logo.png 或 https://example.com/logo.svg"
                 style="margin-top: 10px"
               />
+            </div>
+            <div class="form-group">
+              <label class="form-label">站点名称</label>
+              <input v-model="siteConfigForm.site.name" type="text" class="form-input" placeholder="如 SynthSpark">
+            </div>
+            <div class="form-group">
+              <label class="form-label">浏览器标题</label>
+              <input v-model="siteConfigForm.site.title" type="text" class="form-input" placeholder="显示在浏览器标签页的标题">
+            </div>
+            <div class="form-group">
+              <label class="form-label">站点描述</label>
+              <textarea v-model="siteConfigForm.site.description" class="form-textarea" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">备案号</label>
+              <input v-model="siteConfigForm.site.icp" type="text" class="form-input" placeholder="留空表示不展示">
+            </div>
+            <div class="form-group">
+              <label class="form-label">默认主题</label>
+              <select v-model="siteConfigForm.site.defaultTheme" class="form-input">
+                <option v-for="t in themeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
+              </select>
+              <p class="avatar-hint">仅对首次访问（未选过主题）的用户生效，已选过主题的用户保持自己的选择</p>
             </div>
           </div>
 
@@ -457,6 +470,11 @@
           <p class="site-config-hint">保存后需刷新页面，站点全局配置才会生效</p>
         </template>
       </div>
+      <div v-else-if="currentTab === 'siteConfig'" class="settings-panel">
+        <div class="settings-section">
+          <p class="avatar-hint">站点设置仅超管可见，请使用超管账号登录（默认 admin/123456，首次登录需改密）</p>
+        </div>
+      </div>
     </main>
 
     <!-- Footer -->
@@ -498,7 +516,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { authApi, postsApi, groupsApi, uploadApi, linksApi, siteConfigApi } from '@/api'
 import type { ExternalLink } from '@/api'
@@ -513,19 +531,22 @@ import { useAuthStore } from '@/stores'
 const router = useRouter()
 const authStore = useAuthStore()
 
-// 标签页
+// 标签页（超管专属带 adminOnly 标记，用于置灰提示而非直接隐藏，避免用户误判为缺失）
 const tabs = [
   { id: 'articles', name: '文章' },
   { id: 'drafts', name: '草稿' },
   { id: 'settings', name: '设置' },
-  { id: 'links', name: '外链管理' },
-  { id: 'siteConfig', name: '站点设置' }
+  { id: 'links', name: '外链管理', adminOnly: true } as const,
+  { id: 'siteConfig', name: '站点设置', adminOnly: true } as const,
 ]
 const currentTab = ref('articles')
 
-// 非超管不显示超管专属 tab（外链管理 / 站点设置）
+// 展示用：非超管时保留 Tab 但置灰并提示“仅超管可见”，避免被误认为功能缺失
 const displayTabs = computed(() =>
-  authStore.isAdmin ? tabs : tabs.filter((t) => t.id !== 'links' && t.id !== 'siteConfig')
+  tabs.map((t) => ({
+    ...t,
+    disabled: (t as any).adminOnly ? !authStore.isAdmin : false,
+  }))
 )
 
 // 加载状态
@@ -1030,16 +1051,22 @@ const themeOptions = THEMES.map(t => ({ id: t.id, name: t.name }))
 const siteConfigForm = reactive<SiteConfig>(JSON.parse(JSON.stringify(getSiteConfig())))
 const siteConfigLoading = ref(false)
 const siteConfigSaving = ref(false)
+const siteConfigError = ref('')
 // Logo 上传 input（复用现有上传接口）
 const siteLogoInput = ref<HTMLInputElement | null>(null)
 
 // 加载站点配置作为编辑基底：
 // - 后台有保存值（非空 dict）时以保存值为基底
 // - 后台为空 {}（或加载失败）时用当前生效配置，保证表单有完整默认值
+// - 增加 5 秒超时，避免后端无响应时永久 loading 遮挡表单
 const loadSiteConfig = async () => {
   siteConfigLoading.value = true
+  siteConfigError.value = ''
   try {
-    const saved = await siteConfigApi.getAdmin()
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('加载站点配置超时，请检查后端/网络后重试')), 5000)
+    )
+    const saved = (await Promise.race([siteConfigApi.getAdmin(), timeout])) as Record<string, unknown>
     const base = saved && Object.keys(saved).length > 0 ? saved : getSiteConfig()
     Object.assign(siteConfigForm, JSON.parse(JSON.stringify(base)))
     // 兼容旧配置：site.logo 字段不存在时补空字符串，保证表单可编辑且不丢失
@@ -1048,7 +1075,8 @@ const loadSiteConfig = async () => {
     }
   } catch (error) {
     console.error('加载站点配置失败:', error)
-    alert(error instanceof Error ? error.message : '加载站点配置失败')
+    const msg = error instanceof Error ? error.message : '加载站点配置失败'
+    siteConfigError.value = msg
   } finally {
     siteConfigLoading.value = false
   }
@@ -1127,6 +1155,17 @@ onMounted(() => {
     loadSiteConfig()
   }
 })
+
+// 超管状态由异步 initAuth 决定，mount 时可能仍为 false，需监听变为 true 时补加载
+watch(
+  () => authStore.isAdmin,
+  (isAdmin, wasAdmin) => {
+    if (isAdmin && !wasAdmin) {
+      loadLinks()
+      loadSiteConfig()
+    }
+  }
+)
 </script>
 
 <style scoped>
@@ -1341,6 +1380,22 @@ onMounted(() => {
 .tab-btn.active {
   background: var(--accent-primary);
   color: var(--bg-primary);
+}
+
+.tab-btn.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tab-btn.disabled:hover {
+  background: transparent;
+  color: var(--text-tertiary);
+}
+
+.tab-lock {
+  margin-left: 4px;
+  font-size: 10px;
+  vertical-align: middle;
 }
 
 /* ╭── 筛选栏 ──╮ */
