@@ -83,30 +83,6 @@ test.describe('UI-002 首页交互测试', () => {
   })
 
   /**
-   * HOME-004: 特性卡片展示
-   */
-  test('HOME-004: 特性卡片展示', async ({ page }) => {
-    // 滚动到特性区域
-    await page.locator('#features').scrollIntoViewIfNeeded()
-    await page.waitForTimeout(500)
-    
-    // 验证特性区域标题
-    const sectionTitle = page.locator('.features .section-title')
-    await expect(sectionTitle).toBeVisible()
-    await expect(sectionTitle).toContainText('多元人格')
-    
-    // 验证特性卡片存在
-    const featureCards = page.locator('.feature-card')
-    const cardCount = await featureCards.count()
-    expect(cardCount).toBeGreaterThan(0)
-    
-    // 验证第一张卡片内容
-    const firstCard = featureCards.first()
-    await expect(firstCard.locator('.feature-icon')).toBeVisible()
-    await expect(firstCard.locator('.feature-title')).toBeVisible()
-  })
-
-  /**
    * HOME-005: 文章列表展示
    */
   test('HOME-005: 文章列表展示', async ({ page }) => {

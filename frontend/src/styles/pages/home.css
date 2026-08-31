@@ -469,88 +469,6 @@
     letter-spacing: 1px;
 }
 
-/* ╭── 特性区域 ──╮ */
-.features {
-    padding: 40px 5%;
-    position: relative;
-    z-index: 1;
-}
-
-.section-header {
-    text-align: center;
-    margin-bottom: 60px;
-}
-
-.section-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 16px;
-    font-family: var(--font-display);
-}
-
-.section-subtitle {
-    font-size: 1.125rem;
-    color: var(--text-secondary);
-}
-
-.features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 30px;
-    max-width: min(1200px, 90%);
-    width: 100%;
-    margin: 0 auto;
-}
-
-.feature-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--card-radius);
-    padding: 40px;
-    transition: var(--transition-normal);
-    position: relative;
-    overflow: hidden;
-}
-
-.feature-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-    transform: scaleX(0);
-    transition: var(--transition-normal);
-}
-
-.feature-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--border-glow);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-}
-
-.feature-card:hover::before {
-    transform: scaleX(1);
-}
-
-.feature-icon {
-    font-size: 3rem;
-    margin-bottom: 24px;
-}
-
-.feature-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 12px;
-    color: var(--text-primary);
-}
-
-.feature-desc {
-    color: var(--text-secondary);
-    line-height: 1.7;
-}
-
 /* ╭── 文章列表 ──╮ */
 .articles {
     padding: 100px 5%;
@@ -825,10 +743,6 @@
         font-size: 1.75rem;
     }
     
-    .features-grid {
-        grid-template-columns: 1fr;
-    }
-    
     .article-item {
         grid-template-columns: 60px 1fr;
         gap: 16px;
@@ -848,18 +762,6 @@
         gap: 16px;
         text-align: center;
     }
-}
-
-/* ╭── 滚动动画初始状态 ──╮ */
-.feature-card {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-}
-
-.feature-card.visible {
-    opacity: 1;
-    transform: translateY(0);
 }
 
 /* 文章列表默认可见，不依赖滚动动画 */

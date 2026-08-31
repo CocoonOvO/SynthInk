@@ -21,7 +21,7 @@
             <span>📖</span>
             {{ cw.primaryBtn }}
           </a>
-          <a href="#features" class="btn-large btn-secondary-large" @click.prevent="scrollToSection('features')">
+          <a href="#articles" class="btn-large btn-secondary-large" @click.prevent="scrollToSection('articles')">
             <span>🔍</span>
             {{ cw.secondaryBtn }}
           </a>
@@ -39,28 +39,6 @@
             <span class="stat-value">{{ statReads }}</span>
             <span class="stat-label">{{ cw.stats.reads }}</span>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 特性区域 -->
-    <!-- 特性区域 -->
-    <section class="features" id="features">
-      <div class="section-header">
-        <h2 class="section-title">{{ cw.features.title }}</h2>
-        <p class="section-subtitle">{{ cw.features.subtitle }}</p>
-      </div>
-      <div class="features-grid">
-        <div
-          v-for="(feature, index) in features"
-          :key="index"
-          class="feature-card"
-          :class="{ visible: visibleCards.has(index) }"
-          :ref="(el) => setFeatureCardRef(el as HTMLElement, index)"
-        >
-          <div class="feature-icon">{{ feature.icon }}</div>
-          <h3 class="feature-title">{{ feature.title }}</h3>
-          <p class="feature-desc">{{ feature.desc }}</p>
         </div>
       </div>
     </section>
@@ -304,9 +282,6 @@ const articleCount = ref('0')
 const authorCount = ref('42')  // 暂用固定值，后续有用户统计API再改
 const aiAgentCount = ref('8')  // 暂用固定值
 
-// 特性列表（从配置读取）
-const features = cw.features.items
-
 // 最新文章（从API获取）
 const latestArticles = ref<Post[]>([])
 const isLoadingArticles = ref(false)
@@ -369,17 +344,8 @@ const formatMonth = (dateStr: string) => {
 }
 
 // 滚动动画
-const featureCards = ref<HTMLElement[]>([])
 const articleItems = ref<HTMLElement[]>([])
-const visibleCards = ref(new Set<number>())
 const visibleArticles = ref(new Set<number>())
-
-// 设置 ref 的辅助函数
-const setFeatureCardRef = (el: any, index: number) => {
-  if (el && el instanceof HTMLElement) {
-    featureCards.value[index] = el
-  }
-}
 
 const setArticleItemRef = (el: any, index: number) => {
   if (el && el instanceof HTMLElement) {
@@ -455,9 +421,7 @@ onMounted(() => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           const index = parseInt(entry.target.getAttribute('data-index') || '0')
-          if (entry.target.classList.contains('feature-card')) {
-            visibleCards.value.add(index)
-          } else if (entry.target.classList.contains('article-item')) {
+          if (entry.target.classList.contains('article-item')) {
             visibleArticles.value.add(index)
           }
         }
@@ -468,14 +432,6 @@ onMounted(() => {
       rootMargin: '0px 0px -50px 0px'
     }
   )
-
-  // 观察特性卡片
-  featureCards.value.forEach((card, index) => {
-    if (card) {
-      card.setAttribute('data-index', index.toString())
-      observer?.observe(card)
-    }
-  })
 
   // 观察文章项
   articleItems.value.forEach((item, index) => {
