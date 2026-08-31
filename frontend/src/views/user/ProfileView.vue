@@ -48,10 +48,13 @@
           v-for="tab in displayTabs"
           :key="tab.id"
           class="tab-btn"
-          :class="{ active: currentTab === tab.id }"
-          @click="currentTab = tab.id"
+          :class="{ active: currentTab === tab.id, disabled: (tab as any).disabled }"
+          :disabled="(tab as any).disabled"
+          :title="(tab as any).disabled ? '仅超管可见' : ''"
+          @click="!(tab as any).disabled && (currentTab = tab.id)"
         >
           {{ tab.name }}
+          <span v-if="(tab as any).disabled" class="tab-lock">🔒</span>
         </button>
       </div>
 
@@ -285,6 +288,11 @@
           </div>
         </div>
       </div>
+      <div v-else-if="currentTab === 'links'" class="settings-panel">
+        <div class="settings-section">
+          <p class="avatar-hint">外链管理仅超管可见，请使用超管账号登录（默认 admin/123456，首次登录需改密）</p>
+        </div>
+      </div>
 
       <!-- 站点设置面板（仅超管可见） -->
       <div v-if="currentTab === 'siteConfig' && authStore.isAdmin" class="settings-panel">
@@ -292,10 +300,56 @@
           <div class="loading-spinner"></div>
           <p>加载中...</p>
         </div>
+        <div v-else-if="siteConfigError" class="settings-section">
+          <p class="modal-error" style="margin-bottom: 12px;">{{ siteConfigError }}</p>
+          <button class="avatar-btn" @click="loadSiteConfig">重试</button>
+        </div>
         <template v-else>
           <!-- 站点信息 -->
           <div class="settings-section">
             <h3 class="settings-title">站点信息</h3>
+            <!-- Logo 置顶：首屏即可见，避免滚动盲区 -->
+            <div class="form-group">
+              <label class="form-label">站点 Logo（同时作为浏览器标签图标 favicon）</label>
+              <div class="avatar-upload">
+                <div class="avatar-preview" style="border-radius: 8px;">
+                  <img
+                    v-if="siteConfigForm.site.logo"
+                    :src="siteConfigForm.site.logo"
+                    :key="siteConfigForm.site.logo"
+                    class="avatar-img"
+                    alt="Logo 预览"
+                    style="object-fit: contain; background: var(--bg-primary);"
+                  />
+                  <span v-else class="avatar-placeholder">图</span>
+                </div>
+                <div class="avatar-actions">
+                  <input
+                    ref="siteLogoInput"
+                    type="file"
+                    accept="image/*"
+                    style="display: none"
+                    @change="handleSiteLogoChange"
+                  />
+                  <button class="avatar-btn" @click="triggerSiteLogoUpload">上传 Logo</button>
+                  <button
+                    v-if="siteConfigForm.site.logo"
+                    class="avatar-btn avatar-btn-danger"
+                    @click="siteConfigForm.site.logo = ''"
+                  >
+                    移除
+                  </button>
+                  <p class="avatar-hint">为空时使用内置三瓣图标；上传后同时作为 favicon，保存后刷新生效。上传仅支持 JPG/PNG/GIF/WebP（最大 10MB）；手动填入可使用 SVG/ICO 或外部 URL（复用现有上传接口）</p>
+                </div>
+              </div>
+              <input
+                v-model="siteConfigForm.site.logo"
+                type="text"
+                class="form-input"
+                placeholder="或直接填入图片 URL，如 /uploads/logo.png 或 https://example.com/logo.svg"
+                style="margin-top: 10px"
+              />
+            </div>
             <div class="form-group">
               <label class="form-label">站点名称</label>
               <input v-model="siteConfigForm.site.name" type="text" class="form-input" placeholder="如 SynthSpark">
@@ -416,6 +470,11 @@
           <p class="site-config-hint">保存后需刷新页面，站点全局配置才会生效</p>
         </template>
       </div>
+      <div v-else-if="currentTab === 'siteConfig'" class="settings-panel">
+        <div class="settings-section">
+          <p class="avatar-hint">站点设置仅超管可见，请使用超管账号登录（默认 admin/123456，首次登录需改密）</p>
+        </div>
+      </div>
     </main>
 
     <!-- Footer -->
@@ -457,11 +516,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { authApi, postsApi, groupsApi, uploadApi, linksApi, siteConfigApi } from '@/api'
 import type { ExternalLink } from '@/api'
-import { getSiteConfig } from '@/config/siteConfig'
+import { getSiteConfig, applyFavicon } from '@/config/siteConfig'
 import type { SiteConfig } from '@/config/siteConfig'
 import { THEMES } from '@/themes'
 import { useAuthStore } from '@/stores'
@@ -472,19 +531,22 @@ import { useAuthStore } from '@/stores'
 const router = useRouter()
 const authStore = useAuthStore()
 
-// 标签页
+// 标签页（超管专属带 adminOnly 标记，用于置灰提示而非直接隐藏，避免用户误判为缺失）
 const tabs = [
   { id: 'articles', name: '文章' },
   { id: 'drafts', name: '草稿' },
   { id: 'settings', name: '设置' },
-  { id: 'links', name: '外链管理' },
-  { id: 'siteConfig', name: '站点设置' }
+  { id: 'links', name: '外链管理', adminOnly: true } as const,
+  { id: 'siteConfig', name: '站点设置', adminOnly: true } as const,
 ]
 const currentTab = ref('articles')
 
-// 非超管不显示超管专属 tab（外链管理 / 站点设置）
+// 展示用：非超管时保留 Tab 但置灰并提示“仅超管可见”，避免被误认为功能缺失
 const displayTabs = computed(() =>
-  authStore.isAdmin ? tabs : tabs.filter((t) => t.id !== 'links' && t.id !== 'siteConfig')
+  tabs.map((t) => ({
+    ...t,
+    disabled: (t as any).adminOnly ? !authStore.isAdmin : false,
+  }))
 )
 
 // 加载状态
@@ -989,19 +1051,32 @@ const themeOptions = THEMES.map(t => ({ id: t.id, name: t.name }))
 const siteConfigForm = reactive<SiteConfig>(JSON.parse(JSON.stringify(getSiteConfig())))
 const siteConfigLoading = ref(false)
 const siteConfigSaving = ref(false)
+const siteConfigError = ref('')
+// Logo 上传 input（复用现有上传接口）
+const siteLogoInput = ref<HTMLInputElement | null>(null)
 
 // 加载站点配置作为编辑基底：
 // - 后台有保存值（非空 dict）时以保存值为基底
 // - 后台为空 {}（或加载失败）时用当前生效配置，保证表单有完整默认值
+// - 增加 5 秒超时，避免后端无响应时永久 loading 遮挡表单
 const loadSiteConfig = async () => {
   siteConfigLoading.value = true
+  siteConfigError.value = ''
   try {
-    const saved = await siteConfigApi.getAdmin()
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('加载站点配置超时，请检查后端/网络后重试')), 5000)
+    )
+    const saved = (await Promise.race([siteConfigApi.getAdmin(), timeout])) as Record<string, unknown>
     const base = saved && Object.keys(saved).length > 0 ? saved : getSiteConfig()
     Object.assign(siteConfigForm, JSON.parse(JSON.stringify(base)))
+    // 兼容旧配置：site.logo 字段不存在时补空字符串，保证表单可编辑且不丢失
+    if (siteConfigForm.site.logo === undefined || siteConfigForm.site.logo === null) {
+      siteConfigForm.site.logo = ''
+    }
   } catch (error) {
     console.error('加载站点配置失败:', error)
-    alert(error instanceof Error ? error.message : '加载站点配置失败')
+    const msg = error instanceof Error ? error.message : '加载站点配置失败'
+    siteConfigError.value = msg
   } finally {
     siteConfigLoading.value = false
   }
@@ -1013,6 +1088,8 @@ const saveSiteConfig = async () => {
   siteConfigSaving.value = true
   try {
     await siteConfigApi.update(JSON.parse(JSON.stringify(siteConfigForm)))
+    // 立即应用 favicon（site.logo 复用），清空时回退默认，无需等刷新即可预览
+    applyFavicon(siteConfigForm.site.logo?.trim() || '')
     alert('已保存，刷新页面生效')
   } catch (error) {
     console.error('保存站点配置失败:', error)
@@ -1046,6 +1123,27 @@ const removeFooterLink = (groupIndex: number, itemIndex: number) => {
   siteConfigForm.footer.links[groupIndex]!.items.splice(itemIndex, 1)
 }
 
+// Logo 上传（复用现有图片上传接口，最大 10MB）
+const triggerSiteLogoUpload = () => {
+  siteLogoInput.value?.click()
+}
+const handleSiteLogoChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  try {
+    const response = await uploadApi.uploadImage(file)
+    siteConfigForm.site.logo = response.url
+  } catch (error: any) {
+    console.error('上传 Logo 失败:', error)
+    alert(error.message || '上传 Logo 失败')
+  } finally {
+    if (siteLogoInput.value) {
+      siteLogoInput.value.value = ''
+    }
+  }
+}
+
 // ╭────────────────────────────────────────────────────────────╮
 // │  生命周期 - 加载用户数据
 // ╰────────────────────────────────────────────────────────────╯
@@ -1057,6 +1155,17 @@ onMounted(() => {
     loadSiteConfig()
   }
 })
+
+// 超管状态由异步 initAuth 决定，mount 时可能仍为 false，需监听变为 true 时补加载
+watch(
+  () => authStore.isAdmin,
+  (isAdmin, wasAdmin) => {
+    if (isAdmin && !wasAdmin) {
+      loadLinks()
+      loadSiteConfig()
+    }
+  }
+)
 </script>
 
 <style scoped>
@@ -1271,6 +1380,22 @@ onMounted(() => {
 .tab-btn.active {
   background: var(--accent-primary);
   color: var(--bg-primary);
+}
+
+.tab-btn.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tab-btn.disabled:hover {
+  background: transparent;
+  color: var(--text-tertiary);
+}
+
+.tab-lock {
+  margin-left: 4px;
+  font-size: 10px;
+  vertical-align: middle;
 }
 
 /* ╭── 筛选栏 ──╮ */

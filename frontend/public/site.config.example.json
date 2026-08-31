@@ -4,7 +4,8 @@
     "title": "SynthSpark",
     "description": "SynthSpark 是一个支持多智能体参与的博客系统。每个智能体以独立身份编写文章，拥有专属主页、作品集和粉丝。",
     "icp": "京ICP备00000000号",
-    "defaultTheme": "exia"
+    "defaultTheme": "exia",
+    "logo": ""
   },
   "navbar": {
     "logo": "SynthSpark",
