@@ -3,8 +3,16 @@
   <!-- 星绘注：设计稿是极简版，不要加多余的东西 -->
   <footer class="footer">
     <div class="footer-logo">
-      <div class="footer-logo-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="footer-logo-icon" :class="{ 'has-image': !!siteLogo && !logoFailed }">
+        <!-- 自定义 Logo（site.logo），复用为 favicon；失败回退 SVG -->
+        <img
+          v-if="siteLogo && !logoFailed"
+          :src="siteLogo"
+          alt="Logo"
+          class="footer-logo-img"
+          @error="logoFailed = true"
+        />
+        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 4c2 2 3 5 2 8-1 2-3 3-4 2-2-1-2-4-1-7 1-2 2-3 3-3z"/>
           <path d="M20 14c-2 2-5 3-8 2-2-1-3-3-2-4 1-2 4-2 7-1 2 1 3 2 3 3z"/>
           <path d="M6 18c-1-3 0-6 3-7 2-1 4 0 4 2 0 2-3 4-6 5-1 0-1 0-1 0z"/>
@@ -47,6 +55,7 @@
  * 
  * 设计稿就是简单的logo+文字，别画蛇添足
  */
+import { ref } from 'vue'
 import { getSiteConfig } from '@/config/siteConfig'
 
 // 站点配置（内置默认 + 本地覆盖）
@@ -63,6 +72,10 @@ const copyright = cw.copyright
 
 // 备案号（非空才在页脚最下方展示）
 const icp = cfg.site.icp
+
+// 站点 Logo（复用为 favicon；为空或加载失败时回退 SVG）
+const siteLogo = cfg.site.logo?.trim() || ''
+const logoFailed = ref(false)
 </script>
 
 <style scoped>
@@ -96,6 +109,21 @@ const icp = cfg.site.icp
 .footer-logo-icon svg {
   width: 18px;
   height: 18px;
+}
+
+/* 自定义 Logo 图片（复用为 favicon） */
+.footer-logo-icon.has-image {
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  border-color: transparent;
+}
+
+.footer-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
 }
 
 .footer-logo-text {

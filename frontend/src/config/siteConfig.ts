@@ -31,6 +31,7 @@ export interface SiteConfig {
     description: string // 站点描述
     icp: string         // 备案号（可为空字符串）
     defaultTheme: string // 首次访问用户的默认主题（已选过主题的用户不受影响）
+    logo: string        // 站点 Logo 图片 URL（为空时使用内置 SVG，同时作为 favicon）
   }
   navbar: {
     logo: string        // 导航栏 Logo 文字
@@ -60,6 +61,7 @@ const buildDefaultConfig = (): SiteConfig => ({
     description: copywriting.about.desc,
     icp: '',
     defaultTheme: 'exia',
+    logo: '',
   },
   navbar: {
     logo: copywriting.navbar.logo,
@@ -174,6 +176,9 @@ export async function initSiteConfig(): Promise<void> {
 
   // 设置浏览器标题（title 为空时回退用站点名）
   document.title = currentConfig.site.title || currentConfig.site.name
+
+  // 同步更新 favicon：site.logo 非空时复用为标签页图标，空值保持 index.html 默认
+  applyFavicon(currentConfig.site.logo)
 }
 
 /**
@@ -208,6 +213,59 @@ async function fetchConfigOverlay(url: string, label: string): Promise<Record<st
     // 网络失败 / 超时 / 解析异常：该层跳过，保证启动不受影响
     console.warn(`[站点配置] 加载 ${label} 失败，该层跳过:`, error)
     return null
+  }
+}
+
+/**
+ * 根据 Logo URL 推断 favicon 的 MIME 类型
+ * 支持 data URI、常见图片扩展名，无法识别时返回 undefined 交由浏览器自动判断
+ */
+function getFaviconType(href: string): string | undefined {
+  if (!href) return undefined
+  // data URI：如 data:image/svg+xml,...
+  if (href.startsWith('data:')) {
+    const match = href.match(/^data:([^;,]+)/)
+    if (match) return match[1]
+    return undefined
+  }
+  const lower = href.split('?')[0]!.split('#')[0]!.toLowerCase()
+  if (lower.endsWith('.ico')) return 'image/x-icon'
+  if (lower.endsWith('.svg')) return 'image/svg+xml'
+  if (lower.endsWith('.png')) return 'image/png'
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg'
+  if (lower.endsWith('.webp')) return 'image/webp'
+  if (lower.endsWith('.gif')) return 'image/gif'
+  return undefined
+}
+
+// 默认 favicon（与 index.html 中一致，移除 logo 时回退）
+const DEFAULT_FAVICON_HREF =
+  "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%2352b788' d='M12 4c2 2 3 5 2 8-1 2-3 3-4 2-2-1-2-4-1-7 1-2 2-3 3-3zM20 14c-2 2-5 3-8 2-2-1-3-3-2-4 1-2 4-2 7-1 2 1 3 2 3 3zM6 18c-1-3 0-6 3-7 2-1 4 0 4 2 0 2-3 4-6 5-1 0-1 0-1 0z'/></svg>"
+
+/**
+ * 应用 favicon 到 document.head
+ * - href 非空时更新为该 URL（复用 Logo）
+ * - href 为空时回退到默认 favicon（用于清除 Logo 后立即预览）
+ */
+export function applyFavicon(href: string | undefined): void {
+  const url = href?.trim() ? href.trim() : DEFAULT_FAVICON_HREF
+  if (typeof document === 'undefined') return
+  try {
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'icon'
+      document.head.appendChild(link)
+    }
+    link.href = url
+    const type = getFaviconType(url)
+    if (type) {
+      link.type = type
+    } else {
+      link.removeAttribute('type')
+    }
+  } catch (error) {
+    console.warn('[站点配置] 更新 favicon 失败:', error)
   }
 }
 

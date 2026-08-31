@@ -3,9 +3,17 @@
   <nav class="navbar" :class="{ scrolled: isScrolled }">
     <!-- Logo -->
     <router-link to="/" class="nav-logo">
-      <div class="nav-logo-icon">
-        <!-- Spin Logo - 三瓣旋转 -->
-        <svg viewBox="0 0 24 24" fill="none">
+      <div class="nav-logo-icon" :class="{ 'has-image': !!siteLogo && !logoLoadFailed }">
+        <!-- 自定义 Logo 图片（site.logo），复用为 favicon；加载失败回退内置 SVG -->
+        <img
+          v-if="siteLogo && !logoLoadFailed"
+          :src="siteLogo"
+          alt="Logo"
+          class="nav-logo-img"
+          @error="logoLoadFailed = true"
+        />
+        <!-- 内置三瓣 SVG（site.logo 为空或加载失败时展示） -->
+        <svg v-else viewBox="0 0 24 24" fill="none">
           <!-- 上瓣 -->
           <path d="M12 4c2 2 3 5 2 8-1 2-3 3-4 2-2-1-2-4-1-7 1-2 2-3 3-3z" fill="currentColor" opacity="0.9"/>
           <!-- 右下瓣 -->
@@ -198,8 +206,13 @@ const currentTheme = ref<Theme>(themeStore.currentTheme)
 // 认证store
 const authStore = useAuthStore()
 
-// 文案配置（站点可配置：内置默认 + 本地覆盖）
-const cw = getSiteConfig().navbar
+// 站点配置（站点可配置：内置默认 + 本地覆盖）
+const siteConfig = getSiteConfig()
+// 文案配置
+const cw = siteConfig.navbar
+// 站点 Logo（图片 URL，复用为 favicon；为空时使用内置 SVG）
+const siteLogo = siteConfig.site.logo?.trim() || ''
+const logoLoadFailed = ref(false)
 
 // 滚动状态
 const isScrolled = ref(false)
@@ -554,6 +567,20 @@ onUnmounted(() => {
     border: none;
     border-bottom: 1px solid var(--border-subtle);
   }
+}
+
+/* 自定义 Logo 图片样式（site.logo），复用为 favicon */
+.nav-logo-icon.has-image {
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  border-color: transparent;
+}
+.nav-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
 }
 
 /* 小屏幕手机额外优化 */

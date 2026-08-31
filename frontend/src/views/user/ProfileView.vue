@@ -319,6 +319,47 @@
               </select>
               <p class="avatar-hint">仅对首次访问（未选过主题）的用户生效，已选过主题的用户保持自己的选择</p>
             </div>
+            <div class="form-group">
+              <label class="form-label">站点 Logo（同时作为浏览器标签图标 favicon）</label>
+              <div class="avatar-upload">
+                <div class="avatar-preview" style="border-radius: 8px;">
+                  <img
+                    v-if="siteConfigForm.site.logo"
+                    :src="siteConfigForm.site.logo"
+                    :key="siteConfigForm.site.logo"
+                    class="avatar-img"
+                    alt="Logo 预览"
+                    style="object-fit: contain; background: var(--bg-primary);"
+                  />
+                  <span v-else class="avatar-placeholder">图</span>
+                </div>
+                <div class="avatar-actions">
+                  <input
+                    ref="siteLogoInput"
+                    type="file"
+                    accept="image/*"
+                    style="display: none"
+                    @change="handleSiteLogoChange"
+                  />
+                  <button class="avatar-btn" @click="triggerSiteLogoUpload">上传 Logo</button>
+                  <button
+                    v-if="siteConfigForm.site.logo"
+                    class="avatar-btn avatar-btn-danger"
+                    @click="siteConfigForm.site.logo = ''"
+                  >
+                    移除
+                  </button>
+                  <p class="avatar-hint">为空时使用内置三瓣图标；上传后同时作为 favicon，保存后刷新生效。上传仅支持 JPG/PNG/GIF/WebP（最大 10MB）；手动填入可使用 SVG/ICO 或外部 URL（复用现有上传接口）</p>
+                </div>
+              </div>
+              <input
+                v-model="siteConfigForm.site.logo"
+                type="text"
+                class="form-input"
+                placeholder="或直接填入图片 URL，如 /uploads/logo.png 或 https://example.com/logo.svg"
+                style="margin-top: 10px"
+              />
+            </div>
           </div>
 
           <!-- 首页横幅文案（最常见的需求，放在站点信息之后便于发现） -->
@@ -461,7 +502,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { authApi, postsApi, groupsApi, uploadApi, linksApi, siteConfigApi } from '@/api'
 import type { ExternalLink } from '@/api'
-import { getSiteConfig } from '@/config/siteConfig'
+import { getSiteConfig, applyFavicon } from '@/config/siteConfig'
 import type { SiteConfig } from '@/config/siteConfig'
 import { THEMES } from '@/themes'
 import { useAuthStore } from '@/stores'
@@ -989,6 +1030,8 @@ const themeOptions = THEMES.map(t => ({ id: t.id, name: t.name }))
 const siteConfigForm = reactive<SiteConfig>(JSON.parse(JSON.stringify(getSiteConfig())))
 const siteConfigLoading = ref(false)
 const siteConfigSaving = ref(false)
+// Logo 上传 input（复用现有上传接口）
+const siteLogoInput = ref<HTMLInputElement | null>(null)
 
 // 加载站点配置作为编辑基底：
 // - 后台有保存值（非空 dict）时以保存值为基底
@@ -999,6 +1042,10 @@ const loadSiteConfig = async () => {
     const saved = await siteConfigApi.getAdmin()
     const base = saved && Object.keys(saved).length > 0 ? saved : getSiteConfig()
     Object.assign(siteConfigForm, JSON.parse(JSON.stringify(base)))
+    // 兼容旧配置：site.logo 字段不存在时补空字符串，保证表单可编辑且不丢失
+    if (siteConfigForm.site.logo === undefined || siteConfigForm.site.logo === null) {
+      siteConfigForm.site.logo = ''
+    }
   } catch (error) {
     console.error('加载站点配置失败:', error)
     alert(error instanceof Error ? error.message : '加载站点配置失败')
@@ -1013,6 +1060,8 @@ const saveSiteConfig = async () => {
   siteConfigSaving.value = true
   try {
     await siteConfigApi.update(JSON.parse(JSON.stringify(siteConfigForm)))
+    // 立即应用 favicon（site.logo 复用），清空时回退默认，无需等刷新即可预览
+    applyFavicon(siteConfigForm.site.logo?.trim() || '')
     alert('已保存，刷新页面生效')
   } catch (error) {
     console.error('保存站点配置失败:', error)
@@ -1044,6 +1093,27 @@ const addFooterLink = (groupIndex: number) => {
 }
 const removeFooterLink = (groupIndex: number, itemIndex: number) => {
   siteConfigForm.footer.links[groupIndex]!.items.splice(itemIndex, 1)
+}
+
+// Logo 上传（复用现有图片上传接口，最大 10MB）
+const triggerSiteLogoUpload = () => {
+  siteLogoInput.value?.click()
+}
+const handleSiteLogoChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  try {
+    const response = await uploadApi.uploadImage(file)
+    siteConfigForm.site.logo = response.url
+  } catch (error: any) {
+    console.error('上传 Logo 失败:', error)
+    alert(error.message || '上传 Logo 失败')
+  } finally {
+    if (siteLogoInput.value) {
+      siteLogoInput.value.value = ''
+    }
+  }
 }
 
 // ╭────────────────────────────────────────────────────────────╮
