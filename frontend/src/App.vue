@@ -12,10 +12,7 @@
 </script>
 
 <style>
-/* 字体引入 - 必须放在最前面 */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
-
-/* 全局样式 */
+/* 全局样式（已移除 Google Fonts 外链，改用系统字体栈，避免国内超时） */
 * {
   margin: 0;
   padding: 0;
